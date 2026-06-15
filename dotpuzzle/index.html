@@ -1,0 +1,3054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DotPuzzle Pack — Daily Tactile Puzzles</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" as="style" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <style>
+    :root {
+      /* Heap-inspired light palette */
+      --bg-app: #fafafa;
+      --bg-card: #ffffff;
+      --bg-soft: #f3f3f1;
+      --line: #e8e8e6;
+      --line-soft: #f0f0ee;
+      --fg: #0a0a0a;
+      --fg-soft: #4a4a4a;
+      --fg-dim: #6d6d6d;   /* WCAG AA 5:1 on white (was #8a8a8a = 3.93:1) */
+      --fg-faint: #949494; /* WCAG 1.4.11 3.1:1 on white (was #c5c5c3 = 1.86:1) — UI/borders only */
+      --dot: #0a0a0a;
+      /* Game accents */
+      --c-sudoku: #7fb2e8;
+      --c-sudoku-soft: #d4e7f9;
+      --c-mine: #f5b5bd;
+      --c-mine-soft: #fde0e3;
+      --c-nono: #f5c957;
+      --c-nono-soft: #fdf0c8;
+      --c-maze: #67b87b;
+      --c-maze-soft: #d4ecd9;
+      --accent: var(--c-sudoku);
+      /* status */
+      --ok: #3a8d4f;
+      --danger: #d04848;
+      --info: #4a8fcf;
+    }
+    * { box-sizing: border-box; }
+
+    /* ============ A11Y v0.7 — WCAG 2.4.7 ============ */
+    button:focus-visible,
+    [role="button"]:focus-visible,
+    [role="grid"]:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid var(--dot) !important;
+      outline-offset: 2px !important;
+      box-shadow: 0 0 0 1px var(--bg-card), 0 0 0 4px var(--dot) !important;
+    }
+    /* Skip link */
+    .skip-link {
+      position: fixed; top: -100px; left: 16px; z-index: 9999;
+      background: var(--fg); color: var(--bg-card);
+      padding: 12px 20px; font-weight: 700; font-size: 14px;
+      text-decoration: none; border-radius: 999px;
+      transition: top 0.15s;
+    }
+    .skip-link:focus { top: 12px; outline: 3px solid var(--accent); outline-offset: 2px; }
+    /* sr-only — visually hidden but for screen readers */
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0;
+      margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+      white-space: nowrap; border: 0;
+    }
+
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--bg-app);
+      color: var(--fg);
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Web app container — responsive */
+    .topbar-sticky {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--bg-app);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 20px; margin: -32px -20px 24px;
+    }
+    @media (max-width: 640px) {
+      .topbar-sticky { padding: 12px 16px; margin: -20px -16px 16px; }
+    }
+    .layout {
+      display: grid; grid-template-columns: 1fr;
+      gap: 32px; align-items: start;
+    }
+    @media (min-width: 1100px) {
+      .layout.with-side { grid-template-columns: minmax(0, 1fr) 360px; }
+    }
+    .app {
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+      background: var(--bg-app);
+    }
+    @media (min-width: 640px) {
+      .app { padding: 40px 32px 80px; }
+    }
+    @media (min-width: 1024px) {
+      .app { max-width: 880px; padding: 48px 40px 96px; }
+    }
+    @media (min-width: 1280px) {
+      .app { max-width: 960px; }
+    }
+    @media (max-width: 400px) {
+      .app { padding: 20px 16px 60px; }
+    }
+    /* Themed game screens — different accent per game */
+    body[data-theme="sudoku"], .app[data-theme="sudoku"] { --accent: var(--c-sudoku); --accent-soft: var(--c-sudoku-soft); }
+    body[data-theme="minesweeper"], .app[data-theme="minesweeper"] { --accent: var(--c-mine); --accent-soft: var(--c-mine-soft); }
+    body[data-theme="nonogram"], .app[data-theme="nonogram"] { --accent: var(--c-nono); --accent-soft: var(--c-nono-soft); }
+    body[data-theme="maze"], .app[data-theme="maze"] { --accent: var(--c-maze); --accent-soft: var(--c-maze-soft); }
+
+
+    /* 헤더 — 모바일에서 줄바꿈 가능 */
+    @media (max-width: 480px) {
+      .topbar { flex-wrap: wrap; gap: 6px; }
+      .header-btns { flex-wrap: wrap; }
+      .icon-btn { font-size: 9px; padding: 5px 9px; }
+    }
+    /* Top bar */
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px; gap: 8px;
+    }
+    .brand {
+      font-size: 11px; letter-spacing: 0.18em; color: var(--fg-dim);
+      font-weight: 700;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .brand b { color: var(--fg); }
+    /* BETA chip — sits next to brand or back button to signal pre-release */
+    .beta-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      color: #ff7a45;                       /* warm orange */
+      background: rgba(255, 122, 69, 0.12);
+      border: 1px solid rgba(255, 122, 69, 0.5);
+      border-radius: 999px;
+      line-height: 1;
+      text-transform: uppercase;
+      vertical-align: middle;
+    }
+    .brand-row {
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .header-btns { display: flex; gap: 6px; align-items: center; }
+    .icon-btn {
+      background: var(--bg-card); border: 1px solid var(--line);
+      color: var(--fg-soft); font-size: 11px; padding: 10px 14px;
+      cursor: pointer; font-family: inherit; letter-spacing: 0.08em;
+      border-radius: 999px; font-weight: 600;
+      transition: all 0.15s;
+      min-height: 44px; min-width: 44px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .icon-btn:hover { border-color: var(--fg-faint); color: var(--fg); }
+    .icon-btn.active { background: var(--fg); color: white; border-color: var(--fg); }
+    .icon-btn.connected { background: var(--ok); color: white; border-color: var(--ok); }
+    .back-btn {
+      background: var(--bg-card); border: 1px solid var(--line);
+      color: var(--fg); font-size: 16px; padding: 10px 14px;
+      cursor: pointer; font-family: inherit;
+      border-radius: 999px; line-height: 1;
+      min-height: 44px; min-width: 44px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .back-btn:hover { background: var(--bg-soft); }
+
+    /* Launcher */
+    .launcher-hero {
+      background: var(--c-sudoku-soft);
+      border-radius: 28px;
+      padding: 28px 24px;
+      margin-bottom: 20px;
+      position: relative; overflow: hidden;
+    }
+    @media (min-width: 640px) {
+      .launcher-hero { padding: 40px 36px; border-radius: 32px; }
+    }
+    @media (min-width: 1024px) {
+      .launcher-hero { padding: 56px 48px; }
+    }
+    .launcher-hero-dots {
+      position: absolute; right: -20px; bottom: -20px;
+      width: 200px; height: 100px;
+    }
+    @media (min-width: 640px) {
+      .launcher-hero-dots { width: 280px; height: 140px; right: -10px; bottom: -10px; }
+    }
+    @media (min-width: 1024px) {
+      .launcher-hero-dots { width: 360px; height: 180px; }
+    }
+    .launcher-hero-dots svg { width: 100%; height: 100%; }
+    .launcher-eyebrow {
+      font-size: 11px; letter-spacing: 0.18em; color: var(--fg-soft);
+      font-weight: 700; margin-bottom: 10px;
+    }
+    .launcher-title {
+      font-size: 30px; font-weight: 800; letter-spacing: -0.02em;
+      line-height: 1.1; color: var(--fg);
+      margin: 0 0 10px;
+    }
+    @media (min-width: 640px) { .launcher-title { font-size: 42px; } }
+    @media (min-width: 1024px) { .launcher-title { font-size: 56px; } }
+    .launcher-sub {
+      font-size: 15px; color: var(--fg-soft); line-height: 1.55;
+      max-width: 80%;
+    }
+    @media (min-width: 640px) {
+      .launcher-sub { font-size: 16px; }
+    }
+    .launcher-section-label {
+      font-size: 11px; letter-spacing: 0.18em; color: var(--fg-dim);
+      font-weight: 700; margin: 14px 4px 12px;
+    }
+
+    /* Game card list — 단일 컬럼, 카드 가로 길게 */
+    .game-cards-wrap {
+      display: flex; flex-direction: column; gap: 12px;
+      margin-bottom: 24px;
+    }
+    /* Game card — wide horizontal layout */
+    .game-card {
+      width: 100%;
+      background: var(--bg-card); border: 1.5px solid var(--line);
+      padding: 18px 18px 18px 20px;
+      cursor: pointer; transition: all 0.18s ease;
+      text-align: left;
+      border-radius: 22px;
+      display: flex; gap: 18px; align-items: center;
+      font-family: inherit;
+      position: relative;
+    }
+    .game-card:hover {
+      border-color: var(--fg-faint);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .game-card:focus-visible {
+      border-color: var(--dot);
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.12);
+    }
+    .game-card.dotpad-focus { border-color: var(--dot); box-shadow: 0 0 0 3px rgba(0,0,0,0.08); }
+
+    .game-card-swatch {
+      width: 64px; height: 64px; flex-shrink: 0;
+      border-radius: 18px;
+      display: flex; justify-content: center; align-items: center;
+      padding: 10px;
+    }
+    .game-card-swatch svg { width: 100%; height: 100%; display: block; }
+    .swatch-sudoku { background: var(--c-sudoku-soft); }
+    .swatch-mine { background: var(--c-mine-soft); }
+    .swatch-nono { background: var(--c-nono-soft); }
+    .swatch-maze { background: var(--c-maze-soft); }
+
+    .game-card-body { flex: 1; min-width: 0; }
+    .game-card-title {
+      font-size: 18px; font-weight: 800; color: var(--fg);
+      margin-bottom: 6px;
+      letter-spacing: -0.015em;
+      line-height: 1.2;
+    }
+    .game-card-sub {
+      font-size: 14px; color: var(--fg-soft); line-height: 1.5;
+      letter-spacing: -0.005em;
+    }
+
+    /* Meta column — chip + arrow stacked on right */
+    .game-card-meta {
+      display: flex; flex-direction: column; align-items: flex-end;
+      gap: 10px; flex-shrink: 0;
+    }
+    .game-card-arrow {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--bg-soft); color: var(--fg);
+      display: flex; justify-content: center; align-items: center;
+      font-size: 18px; flex-shrink: 0; font-weight: 600;
+      transition: all 0.18s;
+    }
+    .game-card:hover .game-card-arrow {
+      background: var(--accent); color: var(--bg-card);
+      transform: translateX(2px);
+    }
+
+    /* Difficulty chip — 키 차별화 + 더 큰 폰트 */
+    .diff-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--bg-soft); border: 1px solid var(--line);
+      color: var(--fg); font-size: 12px; font-weight: 700;
+      padding: 6px 12px; border-radius: 999px;
+      cursor: pointer; font-family: inherit; letter-spacing: 0.02em;
+      transition: all 0.15s;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .diff-chip:hover { background: var(--bg-card); border-color: var(--fg-dim); transform: translateY(-1px); }
+    .diff-chip:focus-visible { outline: 2px solid var(--dot); outline-offset: 2px; }
+    .diff-chip .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--dot);
+      flex-shrink: 0;
+    }
+    .diff-chip .lbl { font-weight: 700; }
+    .diff-chip .hint {
+      font-size: 10px; color: var(--fg-dim); font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+    .diff-chip[data-level="easy"] .dot { background: #67b87b; box-shadow: 0 0 0 2px rgba(103,184,123,0.18); }
+    .diff-chip[data-level="medium"] .dot { background: #f5c957; box-shadow: 0 0 0 2px rgba(245,201,87,0.22); }
+    .diff-chip[data-level="hard"] .dot { background: #d04848; box-shadow: 0 0 0 2px rgba(208,72,72,0.18); }
+
+    @media (max-width: 480px) {
+      .game-card { padding: 14px 14px 14px 16px; gap: 12px; border-radius: 18px; }
+      .game-card-swatch { width: 52px; height: 52px; padding: 8px; border-radius: 14px; }
+      .game-card-title { font-size: 16px; }
+      .game-card-sub { font-size: 13px; }
+      .game-card-meta { gap: 6px; }
+      .game-card-arrow { width: 30px; height: 30px; font-size: 15px; }
+      .diff-chip .hint { display: none; }
+    }
+
+    /* Helper tools bar (per-game) — 폰트 키움 */
+    .tools-bar {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .tool-btn {
+      background: var(--bg-card); border: 1px solid var(--line);
+      color: var(--fg); font-size: 13px; font-weight: 600;
+      padding: 12px 16px; border-radius: 999px;
+      cursor: pointer; font-family: inherit;
+      transition: all 0.15s;
+      min-height: 44px;
+    }
+    .tool-btn:hover { background: var(--bg-soft); border-color: var(--fg-faint); }
+    .tool-btn .ico { display: inline-block; margin-right: 5px; }
+
+    /* Game header */
+    .game-head {
+      background: var(--accent-soft);
+      border-radius: 22px;
+      padding: 14px 16px 12px;
+      margin-bottom: 14px;
+      position: relative; overflow: hidden;
+    }
+    .game-head-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px;
+    }
+    .game-eyebrow {
+      font-size: 11px; letter-spacing: 0.15em; color: var(--fg-soft);
+      font-weight: 700;
+    }
+    .game-title {
+      font-size: 22px; font-weight: 800; color: var(--fg);
+      letter-spacing: -0.01em; line-height: 1.2;
+    }
+    @media (min-width: 640px) { .game-title { font-size: 26px; } }
+    .game-sub {
+      font-size: 14px; color: var(--fg-soft);
+      line-height: 1.5;
+    }
+
+    /* Sudoku */
+    .sudoku-grid {
+      display: grid; grid-template-columns: repeat(9, 1fr);
+      gap: 1px; background: var(--fg-faint);
+      border: 2px solid var(--fg);
+      margin-bottom: 14px;
+      aspect-ratio: 1;
+      border-radius: 8px; overflow: hidden;
+    }
+    .sudoku-cell {
+      background: var(--bg-card);
+      display: flex; justify-content: center; align-items: center;
+      font-size: 14px; font-weight: 700; color: var(--fg);
+      cursor: pointer; user-select: none;
+      position: relative;
+    }
+    .sudoku-cell.given { color: var(--fg); background: var(--bg-soft); }
+    .sudoku-cell.user { color: var(--info); }
+    .sudoku-cell.bad { color: var(--danger); }
+    .sudoku-cell.focused { background: var(--accent); color: var(--fg); z-index: 2; }
+    /* Box dividers — class-driven for variable sizes */
+    .sudoku-cell.box-r { border-right: 2px solid var(--fg); }
+    .sudoku-cell.box-b { border-bottom: 2px solid var(--fg); }
+
+
+    /* iOS-style number pad */
+    .num-pad {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      margin-bottom: 12px;
+      max-width: 280px;
+    }
+    .num-btn {
+      background: var(--bg-card); border: 1px solid var(--line);
+      color: var(--fg); padding: 14px 0;
+      font-size: 19px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      border-radius: 16px;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      gap: 1px; transition: all 0.1s;
+    }
+    .num-btn:hover { background: var(--bg-soft); border-color: var(--fg-faint); }
+    .num-btn:active { transform: scale(0.97); background: var(--accent-soft); }
+    .num-btn .sub {
+      font-size: 8px; letter-spacing: 0.15em; color: var(--fg-dim);
+      font-weight: 600;
+    }
+    .num-btn.dotpad-focus { background: var(--accent); border-color: var(--dot); }
+    .num-btn.erase { background: var(--bg-soft); }
+    .num-row { display: flex; gap: 8px; }
+    .num-row > * { flex: 1; }
+
+    /* Cancel/Done pill bar */
+    .pad-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0 12px;
+      font-size: 14px; font-weight: 600;
+    }
+    .pad-bar .cancel { color: var(--info); cursor: pointer; }
+    .pad-bar .done { color: var(--info); cursor: pointer; }
+
+    /* Minesweeper */
+    .ms-grid {
+      display: grid; gap: 1px; background: var(--fg-faint);
+      border: 2px solid var(--fg);
+      margin-bottom: 12px;
+      aspect-ratio: 1;
+      border-radius: 8px; overflow: hidden;
+    }
+    .ms-cell {
+      background: var(--bg-soft);
+      display: flex; justify-content: center; align-items: center;
+      font-size: 11px; font-weight: 700; color: var(--fg);
+      cursor: pointer; user-select: none;
+    }
+    .ms-cell.revealed { background: var(--bg-card); color: var(--fg-soft); }
+    .ms-cell.revealed.n1 { color: var(--info); }
+    .ms-cell.revealed.n2 { color: var(--ok); }
+    .ms-cell.revealed.n3 { color: var(--danger); }
+    .ms-cell.revealed.n4 { color: #8a4fb5; }
+    .ms-cell.flagged { background: var(--c-mine-soft); }
+    .ms-cell.flagged::after { content: '⚑'; color: var(--danger); font-size: 12px; }
+    .ms-cell.mine { background: var(--c-mine); }
+    .ms-cell.mine::after { content: '●'; color: var(--dot); }
+    .ms-cell.focused { background: var(--accent); color: var(--fg); z-index: 2; }
+    .ms-status {
+      display: flex; justify-content: space-around;
+      font-size: 11px; color: var(--fg-soft); margin-bottom: 8px;
+      background: var(--bg-card); border: 1px solid var(--line);
+      border-radius: 14px; padding: 8px 10px;
+    }
+    .ms-status b { color: var(--fg); font-weight: 700; }
+
+    /* Nonogram */
+    .nono-wrap {
+      display: grid; gap: 1px;
+      margin-bottom: 12px;
+    }
+    .nono-hint-cell {
+      background: var(--bg-soft); padding: 2px 4px;
+      font-size: 9px; color: var(--fg-soft);
+      display: flex; align-items: center; line-height: 1.1;
+      letter-spacing: 0; font-weight: 600;
+    }
+    .nono-hint-cell.col { flex-direction: column; justify-content: flex-end; text-align: center; }
+    .nono-hint-cell.row { justify-content: flex-end; }
+    .nono-grid-area {
+      background: var(--fg-faint); border: 2px solid var(--fg);
+      border-radius: 4px; overflow: hidden;
+    }
+    .nono-cell {
+      background: var(--bg-card); cursor: pointer; user-select: none;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 10px; color: var(--fg-dim);
+    }
+    .nono-cell.filled { background: var(--dot); }
+    .nono-cell.x::after { content: '×'; color: var(--fg-dim); font-size: 12px; }
+    .nono-cell.focused { box-shadow: inset 0 0 0 2px var(--c-nono); z-index: 2; }
+
+    /* Maze */
+    .maze-grid {
+      display: grid; gap: 0;
+      margin-bottom: 12px;
+      aspect-ratio: 1;
+      border: 2px solid var(--fg);
+      border-radius: 8px; overflow: hidden;
+      background: var(--bg-card);
+    }
+    .maze-cell {
+      background: var(--bg-card); position: relative;
+    }
+    .maze-cell.wall { background: var(--fg); }
+    .maze-cell.player::after {
+      content: ''; position: absolute; inset: 12%;
+      background: var(--c-maze); border-radius: 50%;
+      box-shadow: 0 0 0 2px var(--fg);
+    }
+    .maze-cell.goal::after {
+      content: ''; position: absolute; inset: 25%;
+      background: var(--accent); border-radius: 50%;
+    }
+    .maze-controls {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 6px; margin: 0 auto; width: 200px;
+    }
+    .maze-controls .num-btn { padding: 14px 0; font-size: 16px; }
+    .maze-controls .empty { background: transparent; border: none; }
+
+    /* Action buttons */
+    .action-bar {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .primary-btn {
+      background: var(--fg); color: white; border: none;
+      padding: 15px 24px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: inherit; letter-spacing: 0.02em;
+      flex: 1; min-width: 130px;
+      border-radius: 999px;
+      transition: all 0.15s;
+    }
+    .primary-btn:hover { background: #2a2a2a; transform: translateY(-1px); }
+    .primary-btn.dotpad-focus { box-shadow: 0 0 0 3px var(--accent); }
+    .ghost-btn {
+      background: var(--bg-card); color: var(--fg);
+      border: 1px solid var(--line);
+      padding: 14px 22px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      border-radius: 999px;
+      transition: all 0.15s;
+    }
+    .ghost-btn:hover { background: var(--bg-soft); border-color: var(--fg-faint); }
+    .ghost-btn.dotpad-focus { border-color: var(--dot); }
+
+
+    /* 게임 그리드는 max-width로 데스크탑에서 너무 커지지 않게 */
+    .sudoku-grid, .ms-grid, .maze-grid {
+      max-width: 540px;
+      margin-left: auto; margin-right: auto;
+    }
+    .nono-wrap {
+      max-width: 600px;
+      margin-left: auto; margin-right: auto;
+    }
+    /* 모바일에서 num-pad 좀 더 크게 */
+    @media (max-width: 480px) {
+      .num-pad { max-width: 100%; }
+      .num-btn { padding: 18px 0; font-size: 21px; }
+      .tool-btn { padding: 10px 14px; font-size: 12px; }
+    }
+    /* 데스크탑에서 num-pad 가운데 정렬 */
+    @media (min-width: 640px) {
+      .num-pad { margin-left: auto; margin-right: auto; }
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      background: var(--fg); color: white;
+      padding: 12px 22px; font-size: 13px; font-weight: 600;
+      z-index: 9999; opacity: 0; transition: opacity 0.3s;
+      pointer-events: none; letter-spacing: 0.02em;
+      border-radius: 999px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+    #toast.show { opacity: 1; }
+
+
+    /* Connect popup — redesigned (v0.16) */
+    .modal-connect {
+      background: var(--bg-card);
+      border-radius: 28px;
+      padding: 32px 24px 20px;
+      max-width: 340px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+    }
+    .modal-icon {
+      width: 60px; height: 60px;
+      background: var(--bg-soft);
+      border-radius: 18px;
+      margin: 0 auto 16px;
+      display: flex; justify-content: center; align-items: center;
+      color: var(--fg);
+    }
+    .modal-icon svg { width: 32px; height: 32px; }
+    .modal-connect h3 {
+      font-size: 21px; font-weight: 800;
+      letter-spacing: -0.015em;
+      margin: 0 0 8px;
+      color: var(--fg);
+    }
+    .modal-desc {
+      font-size: 13px; color: var(--fg-dim);
+      line-height: 1.55; margin: 0 0 22px;
+      font-weight: 500;
+    }
+    .connect-options {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-bottom: 14px;
+    }
+    .connect-btn {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--fg); color: white;
+      border: 0;
+      border-radius: 18px;
+      padding: 14px 18px;
+      cursor: pointer; font-family: inherit;
+      text-align: left; width: 100%;
+      transition: all 0.15s ease;
+      min-height: 64px;
+    }
+    .connect-btn:hover {
+      background: #2a2a2a;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+    .connect-btn:active { transform: translateY(0); }
+    .connect-btn:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 3px;
+    }
+    .connect-btn-icon {
+      width: 40px; height: 40px;
+      background: rgba(255,255,255,0.14);
+      border-radius: 12px;
+      display: flex; justify-content: center; align-items: center;
+      flex-shrink: 0;
+      color: white;
+    }
+    .connect-btn-icon svg { width: 22px; height: 22px; }
+    .connect-btn-text {
+      display: flex; flex-direction: column;
+      flex: 1; min-width: 0;
+      gap: 2px;
+    }
+    .connect-btn-title {
+      font-size: 16px; font-weight: 700;
+      letter-spacing: -0.005em;
+      color: white;
+    }
+    .connect-btn-sub {
+      font-size: 11px;
+      color: rgba(255,255,255,0.65);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+    .connect-btn-arrow {
+      font-size: 24px;
+      color: rgba(255,255,255,0.5);
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .modal-cancel {
+      width: 100%;
+      padding: 13px;
+    }
+    /* Mobile */
+    @media (max-width: 400px) {
+      .modal-connect { padding: 28px 20px 18px; border-radius: 24px; }
+      .modal-connect h3 { font-size: 19px; }
+      .connect-btn { padding: 12px 14px; min-height: 60px; }
+    }
+
+    /* Dot Pad popup */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      display: none; justify-content: center; align-items: center;
+      z-index: 200; backdrop-filter: blur(4px);
+      padding: 20px;
+    }
+    .overlay.active { display: flex; }
+    .modal {
+      background: var(--bg-card); border: 1px solid var(--line);
+      padding: 24px; width: 90%; max-width: 320px;
+      border-radius: 28px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    }
+    .modal h3 { margin: 0 0 6px; font-size: 16px; color: var(--fg); letter-spacing: -0.01em; font-weight: 800; }
+    .modal p { font-size: 12px; color: var(--fg-dim); margin: 0 0 16px; line-height: 1.5; }
+    .modal .row { display: flex; gap: 8px; }
+
+    /* Dot Pad preview — full 30x10 grid */
+    .dotpad-preview {
+      background: var(--bg-card); border: 1px solid var(--line);
+      padding: 14px; margin-top: 16px;
+      border-radius: 18px;
+    }
+    @media (min-width: 1024px) {
+      .dotpad-preview { padding: 20px; border-radius: 22px; }
+    }
+    .dotpad-preview-label {
+      font-size: 9px; color: var(--fg-dim); letter-spacing: 0.14em;
+      font-weight: 700; margin-bottom: 8px;
+    }
+    .dotpad-preview-grid {
+      display: grid; grid-template-columns: repeat(30, 1fr);
+      gap: 1px;
+      background: var(--bg-soft);
+      border-radius: 6px; overflow: hidden;
+      padding: 3px;
+    }
+    .dotpad-preview-grid.full {
+      grid-template-rows: repeat(10, 1fr);
+      aspect-ratio: 30 / 13; /* 30 wide × 10 tall (2x4 dots/cell, but slightly stretched vertically) */
+    }
+    .dp-c {
+      position: relative; background: rgba(0,0,0,0.02);
+      border-radius: 1px;
+    }
+    .dp-d {
+      position: absolute; width: 30%; height: 18%;
+      background: var(--fg-faint); border-radius: 50%;
+    }
+    .dp-d.up { background: var(--dot); box-shadow: 0 0 1px rgba(0,0,0,0.3); }
+    .dp-d.d1 { left: 18%; top: 6%; }
+    .dp-d.d2 { left: 18%; top: 30%; }
+    .dp-d.d3 { left: 18%; top: 54%; }
+    .dp-d.d7 { left: 18%; top: 78%; }
+    .dp-d.d4 { left: 58%; top: 6%; }
+    .dp-d.d5 { left: 58%; top: 30%; }
+    .dp-d.d6 { left: 58%; top: 54%; }
+    .dp-d.d8 { left: 58%; top: 78%; }
+    /* Text line below (20 cells) */
+    .dotpad-text-line {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 8px; padding: 8px 10px;
+      background: var(--bg-soft); border-radius: 8px;
+      font-size: 10px; color: var(--fg-soft);
+    }
+    .tl-label {
+      background: var(--fg); color: white;
+      padding: 2px 7px; border-radius: 999px;
+      font-size: 8px; letter-spacing: 0.12em; font-weight: 700;
+    }
+    .tl-content { font-family: 'SF Mono', Menlo, monospace; letter-spacing: 0.05em; }
+
+    /* Key hints */
+    .key-hints {
+      background: var(--bg-card); padding: 12px 16px;
+      font-size: 13px; color: var(--fg-soft);
+      letter-spacing: 0; line-height: 1.6;
+      margin-bottom: 14px; border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+    .key-hints b { color: var(--fg); font-weight: 700; }
+
+    /* Footer brand mark (small dot cluster) */
+    .footer-mark {
+      display: flex; justify-content: center; align-items: center;
+      gap: 4px; margin-top: 18px; opacity: 0.4;
+    }
+    .footer-mark .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dot); }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#screen">Skip to main content</a>
+  <main class="app" id="app" role="main">
+    <div id="screen" tabindex="-1"></div>
+  </main>
+
+  <div class="overlay" id="dp-overlay" role="dialog" aria-modal="true" aria-labelledby="dp-modal-title">
+    <div class="modal modal-connect">
+      <div class="modal-icon" aria-hidden="true">
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="4" width="20" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle cx="11" cy="10" r="1.5" fill="currentColor"/>
+          <circle cx="16" cy="10" r="1.5" fill="currentColor"/>
+          <circle cx="21" cy="10" r="1.5" fill="currentColor"/>
+          <circle cx="11" cy="16" r="1.5" fill="currentColor"/>
+          <circle cx="16" cy="16" r="1.5" fill="currentColor"/>
+          <circle cx="21" cy="16" r="1.5" fill="currentColor"/>
+          <circle cx="11" cy="22" r="1.5" fill="currentColor"/>
+          <circle cx="16" cy="22" r="1.5" fill="currentColor"/>
+          <circle cx="21" cy="22" r="1.5" fill="currentColor"/>
+        </svg>
+      </div>
+      <h3 id="dp-modal-title">Connect Dot Pad</h3>
+      <p class="modal-desc">Chrome or Edge desktop · HTTPS only<br/>Pair the device near your laptop</p>
+      <div class="connect-options">
+        <button class="connect-btn" onclick="connectBle()" type="button" aria-label="Connect via Bluetooth, wireless BLE">
+          <span class="connect-btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2v20l-5-5 5-5-5-5 5-5zm0 6.5l3 3-3 3v-6zm0 9l3-3-3-3v6z" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="connect-btn-text">
+            <span class="connect-btn-title">Bluetooth</span>
+            <span class="connect-btn-sub">Wireless · BLE</span>
+          </span>
+          <span class="connect-btn-arrow" aria-hidden="true">›</span>
+        </button>
+        <button class="connect-btn" onclick="connectUsb()" type="button" aria-label="Connect via USB cable, wired">
+          <span class="connect-btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 1l-3 5h2v9.5l-3-2v-3l1-1h-4l1 1v3l5 3v3l-2 1h6l-2-1v-9l5-3v-3l1-1h-4l1 1v3l-3 2V6h2l-3-5z" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="connect-btn-text">
+            <span class="connect-btn-title">USB</span>
+            <span class="connect-btn-sub">Wired · Reliable</span>
+          </span>
+          <span class="connect-btn-arrow" aria-hidden="true">›</span>
+        </button>
+      </div>
+      <button class="ghost-btn modal-cancel" onclick="closeDpOverlay()" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Dot Pad SDK (Web SDK 3.0.0) -->
+  <script type="module">
+    // Dot Pad Web SDK 3.0.0 — ES module 명시 import + 클래스 인스턴스화 (Detective Voice 패턴)
+    try {
+      const { DotPadSDK, DotPadScanner, DisplayMode, DataCodes, KeyCodes }
+        = await import('./dotpad-sdk/DotPadSDK-3.0.0.js');
+      window.DotPad = {
+        sdk: new DotPadSDK(),
+        scanner: new DotPadScanner(),
+        DisplayMode, DataCodes, KeyCodes,
+      };
+      console.log('[DotPad] SDK loaded — version 3.0.0');
+    } catch (err) {
+      console.error('[DotPad] SDK load failed:', err);
+      window._dotpadLoadError = err.message || String(err);
+    }
+  </script>
+
+  <script>
+  // ============================================================
+  // STATE
+  // ============================================================
+  const state = {
+    screen: 'launcher',
+    dotpadConnected: false,
+    dotpadDevice: null,
+    dotpadName: '',
+    dotpadCursor: 0,
+    ttsOn: true,
+    sfxOn: true,
+    sudokuBlinkOn: true,
+    mazeBlinkOn: true,
+    difficulty: { sudoku: 'easy', minesweeper: 'easy', nonogram: 'easy', maze: 'easy' },
+    sudoku: null,
+    minesweeper: null,
+    nonogram: null,
+    maze: null,
+  };
+
+  // ============================================================
+  // DIFFICULTY CONFIGS
+  // ============================================================
+  const DIFF_LABEL = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+  const DIFF_LEVELS = ['easy', 'medium', 'hard'];
+
+  // Sudoku puzzles per size — [size, puzzle, solution]
+  const SUDOKU_4 = {
+    puzzle: [
+      [1,0, 0,4],
+      [0,4, 1,0],
+      [0,1, 4,0],
+      [4,0, 0,1],
+    ],
+    solution: [
+      [1,3, 2,4],
+      [2,4, 1,3],
+      [3,1, 4,2],
+      [4,2, 3,1],
+    ],
+    box: { rows: 2, cols: 2 },
+    max: 4,
+  };
+  const SUDOKU_6 = {
+    puzzle: [
+      [1,0, 0, 0,5,0],
+      [0,5, 0, 1,0,0],
+      [0,0, 4, 0,0,1],
+      [5,0, 0, 0,3,0],
+      [0,4, 0, 0,0,2],
+      [0,0, 2, 3,0,0],
+    ],
+    solution: [
+      [1,2,3, 4,5,6],
+      [4,5,6, 1,2,3],
+      [2,3,4, 5,6,1],
+      [5,6,1, 2,3,4],
+      [3,4,5, 6,1,2],
+      [6,1,2, 3,4,5],
+    ],
+    box: { rows: 2, cols: 3 },
+    max: 6,
+  };
+  const SUDOKU_9 = {
+    puzzle: [
+      [5,3,0, 0,7,0, 0,0,0],
+      [6,0,0, 1,9,5, 0,0,0],
+      [0,9,8, 0,0,0, 0,6,0],
+      [8,0,0, 0,6,0, 0,0,3],
+      [4,0,0, 8,0,3, 0,0,1],
+      [7,0,0, 0,2,0, 0,0,6],
+      [0,6,0, 0,0,0, 2,8,0],
+      [0,0,0, 4,1,9, 0,0,5],
+      [0,0,0, 0,8,0, 0,7,9],
+    ],
+    solution: [
+      [5,3,4, 6,7,8, 9,1,2],
+      [6,7,2, 1,9,5, 3,4,8],
+      [1,9,8, 3,4,2, 5,6,7],
+      [8,5,9, 7,6,1, 4,2,3],
+      [4,2,6, 8,5,3, 7,9,1],
+      [7,1,3, 9,2,4, 8,5,6],
+      [9,6,1, 5,3,7, 2,8,4],
+      [2,8,7, 4,1,9, 6,3,5],
+      [3,4,5, 2,8,6, 1,7,9],
+    ],
+    box: { rows: 3, cols: 3 },
+    max: 9,
+  };
+  const SUDOKU_BY_DIFF = { easy: SUDOKU_4, medium: SUDOKU_6, hard: SUDOKU_9 };
+
+  // Minesweeper config
+  const MS_CFG = {
+    easy: { N: 5, mines: 3 },
+    medium: { N: 7, mines: 7 },
+    hard: { N: 9, mines: 10 },
+  };
+
+  // Nonogram pictures
+  const NONO_PLUS_5 = [
+    [0,0,1,0,0],
+    [0,0,1,0,0],
+    [1,1,1,1,1],
+    [0,0,1,0,0],
+    [0,0,1,0,0],
+  ];
+  const NONO_SMILE_8 = [
+    [0,0,1,1,1,1,0,0],
+    [0,1,0,0,0,0,1,0],
+    [1,0,1,0,0,1,0,1],
+    [1,0,0,0,0,0,0,1],
+    [1,0,1,0,0,1,0,1],
+    [1,0,0,1,1,0,0,1],
+    [0,1,0,0,0,0,1,0],
+    [0,0,1,1,1,1,0,0],
+  ];
+  const NONO_SMILE_10 = [
+    [0,0,1,1,1,1,1,1,0,0],
+    [0,1,0,0,0,0,0,0,1,0],
+    [1,0,0,1,0,0,1,0,0,1],
+    [1,0,0,1,0,0,1,0,0,1],
+    [1,0,0,0,0,0,0,0,0,1],
+    [1,0,1,0,0,0,0,1,0,1],
+    [1,0,0,1,0,0,1,0,0,1],
+    [1,0,0,0,1,1,0,0,0,1],
+    [0,1,0,0,0,0,0,0,1,0],
+    [0,0,1,1,1,1,1,1,0,0],
+  ];
+  const NONO_BY_DIFF = { easy: NONO_PLUS_5, medium: NONO_SMILE_8, hard: NONO_SMILE_10 };
+
+  // Maze size
+  const MAZE_BY_DIFF = { easy: 7, medium: 11, hard: 15 };
+
+  function cycleDifficulty(game) {
+    const cur = state.difficulty[game];
+    const idx = DIFF_LEVELS.indexOf(cur);
+    state.difficulty[game] = DIFF_LEVELS[(idx + 1) % DIFF_LEVELS.length];
+    // Reset puzzle state so next start uses new size
+    state[game] = null;
+    renderLauncher();
+  }
+  window.cycleDifficulty = cycleDifficulty;
+
+  // ============================================================
+  // UTILITIES
+  // ============================================================
+  function $(id) { return document.getElementById(id); }
+  function el(tag, attrs={}, ...children) {
+    const e = document.createElement(tag);
+    for (const k in attrs) {
+      if (k === 'class') e.className = attrs[k];
+      else if (k.startsWith('on')) e[k] = attrs[k];
+      else e.setAttribute(k, attrs[k]);
+    }
+    children.forEach(c => {
+      if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+      else if (c) e.appendChild(c);
+    });
+    return e;
+  }
+  function toast(msg, ms=1500) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._h);
+    t._h = setTimeout(() => t.classList.remove('show'), ms);
+  }
+  // Voice quality — same selection logic as DotPet so English narration
+  // sounds natural (Google US English / Samantha / MS Neural — NOT the
+  // novelty voices like Albert, Bahh, Boing, Zarvox, etc.)
+  let _preferredVoiceEn = null;
+  function _loadVoices() {
+    if (!window.speechSynthesis) return;
+    const voices = speechSynthesis.getVoices();
+    const en = voices.filter(v => v.lang && v.lang.startsWith('en'));
+    const isLowQuality = (name) => /albert|bahh|bells|boing|bubbles|cellos|deranged|good news|hysterical|junior|pipe organ|trinoids|whisper|zarvox|bad news|kathy/i.test(name);
+    _preferredVoiceEn =
+      en.find(v => /Google US English/i.test(v.name)) ||
+      en.find(v => /^(Samantha|Ava|Alex|Karen|Allison|Susan|Tessa)$/i.test(v.name) && v.lang === 'en-US') ||
+      en.find(v => /^(Samantha|Ava|Alex|Karen|Allison|Susan|Tessa)/i.test(v.name)) ||
+      en.find(v => /Aria|Jenny|Guy|Davis|Sara|Emma/i.test(v.name) && /Neural|Online/i.test(v.name)) ||
+      en.find(v => v.lang === 'en-US' && v.default && !isLowQuality(v.name)) ||
+      en.find(v => v.lang === 'en-US' && !isLowQuality(v.name)) ||
+      en.find(v => !isLowQuality(v.name)) ||
+      en[0];
+  }
+  if (window.speechSynthesis) {
+    speechSynthesis.onvoiceschanged = _loadVoices;
+    _loadVoices();
+  }
+
+  function speak(text) {
+    if (!state.ttsOn || !window.speechSynthesis) return;
+    try {
+      window.speechSynthesis.cancel();
+      // Chrome sometimes leaves the synth paused after .cancel(); resume defensively
+      try { if (speechSynthesis.paused) speechSynthesis.resume(); } catch(e){}
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US';
+      u.rate = 1.0;        // natural pace (was 1.05 — slightly clipped)
+      u.pitch = 1.0;
+      u.volume = 1;
+      if (_preferredVoiceEn) u.voice = _preferredVoiceEn;
+      // setTimeout(0) — works around Chrome cancel/speak race that drops the first call
+      setTimeout(() => { try { window.speechSynthesis.speak(u); } catch(e){} }, 0);
+    } catch(e){}
+  }
+
+
+  // ============================================================
+  // SFX SYSTEM (Web Audio API 합성, 오디오 파일 0개)
+  // ============================================================
+  let _audioCtx = null;
+  function _audio() {
+    if (!_audioCtx) {
+      try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e) { return null; }
+    }
+    if (_audioCtx.state === 'suspended') {
+      try { _audioCtx.resume(); } catch(e){}
+    }
+    return _audioCtx;
+  }
+
+  // Envelope tone — frequency Hz, duration sec, oscillator type, peak gain
+  function _tone(freq, duration, type, gain) {
+    if (!state.sfxOn) return;
+    const ctx = _audio();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain || 0.12, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, t + duration);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + duration + 0.02);
+  }
+
+  // Frequency glide (sweep) — from→to over duration
+  function _glide(fromFreq, toFreq, duration, type, gain) {
+    if (!state.sfxOn) return;
+    const ctx = _audio();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type || 'sawtooth';
+    osc.frequency.setValueAtTime(fromFreq, t);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(50, toFreq), t + duration);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain || 0.15, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t + duration);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + duration + 0.02);
+  }
+
+  // Note sequence — list of [freq, duration, type?, gain?, delayMs?]
+  function _seq(notes) {
+    if (!state.sfxOn) return;
+    notes.forEach((n, i) => {
+      const delay = n[4] !== undefined ? n[4] : (i * 80);
+      setTimeout(() => _tone(n[0], n[1] || 0.1, n[2] || 'triangle', n[3] || 0.12), delay);
+    });
+  }
+
+  // Noise burst (for explosion-like)
+  function _noise(duration, gain) {
+    if (!state.sfxOn) return;
+    const ctx = _audio();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const bufLen = Math.floor(ctx.sampleRate * duration);
+    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 2);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const filt = ctx.createBiquadFilter();
+    filt.type = 'lowpass'; filt.frequency.value = 800;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(gain || 0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + duration);
+    src.connect(filt).connect(g).connect(ctx.destination);
+    src.start(t);
+  }
+
+  // Game-specific SFX dictionary
+  const SFX = {
+    // Universal
+    move:       () => _tone(660, 0.04, 'sine', 0.06),
+    back:       () => _tone(330, 0.08, 'sine', 0.08),
+    start:      () => _seq([[523, 0.12], [659, 0.12], [784, 0.18]]),
+    win:        () => _seq([[523, 0.15], [659, 0.15], [784, 0.18], [1047, 0.3]]),
+    lose:       () => _glide(330, 110, 0.5, 'sawtooth', 0.2),
+    toggle:     () => _tone(880, 0.05, 'square', 0.08),
+    // Tier 1 standard: no-op / invalid input feedback
+    error:      () => _seq([[330, 0.06], [220, 0.10]]),
+    // Sudoku
+    digitInput: (n) => _tone(440 + n * 30, 0.1, 'triangle', 0.12),
+    given:      () => _tone(220, 0.08, 'sawtooth', 0.1),  // can't change given
+    erase:      () => _tone(330, 0.06, 'sine', 0.08),
+    checkOk:    () => _seq([[523, 0.12], [659, 0.12], [784, 0.2]]),
+    checkPartial: () => _tone(440, 0.15, 'triangle', 0.1),
+    checkBad:   () => _glide(220, 110, 0.3, 'sawtooth', 0.15),
+    // Minesweeper
+    reveal:     () => _tone(880, 0.06, 'sine', 0.1),
+    revealN:    (n) => _tone(440 + n * 50, 0.1, 'triangle', 0.12),
+    mine:       () => { _noise(0.3, 0.25); _glide(220, 60, 0.4, 'sawtooth', 0.2); },
+    flag:       () => _tone(550, 0.08, 'square', 0.1),
+    unflag:     () => _tone(440, 0.06, 'square', 0.08),
+    safeHint:   () => _seq([[700, 0.1], [900, 0.15]]),
+    // Nonogram
+    fill:       () => _tone(880, 0.1, 'triangle', 0.12),
+    unfill:     () => _tone(660, 0.08, 'triangle', 0.1),
+    xMark:      () => _tone(440, 0.1, 'square', 0.1),
+    lineComplete: () => _seq([[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.2]]),
+    // Maze
+    step:       () => _tone(330, 0.04, 'sine', 0.06),
+    wall:       () => _glide(180, 100, 0.12, 'sawtooth', 0.18),
+    goal:       () => _seq([[523, 0.15], [659, 0.15], [784, 0.15], [1047, 0.3]]),
+  };
+  window.SFX = SFX;
+
+  function toggleSfx() {
+    state.sfxOn = !state.sfxOn;
+    if (state.sfxOn) SFX.toggle();
+    render();
+  }
+  window.toggleSfx = toggleSfx;
+
+
+  // ============================================================
+  // HEADER
+  // ============================================================
+  function renderHeader(titleHtml, subText, eyebrowText) {
+    const stageNum = { launcher: '', sudoku: '1', minesweeper: '2', nonogram: '3', maze: '4' }[state.screen] || '';
+    const stageLabel = { sudoku: 'Sudoku', minesweeper: 'Minesweeper', nonogram: 'Nonogram', maze: 'Maze' }[state.screen] || '';
+    return `
+      <header class="topbar" role="banner">
+        ${state.screen !== 'launcher'
+          ? `<div class="brand-row"><button class="back-btn" onclick="goLauncher()" aria-label="Back to main menu" type="button">←</button><span class="beta-badge" aria-label="Beta version">BETA</span></div>`
+          : `<div class="brand-row"><div class="brand">DOT <b>ARCADE</b></div><span class="beta-badge" aria-label="Beta version">BETA</span></div>`}
+        <div class="game-eyebrow" style="${state.screen==='launcher'?'display:none':''}">${stageLabel} ${stageNum}</div>
+        <div class="header-btns">
+          <button class="icon-btn ${state.ttsOn?'active':''}" id="tts-btn" onclick="toggleTts()" type="button" aria-pressed="${state.ttsOn}" aria-label="Toggle voice announcements">Voice</button>
+          <button class="icon-btn ${state.sfxOn?'active':''}" id="sfx-btn" onclick="toggleSfx()" type="button" aria-pressed="${state.sfxOn}" aria-label="Toggle sound effects">FX</button>
+          <button class="icon-btn ${state.dotpadConnected?'connected':''}" id="dp-btn" onclick="openDpOverlay()" type="button" aria-label="${state.dotpadConnected?'Dot Pad connected. Click to manage':'Connect Dot Pad'}">${state.dotpadConnected?'● PAD':'PAD'}</button>
+        </div>
+      </header>
+      ${titleHtml ? `
+        <div class="game-head">
+          ${eyebrowText ? `<div class="game-eyebrow">${eyebrowText}</div>` : ''}
+          <div class="game-title">${titleHtml}</div>
+          ${subText ? `<div class="game-sub">${subText}</div>` : ''}
+        </div>` : ''}
+    `;
+  }
+
+  function toggleTts() {
+    state.ttsOn = !state.ttsOn;
+    if (!state.ttsOn) window.speechSynthesis.cancel();
+    SFX.toggle();
+    render();
+  }
+
+  function goLauncher() {
+    state.screen = 'launcher';
+    state.dotpadCursor = 0;
+    stopSudokuBlink();
+    stopMazeBlink();
+    SFX.back();
+    render();
+  }
+
+  // ============================================================
+  // ROUTER
+  // ============================================================
+  function render() {
+    document.getElementById('app').setAttribute('data-theme', state.screen);
+    document.body.setAttribute('data-theme', state.screen);
+    if (state.screen === 'launcher') renderLauncher();
+    else if (state.screen === 'sudoku') renderSudoku();
+    else if (state.screen === 'minesweeper') renderMinesweeper();
+    else if (state.screen === 'nonogram') renderNonogram();
+    else if (state.screen === 'maze') renderMaze();
+    setTimeout(() => {
+      if (state.dotpadConnected) dotpadHighlight();
+      pushToDotpad();
+    }, 50);
+  }
+
+  // ============================================================
+  // LAUNCHER
+  // ============================================================
+  function getSudokuSub() {
+    const n = SUDOKU_BY_DIFF[state.difficulty.sudoku].max;
+    const box = SUDOKU_BY_DIFF[state.difficulty.sudoku].box;
+    return `${n} × ${n} · Fill rows, columns, and ${box.rows}×${box.cols} boxes with 1-${n}.`;
+  }
+  function getMsSub() {
+    const cfg = MS_CFG[state.difficulty.minesweeper];
+    return `${cfg.N} × ${cfg.N} · ${cfg.mines} mines. Reveal safe cells, flag the mines.`;
+  }
+  function getNonoSub() {
+    const n = NONO_BY_DIFF[state.difficulty.nonogram].length;
+    return `${n} × ${n} · Use row and column hints to reveal the picture.`;
+  }
+  function getMazeSub() {
+    const n = MAZE_BY_DIFF[state.difficulty.maze];
+    return `${n} × ${n} · Navigate from start to goal. Pan keys steer.`;
+  }
+  window.getSudokuSub = getSudokuSub;
+  window.getMsSub = getMsSub;
+  window.getNonoSub = getNonoSub;
+  window.getMazeSub = getMazeSub;
+
+  function renderLauncher() {
+    $('screen').innerHTML = `
+      ${renderHeader('', '')}
+      <div class="launcher-hero">
+        <div class="launcher-eyebrow">DOT ARCADE · TRACK A</div>
+        <div class="launcher-title">DotPuzzle<br/>Pack</div>
+        <div class="launcher-sub">Daily tactile puzzles. One grid cell = one Dot Pad cell. Perfect mapping.</div>
+        <svg class="launcher-hero-dots" viewBox="0 0 180 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="36" cy="60" r="36" fill="#0a0a0a"/>
+          <circle cx="100" cy="60" r="36" fill="#0a0a0a"/>
+          <circle cx="164" cy="60" r="36" fill="#0a0a0a"/>
+        </svg>
+      </div>
+
+      <div class="launcher-section-label">CHOOSE A PUZZLE</div>
+
+      <div class="game-cards-wrap">
+
+      <div class="game-card" role="button" tabindex="0" onclick="startGame('sudoku')" onkeydown="cardKey(event,'sudoku')">
+        <div class="game-card-swatch swatch-sudoku"><svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <rect x="3" y="3" width="30" height="30" rx="2" fill="none" stroke="#0a0a0a" stroke-width="2.2"/>
+  <line x1="13" y1="3" x2="13" y2="33" stroke="#0a0a0a" stroke-width="1.5"/>
+  <line x1="23" y1="3" x2="23" y2="33" stroke="#0a0a0a" stroke-width="1.5"/>
+  <line x1="3" y1="13" x2="33" y2="13" stroke="#0a0a0a" stroke-width="1.5"/>
+  <line x1="3" y1="23" x2="33" y2="23" stroke="#0a0a0a" stroke-width="1.5"/>
+  <circle cx="8" cy="8" r="1.6" fill="#0a0a0a"/>
+  <circle cx="28" cy="18" r="1.6" fill="#0a0a0a"/>
+  <circle cx="18" cy="28" r="1.6" fill="#0a0a0a"/>
+</svg></div>
+        <div class="game-card-body">
+          <div class="game-card-title">Sudoku</div>
+          <div class="game-card-sub" id="sudoku-sub">${getSudokuSub()}</div>
+        </div>
+        <div class="game-card-meta">
+          <button type="button" class="diff-chip" data-level="${state.difficulty.sudoku}" onclick="event.stopPropagation();cycleDifficulty('sudoku')" aria-label="Change difficulty">
+            <span class="dot"></span><span class="lbl">${DIFF_LABEL[state.difficulty.sudoku]}</span>
+            <span class="hint">tap to change</span>
+          </button>
+          <div class="game-card-arrow" aria-hidden="true">→</div>
+        </div>
+      </div>
+
+      <div class="game-card" role="button" tabindex="0" onclick="startGame('minesweeper')" onkeydown="cardKey(event,'minesweeper')">
+        <div class="game-card-swatch swatch-mine"><svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <circle cx="18" cy="20" r="10" fill="#0a0a0a"/>
+  <rect x="16.5" y="6" width="3" height="6" fill="#0a0a0a"/>
+  <circle cx="18" cy="5.5" r="2.2" fill="#0a0a0a"/>
+  <line x1="18" y1="20" x2="18" y2="5" stroke="none"/>
+  <circle cx="14" cy="17" r="1.3" fill="#fde0e3"/>
+  <line x1="6" y1="20" x2="11" y2="20" stroke="#0a0a0a" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="25" y1="20" x2="30" y2="20" stroke="#0a0a0a" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="11" y1="13" x2="8" y2="10" stroke="#0a0a0a" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="25" y1="13" x2="28" y2="10" stroke="#0a0a0a" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="11" y1="27" x2="8" y2="30" stroke="#0a0a0a" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="25" y1="27" x2="28" y2="30" stroke="#0a0a0a" stroke-width="1.6" stroke-linecap="round"/>
+</svg></div>
+        <div class="game-card-body">
+          <div class="game-card-title">Minesweeper</div>
+          <div class="game-card-sub">${getMsSub()}</div>
+        </div>
+        <div class="game-card-meta">
+          <button type="button" class="diff-chip" data-level="${state.difficulty.minesweeper}" onclick="event.stopPropagation();cycleDifficulty('minesweeper')" aria-label="Change difficulty">
+            <span class="dot"></span><span class="lbl">${DIFF_LABEL[state.difficulty.minesweeper]}</span>
+            <span class="hint">tap to change</span>
+          </button>
+          <div class="game-card-arrow" aria-hidden="true">→</div>
+        </div>
+      </div>
+
+      <div class="game-card" role="button" tabindex="0" onclick="startGame('nonogram')" onkeydown="cardKey(event,'nonogram')">
+        <div class="game-card-swatch swatch-nono"><svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <!-- 5x5 grid, filled cells form a heart-ish shape -->
+  <g fill="#0a0a0a">
+    <rect x="9" y="9" width="4.6" height="4.6"/>
+    <rect x="14.7" y="9" width="4.6" height="4.6"/>
+    <rect x="22.4" y="9" width="4.6" height="4.6"/>
+    <rect x="6" y="14.7" width="4.6" height="4.6"/>
+    <rect x="14.7" y="14.7" width="4.6" height="4.6"/>
+    <rect x="22.4" y="14.7" width="4.6" height="4.6"/>
+    <rect x="6" y="20.4" width="4.6" height="4.6"/>
+    <rect x="14.7" y="20.4" width="4.6" height="4.6"/>
+    <rect x="9" y="26.1" width="4.6" height="4.6"/>
+  </g>
+  <!-- hint marks on top/left -->
+  <g fill="#0a0a0a" font-family="monospace" font-size="3.4" font-weight="700">
+    <text x="9" y="6.4">3</text>
+    <text x="14.7" y="6.4">2</text>
+    <text x="22.4" y="6.4">2</text>
+    <text x="2.5" y="11.5">2</text>
+    <text x="2.5" y="17.2">3</text>
+  </g>
+</svg></div>
+        <div class="game-card-body">
+          <div class="game-card-title">Nonogram</div>
+          <div class="game-card-sub">${getNonoSub()}</div>
+        </div>
+        <div class="game-card-meta">
+          <button type="button" class="diff-chip" data-level="${state.difficulty.nonogram}" onclick="event.stopPropagation();cycleDifficulty('nonogram')" aria-label="Change difficulty">
+            <span class="dot"></span><span class="lbl">${DIFF_LABEL[state.difficulty.nonogram]}</span>
+            <span class="hint">tap to change</span>
+          </button>
+          <div class="game-card-arrow" aria-hidden="true">→</div>
+        </div>
+      </div>
+
+      <div class="game-card" role="button" tabindex="0" onclick="startGame('maze')" onkeydown="cardKey(event,'maze')">
+        <div class="game-card-swatch swatch-maze"><svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <rect x="3" y="3" width="30" height="30" rx="2" fill="none" stroke="#0a0a0a" stroke-width="2"/>
+  <!-- Walls -->
+  <g stroke="#0a0a0a" stroke-width="2" stroke-linecap="square" fill="none">
+    <line x1="9" y1="3" x2="9" y2="15"/>
+    <line x1="15" y1="9" x2="15" y2="21"/>
+    <line x1="21" y1="3" x2="21" y2="9"/>
+    <line x1="27" y1="9" x2="27" y2="27"/>
+    <line x1="3" y1="21" x2="9" y2="21"/>
+    <line x1="9" y1="27" x2="21" y2="27"/>
+    <line x1="15" y1="15" x2="27" y2="15"/>
+    <line x1="21" y1="21" x2="27" y2="21"/>
+  </g>
+  <!-- Start dot -->
+  <circle cx="6" cy="6" r="2" fill="#0a0a0a"/>
+  <!-- Goal flag -->
+  <circle cx="30" cy="30" r="2.4" fill="#0a0a0a"/>
+</svg></div>
+        <div class="game-card-body">
+          <div class="game-card-title">Maze</div>
+          <div class="game-card-sub">${getMazeSub()}</div>
+        </div>
+        <div class="game-card-meta">
+          <button type="button" class="diff-chip" data-level="${state.difficulty.maze}" onclick="event.stopPropagation();cycleDifficulty('maze')" aria-label="Change difficulty">
+            <span class="dot"></span><span class="lbl">${DIFF_LABEL[state.difficulty.maze]}</span>
+            <span class="hint">tap to change</span>
+          </button>
+          <div class="game-card-arrow" aria-hidden="true">→</div>
+        </div>
+      </div>
+
+      </div>
+
+      <div class="key-hints" style="margin-top:14px">
+        <b>Dot Pad keys</b> — F1/F2 nav · F3 select · F4 mark · Pan L/R · Pan All replay<br/>
+        <b>Combos</b> — F3+F4 context help · F1+F4 back to menu
+      </div>
+
+      <div class="footer-mark">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+    `;
+  }
+
+  function cardKey(e, gameName) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      startGame(gameName);
+    }
+  }
+  window.cardKey = cardKey;
+
+  function startGame(name) {
+    state.screen = name;
+    state.dotpadCursor = 0;
+    if (name === 'sudoku') { initSudoku(); startSudokuBlink(); } else stopSudokuBlink();
+    if (name === 'minesweeper') initMinesweeper();
+    if (name === 'nonogram') initNonogram();
+    if (name === 'maze') { initMaze(); startMazeBlink(); } else stopMazeBlink();
+    SFX.start();
+    render();
+    speak(name + '. ' + (name === 'sudoku' ? 'Fill the grid with one to nine.' :
+      name === 'minesweeper' ? 'Find the mines without revealing them.' :
+      name === 'nonogram' ? 'Use the hints to reveal the picture.' :
+      'Navigate the maze to the goal.'));
+  }
+
+  // ============================================================
+  // SUDOKU
+  // ============================================================
+  function initSudoku() {
+    if (state.sudoku) return;
+    const cfg = SUDOKU_BY_DIFF[state.difficulty.sudoku];
+    state.sudoku = {
+      N: cfg.max,
+      box: cfg.box,
+      solution: cfg.solution.map(r => r.slice()),
+      grid: cfg.puzzle.map(r => r.slice()),
+      given: cfg.puzzle.map(r => r.map(v => v !== 0)),
+      cursor: { r: 0, c: 0 },
+      mode: 'cell',
+      numCursor: 0,
+    };
+  }
+
+  function renderSudoku() {
+    const s = state.sudoku;
+    let cellsHtml = '';
+    for (let r = 0; r < s.N; r++) {
+      for (let c = 0; c < s.N; c++) {
+        const v = s.grid[r][c];
+        // Box dividers — last col of box gets right border, last row of box gets bottom
+        const isBoxRight = (c + 1) % s.box.cols === 0 && c < s.N - 1;
+        const isBoxBottom = (r + 1) % s.box.rows === 0 && r < s.N - 1;
+        const cls = [
+          'sudoku-cell',
+          s.given[r][c] ? 'given' : (v ? 'user' : ''),
+          (r === s.cursor.r && c === s.cursor.c && s.mode === 'cell') ? 'focused' : '',
+          isBoxRight ? 'box-r' : '',
+          isBoxBottom ? 'box-b' : '',
+        ].filter(Boolean).join(' ');
+        const cellLabel = (v ? `Row ${r+1} column ${c+1}, ${s.given[r][c]?'given':'user'} value ${v}` : `Row ${r+1} column ${c+1}, empty`);
+        cellsHtml += `<div class="${cls}" role="gridcell" aria-label="${cellLabel}" data-r="${r}" data-c="${c}" onclick="sudokuClick(${r},${c})">${v||''}</div>`;
+      }
+    }
+    const subs = ['', '', 'ABC', 'DEF', 'GHI', 'JKL', 'MNO', 'PQRS', 'TUV', 'WXYZ'];
+    let numHtml = '';
+    for (let n = 1; n <= s.N; n++) {
+      const focused = s.mode === 'num-pad' && s.numCursor === n - 1 ? 'dotpad-focus' : '';
+      numHtml += `<button class="num-btn ${focused}" onclick="sudokuInput(${n})">${n}<span class="sub">${subs[n]||'&nbsp;'}</span></button>`;
+    }
+    const eraseFocused = s.mode==='num-pad'&&s.numCursor===s.N?'dotpad-focus':'';
+
+    // Pad layout: for 4x4 = 2 rows of 2, for 6x6 = 2 rows of 3, for 9x9 = 3 rows of 3
+    const padCols = s.N === 4 ? 2 : 3;
+    $('screen').innerHTML = `
+      ${renderHeader('Fill the grid', `${s.N} × ${s.N} · Row ${s.cursor.r+1} · Col ${s.cursor.c+1}`, `Stage 1 · Sudoku · ${DIFF_LABEL[state.difficulty.sudoku]}`)}
+      <div class="tools-bar">
+        <button class="tool-btn" onclick="sudokuReadRow()"><span class="ico">📢</span>Read row</button>
+        <button class="tool-btn" onclick="sudokuWhatMissing()"><span class="ico">?</span>What's missing</button>
+        <button class="tool-btn" onclick="sudokuCheck()"><span class="ico">✓</span>Check</button>
+        <button class="tool-btn" onclick="announceContextHelp()"><span class="ico">?</span>Help</button>
+      </div>
+      <div class="sudoku-grid" id="sudoku-grid" role="grid" tabindex="0" aria-label="Sudoku ${s.N} by ${s.N} grid. Arrow keys to navigate, number keys to fill." aria-rowcount="${s.N}" aria-colcount="${s.N}" style="grid-template-columns: repeat(${s.N}, 1fr)">${cellsHtml}</div>
+      <div class="pad-bar">
+        <span class="cancel" onclick="goLauncher()">Back</span>
+        <span class="done" onclick="sudokuCheck()">Check</span>
+      </div>
+      <div class="num-pad" style="grid-template-columns: repeat(${padCols}, 1fr)">
+        ${numHtml}
+        <button class="num-btn erase ${eraseFocused}" onclick="sudokuInput(0)">⌫</button>
+      </div>
+      <div class="action-bar">
+        <button class="ghost-btn" onclick="sudokuReset()">Reset</button>
+      </div>
+      ${renderDotpadPreview()}
+    `;
+  }
+
+  // Sudoku helper: read current row
+  function sudokuReadRow() {
+    const s = state.sudoku;
+    const row = s.grid[s.cursor.r];
+    const cells = row.map((v, i) => v ? v.toString() : 'empty').join(', ');
+    const msg = `Row ${s.cursor.r+1}: ${cells}.`;
+    toast(msg, 4000); speak(msg);
+  }
+  // Sudoku helper: what's missing in current row
+  function sudokuWhatMissing() {
+    const s = state.sudoku;
+    const row = s.grid[s.cursor.r];
+    const has = new Set(row.filter(v => v));
+    const missing = [];
+    for (let n = 1; n <= s.N; n++) if (!has.has(n)) missing.push(n);
+    const msg = missing.length === 0
+      ? `Row ${s.cursor.r+1} complete.`
+      : `Row ${s.cursor.r+1} needs: ${missing.join(', ')}.`;
+    toast(msg, 4000); speak(msg);
+  }
+  window.sudokuReadRow = sudokuReadRow;
+  window.sudokuWhatMissing = sudokuWhatMissing;
+
+  // ============================================================
+  // SUDOKU 4×4 전용 보조 (v0.15)
+  // ============================================================
+  function sudokuAnnounceCursor() {
+    const s = state.sudoku;
+    if (!s) return;
+    const { r, c } = s.cursor;
+    const v = s.grid[r][c];
+    let status;
+    if (v === 0) status = 'empty';
+    else if (s.given[r][c]) status = 'given ' + v;
+    else status = 'user ' + v;
+    speak(`Row ${r+1} column ${c+1}, ${status}`);
+  }
+
+  function sudokuNextCell() {
+    const s = state.sudoku;
+    const total = s.N * s.N;
+    let idx = s.cursor.r * s.N + s.cursor.c;
+    idx = (idx + 1) % total;
+    s.cursor.r = Math.floor(idx / s.N);
+    s.cursor.c = idx % s.N;
+    SFX.move();
+    render();
+    sudokuAnnounceCursor();
+  }
+
+  function sudokuPrevCell() {
+    const s = state.sudoku;
+    const total = s.N * s.N;
+    let idx = s.cursor.r * s.N + s.cursor.c;
+    idx = (idx - 1 + total) % total;
+    s.cursor.r = Math.floor(idx / s.N);
+    s.cursor.c = idx % s.N;
+    SFX.move();
+    render();
+    sudokuAnnounceCursor();
+  }
+
+  // 숫자 n 입력 (toggle: 같은 숫자면 erase)
+  function sudokuInputN(n) {
+    const s = state.sudoku;
+    if (!s) return;
+    const { r, c } = s.cursor;
+    if (s.given[r][c]) {
+      SFX.given();
+      speak('Cannot edit fixed cell');
+      toast('Cannot edit fixed cell');
+      return;
+    }
+    if (s.grid[r][c] === n) {
+      // Toggle — same digit → erase
+      s.grid[r][c] = 0;
+      SFX.erase();
+      speak('Cleared, empty');
+    } else {
+      s.grid[r][c] = n;
+      SFX.digitInput(n);
+      speak(n + ' entered');
+    }
+    render();
+  }
+
+  // 행 읽기 (F1+F2 long-press 대체)
+  function sudokuReadCol() {
+    const s = state.sudoku;
+    if (!s) return;
+    const c = s.cursor.c;
+    const vals = [];
+    for (let r = 0; r < s.N; r++) {
+      const v = s.grid[r][c];
+      vals.push(v === 0 ? 'empty' : v.toString());
+    }
+    const msg = `Column ${c+1}: ${vals.join(', ')}`;
+    toast(msg, 4000); speak(msg);
+  }
+
+  function sudokuReadBox() {
+    const s = state.sudoku;
+    if (!s) return;
+    const { r, c } = s.cursor;
+    const boxR = Math.floor(r / s.box.rows) * s.box.rows;
+    const boxC = Math.floor(c / s.box.cols) * s.box.cols;
+    const vals = [];
+    for (let dr = 0; dr < s.box.rows; dr++) {
+      for (let dc = 0; dc < s.box.cols; dc++) {
+        const v = s.grid[boxR+dr][boxC+dc];
+        vals.push(v === 0 ? 'empty' : v.toString());
+      }
+    }
+    const msg = `${s.box.rows} by ${s.box.cols} box: ${vals.join(', ')}`;
+    toast(msg, 4000); speak(msg);
+  }
+
+  // Cursor blink interval
+  let _sudokuBlinkInterval = null;
+  function startSudokuBlink() {
+    if (_sudokuBlinkInterval) return;
+    _sudokuBlinkInterval = setInterval(() => {
+      if (state.screen !== 'sudoku' || !state.dotpadConnected) return;
+      state.sudokuBlinkOn = !state.sudokuBlinkOn;
+      pushToDotpad();
+    }, 600);
+  }
+  function stopSudokuBlink() {
+    if (_sudokuBlinkInterval) {
+      clearInterval(_sudokuBlinkInterval);
+      _sudokuBlinkInterval = null;
+    }
+    state.sudokuBlinkOn = true;
+  }
+
+  // Maze player ball blink — pulses the ball position so a blind user can
+  // locate themselves in real time via tactile feedback alone.
+  let _mazeBlinkInterval = null;
+  function startMazeBlink() {
+    if (_mazeBlinkInterval) return;
+    state.mazeBlinkOn = true;
+    _mazeBlinkInterval = setInterval(() => {
+      if (state.screen !== 'maze' || !state.dotpadConnected) return;
+      state.mazeBlinkOn = !state.mazeBlinkOn;
+      pushToDotpad();
+    }, 450);
+  }
+  function stopMazeBlink() {
+    if (_mazeBlinkInterval) {
+      clearInterval(_mazeBlinkInterval);
+      _mazeBlinkInterval = null;
+    }
+    state.mazeBlinkOn = true;
+  }
+  window.sudokuInputN = sudokuInputN;
+  window.sudokuReadCol = sudokuReadCol;
+  window.sudokuReadBox = sudokuReadBox;
+  window.sudokuPrevCell = sudokuPrevCell;
+  window.sudokuNextCell = sudokuNextCell;
+  window.sudokuAnnounceCursor = sudokuAnnounceCursor;
+
+  function sudokuClick(r, c) {
+    const s = state.sudoku;
+    s.cursor.r = r; s.cursor.c = c; s.mode = 'cell';
+    SFX.move();
+    render();
+    sudokuAnnounceCursor();
+  }
+  function sudokuInput(n) {
+    const s = state.sudoku;
+    const { r, c } = s.cursor;
+    if (s.given[r][c]) { SFX.given(); toast('Given digit'); return; }
+    s.grid[r][c] = n;
+    if (n === 0) SFX.erase(); else SFX.digitInput(n);
+    render();
+    speak(n === 0 ? 'Erased' : ('Set to ' + n));
+  }
+  function sudokuCheck() {
+    const s = state.sudoku;
+    let wrong = 0, empty = 0;
+    for (let r=0; r<s.N; r++) for (let c=0; c<s.N; c++) {
+      if (s.grid[r][c] === 0) empty++;
+      else if (s.grid[r][c] !== s.solution[r][c]) wrong++;
+    }
+    if (empty === 0 && wrong === 0) {
+      SFX.checkOk();
+      toast('☆ Solved!', 3000);
+      speak('Solved.');
+    } else if (wrong === 0) {
+      SFX.checkPartial();
+      toast(empty + ' cells to go');
+      speak(empty + ' cells remaining.');
+    } else {
+      SFX.checkBad();
+      toast(wrong + ' wrong · ' + empty + ' empty');
+      speak(wrong + ' wrong, ' + empty + ' empty.');
+    }
+  }
+  function sudokuReset() {
+    state.sudoku = null;
+    initSudoku();
+    render();
+  }
+
+  // ============================================================
+  // MINESWEEPER
+  // ============================================================
+  function initMinesweeper() {
+    const cfg = MS_CFG[state.difficulty.minesweeper];
+    const N = cfg.N, MINES = cfg.mines;
+    const grid = Array.from({length: N}, () => Array(N).fill(0));
+    const revealed = Array.from({length: N}, () => Array(N).fill(false));
+    const flagged = Array.from({length: N}, () => Array(N).fill(false));
+    state.minesweeper = {
+      N, MINES,
+      grid, revealed, flagged,
+      cursor: { r: 0, c: 0 },
+      gameOver: false, won: false,
+      firstClick: true, // 첫 클릭 안전 보장
+    };
+  }
+
+  // 첫 클릭 위치 안전하게: 그 셀과 주변 8칸 제외하고 mine 배치
+  function msPlaceMines(safeR, safeC) {
+    const s = state.minesweeper;
+    const safe = new Set();
+    for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) {
+      safe.add((safeR+dr) + ',' + (safeC+dc));
+    }
+    let placed = 0;
+    while (placed < s.MINES) {
+      const r = Math.floor(Math.random() * s.N);
+      const c = Math.floor(Math.random() * s.N);
+      if (s.grid[r][c] !== -1 && !safe.has(r + ',' + c)) {
+        s.grid[r][c] = -1; placed++;
+      }
+    }
+    for (let r=0; r<s.N; r++) for (let c=0; c<s.N; c++) {
+      if (s.grid[r][c] === -1) continue;
+      let cnt = 0;
+      for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) {
+        const nr = r+dr, nc = c+dc;
+        if (nr<0||nr>=s.N||nc<0||nc>=s.N) continue;
+        if (s.grid[nr][nc] === -1) cnt++;
+      }
+      s.grid[r][c] = cnt;
+    }
+  }
+
+  // Safe hint — 안전한 셀 한 개 음성으로 안내
+  function msSafeHint() {
+    const s = state.minesweeper;
+    if (s.firstClick) { toast('Tap any cell to start'); speak('Tap any cell to start.'); return; }
+    // 가려져 있고 지뢰가 아닌 셀 중 하나 선택
+    const safeHidden = [];
+    for (let r=0; r<s.N; r++) for (let c=0; c<s.N; c++) {
+      if (!s.revealed[r][c] && !s.flagged[r][c] && s.grid[r][c] !== -1) {
+        safeHidden.push({r, c});
+      }
+    }
+    if (safeHidden.length === 0) { toast('No safe hidden cells left'); return; }
+    const pick = safeHidden[Math.floor(Math.random() * safeHidden.length)];
+    s.cursor.r = pick.r; s.cursor.c = pick.c;
+    SFX.safeHint();
+    const msg = `Safe cell: row ${pick.r+1} column ${pick.c+1}.`;
+    toast(msg, 3000); speak(msg);
+    render();
+  }
+  window.msSafeHint = msSafeHint;
+
+  function renderMinesweeper() {
+    const s = state.minesweeper;
+    let cellsHtml = '';
+    for (let r=0; r<s.N; r++) for (let c=0; c<s.N; c++) {
+      const focused = (r === s.cursor.r && c === s.cursor.c) ? 'focused' : '';
+      let cls = `ms-cell ${focused}`;
+      let label = '';
+      if (s.revealed[r][c]) {
+        if (s.grid[r][c] === -1) { cls += ' mine'; }
+        else {
+          cls += ' revealed n' + s.grid[r][c];
+          if (s.grid[r][c] > 0) label = s.grid[r][c];
+        }
+      } else if (s.flagged[r][c]) {
+        cls += ' flagged';
+      }
+      const msState = s.revealed[r][c] ? (s.grid[r][c] === -1 ? 'mine' : s.grid[r][c] === 0 ? 'safe empty' : `${s.grid[r][c]} mines nearby`) : (s.flagged[r][c] ? 'flagged' : 'hidden');
+      const msLabel = `Row ${r+1} column ${c+1}, ${msState}`;
+      cellsHtml += `<div class="${cls}" role="gridcell" aria-label="${msLabel}" onclick="msClick(${r},${c})" oncontextmenu="event.preventDefault();msFlag(${r},${c});return false">${label}</div>`;
+    }
+    const flagsLeft = s.MINES - s.flagged.flat().filter(Boolean).length;
+
+    $('screen').innerHTML = `
+      ${renderHeader('Find the mines', `${s.N} × ${s.N} · ${s.MINES} mines · Row ${s.cursor.r+1}, Col ${s.cursor.c+1}`, `Stage 2 · Minesweeper · ${DIFF_LABEL[state.difficulty.minesweeper]}`)}
+      <div class="ms-status">
+        <span>Mines: <b>${s.MINES}</b></span>
+        <span>Flags left: <b>${flagsLeft}</b></span>
+        <span>${s.gameOver ? (s.won ? '☆ Won' : '☠ Lost') : (s.firstClick ? 'Tap to start' : 'Playing')}</span>
+      </div>
+      <div class="tools-bar">
+        <button class="tool-btn" onclick="msSafeHint()"><span class="ico">💡</span>Safe hint</button>
+        <button class="tool-btn" onclick="msReadAround()"><span class="ico">📢</span>Read around</button>
+        <button class="tool-btn" onclick="state.minesweeper=null;initMinesweeper();render()"><span class="ico">↺</span>New game</button>
+        <button class="tool-btn" onclick="announceContextHelp()"><span class="ico">?</span>Help</button>
+      </div>
+      <div class="ms-grid" id="ms-grid" role="grid" tabindex="0" aria-label="Minesweeper ${s.N} by ${s.N} grid. Arrow keys to navigate, Space to reveal, F to flag." aria-rowcount="${s.N}" aria-colcount="${s.N}" style="grid-template-columns: repeat(${s.N}, 1fr)">${cellsHtml}</div>
+      <div class="key-hints"><b>Tap</b> reveal · <b>right-click</b> flag · Dot Pad: <b>F1/F2</b> row · <b>Pan ◀▶</b> col · <b>F3</b> reveal · <b>F4</b> flag · <b>Pan ⊙</b> board summary</div>
+      ${renderDotpadPreview()}
+    `;
+  }
+
+  // Minesweeper: read 8 cells around cursor
+  function msReadAround() {
+    const s = state.minesweeper;
+    const dirs = [
+      ['north-west', -1, -1], ['north', -1, 0], ['north-east', -1, 1],
+      ['west', 0, -1], ['east', 0, 1],
+      ['south-west', 1, -1], ['south', 1, 0], ['south-east', 1, 1],
+    ];
+    const around = dirs.map(([name, dr, dc]) => {
+      const nr = s.cursor.r + dr, nc = s.cursor.c + dc;
+      if (nr<0||nr>=s.N||nc<0||nc>=s.N) return null;
+      let st;
+      if (s.revealed[nr][nc]) {
+        const v = s.grid[nr][nc];
+        st = v === -1 ? 'mine' : v === 0 ? 'empty' : v + ' nearby';
+      } else st = s.flagged[nr][nc] ? 'flagged' : 'hidden';
+      return name + ' ' + st;
+    }).filter(Boolean);
+    const msg = around.join('. ');
+    toast(msg, 5000); speak(msg);
+  }
+  window.msReadAround = msReadAround;
+
+  function msClick(r, c) {
+    const s = state.minesweeper;
+    if (s.gameOver) return;
+    s.cursor.r = r; s.cursor.c = c;
+    // No-op error: clicking on a flagged cell or already-revealed cell
+    if (s.flagged[r][c]) {
+      SFX.error(); speak('Flagged. Unflag first.');
+      render(); return;
+    }
+    if (s.revealed[r][c]) {
+      SFX.error(); speak('Already revealed.');
+      render(); return;
+    }
+    // First click safety: place mines avoiding this cell + neighbors
+    if (s.firstClick) {
+      msPlaceMines(r, c);
+      s.firstClick = false;
+    }
+    if (s.grid[r][c] === -1) {
+      for (let r2=0; r2<s.N; r2++) for (let c2=0; c2<s.N; c2++)
+        if (s.grid[r2][c2] === -1) s.revealed[r2][c2] = true;
+      s.gameOver = true; s.won = false;
+      SFX.mine();
+      toast('☠ Boom!', 2000); speak('Mine. Game over.');
+      render(); return;
+    }
+    // Track how many cells opened by the flood for voice summary (Tier 1)
+    const openedCells = [];
+    msFlood(r, c, openedCells);
+    if (s.grid[r][c] === 0) SFX.reveal(); else SFX.revealN(s.grid[r][c]);
+    msCheckWin();
+    render();
+    // Tier 1: announce flood scope when 0-cell chain reveals multiple cells
+    if (s.grid[r][c] === 0 && openedCells.length > 1) {
+      speak('Row ' + (r+1) + ' col ' + (c+1) + ' safe. Chain opened ' + openedCells.length + ' cells.');
+    } else {
+      speak('Row ' + (r+1) + ' col ' + (c+1) + ': ' + (s.grid[r][c] === 0 ? 'safe' : s.grid[r][c] + ' nearby'));
+    }
+  }
+  function msFlood(r, c, opened) {
+    const s = state.minesweeper;
+    if (r<0||r>=s.N||c<0||c>=s.N) return;
+    if (s.revealed[r][c] || s.flagged[r][c]) return;
+    if (s.grid[r][c] === -1) return;
+    s.revealed[r][c] = true;
+    if (opened) opened.push([r, c]);
+    if (s.grid[r][c] === 0) {
+      for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++)
+        if (dr || dc) msFlood(r+dr, c+dc, opened);
+    }
+  }
+  function msFlag(r, c) {
+    const s = state.minesweeper;
+    if (s.gameOver) { SFX.error(); return; }
+    if (s.revealed[r][c]) {
+      SFX.error(); speak('Cannot flag a revealed cell.');
+      return;
+    }
+    s.flagged[r][c] = !s.flagged[r][c];
+    s.cursor.r = r; s.cursor.c = c;
+    if (s.flagged[r][c]) SFX.flag(); else SFX.unflag();
+    render();
+    speak(s.flagged[r][c] ? 'Flagged' : 'Unflagged');
+  }
+  function msCheckWin() {
+    const s = state.minesweeper;
+    let safeCells = 0, safeRevealed = 0;
+    for (let r=0; r<s.N; r++) for (let c=0; c<s.N; c++) {
+      if (s.grid[r][c] !== -1) {
+        safeCells++;
+        if (s.revealed[r][c]) safeRevealed++;
+      }
+    }
+    if (safeCells === safeRevealed) {
+      s.gameOver = true; s.won = true;
+      SFX.win();
+      toast('☆ Solved!', 3000); speak('Solved. Congratulations.');
+    }
+  }
+
+  // ============================================================
+  // NONOGRAM
+  // ============================================================
+  // Nonogram target — from NONO_BY_DIFF based on difficulty
+
+  function computeHints(grid, axis) {
+    // axis: 'row' or 'col'
+    const N = grid.length;
+    const hints = [];
+    if (axis === 'row') {
+      for (let r=0; r<N; r++) {
+        const line = grid[r];
+        const groups = [];
+        let cur = 0;
+        for (let c=0; c<N; c++) {
+          if (line[c]) cur++;
+          else if (cur) { groups.push(cur); cur = 0; }
+        }
+        if (cur) groups.push(cur);
+        hints.push(groups.length ? groups : [0]);
+      }
+    } else {
+      for (let c=0; c<N; c++) {
+        const groups = [];
+        let cur = 0;
+        for (let r=0; r<N; r++) {
+          if (grid[r][c]) cur++;
+          else if (cur) { groups.push(cur); cur = 0; }
+        }
+        if (cur) groups.push(cur);
+        hints.push(groups.length ? groups : [0]);
+      }
+    }
+    return hints;
+  }
+
+  function initNonogram() {
+    if (state.nonogram) return;
+    const target = NONO_BY_DIFF[state.difficulty.nonogram];
+    const N = target.length;
+    state.nonogram = {
+      N,
+      target,
+      state: Array.from({length: N}, () => Array(N).fill(0)),
+      rowHints: computeHints(target, 'row'),
+      colHints: computeHints(target, 'col'),
+      cursor: { r: 0, c: 0 },
+      completedRows: new Set(),
+      completedCols: new Set(),
+    };
+  }
+
+  function renderNonogram() {
+    const s = state.nonogram;
+    // Column hints
+    let colHtml = '';
+    for (let c=0; c<s.N; c++) {
+      const hints = s.colHints[c].join(' ');
+      colHtml += `<div class="nono-hint-cell col">${hints.replace(/ /g, '<br/>')}</div>`;
+    }
+    // Row hints
+    let rowHtml = '';
+    for (let r=0; r<s.N; r++) {
+      const hints = s.rowHints[r].join(' ');
+      rowHtml += `<div class="nono-hint-cell row">${hints}</div>`;
+    }
+    // Grid
+    let cellsHtml = '';
+    for (let r=0; r<s.N; r++) for (let c=0; c<s.N; c++) {
+      const v = s.state[r][c];
+      const focused = (r === s.cursor.r && c === s.cursor.c) ? 'focused' : '';
+      const cls = `nono-cell ${v===1?'filled':''} ${v===2?'x':''} ${focused}`;
+      const nonoState = v === 1 ? 'filled' : v === 2 ? 'x marked' : 'empty';
+      const nonoLabel = `Row ${r+1} column ${c+1}, ${nonoState}. Row hint ${s.rowHints[r].join(' ')}. Column hint ${s.colHints[c].join(' ')}.`;
+      cellsHtml += `<div class="${cls}" role="gridcell" aria-label="${nonoLabel}" onclick="nonoClick(${r},${c})" oncontextmenu="event.preventDefault();nonoX(${r},${c});return false"></div>`;
+    }
+
+    $('screen').innerHTML = `
+      ${renderHeader('Reveal the picture', `${s.N} × ${s.N} · Row ${s.cursor.r+1}, Col ${s.cursor.c+1}`, `Stage 3 · Nonogram · ${DIFF_LABEL[state.difficulty.nonogram]}`)}
+      <div class="tools-bar">
+        <button class="tool-btn" onclick="nonoReadHints()"><span class="ico">📢</span>Read hints</button>
+        <button class="tool-btn" onclick="nonoProgress()"><span class="ico">📊</span>Progress</button>
+        <button class="tool-btn" onclick="nonoCheck()"><span class="ico">✓</span>Check</button>
+        <button class="tool-btn" onclick="announceContextHelp()"><span class="ico">?</span>Help</button>
+      </div>
+      <div class="key-hints"><b>Tap</b> fill · <b>right-click</b> mark X · <b>F3</b> fill · <b>F4</b> mark</div>
+      <div class="nono-wrap" style="grid-template-columns: 80px repeat(${s.N}, 1fr)">
+        <div class="nono-hint-cell" style="grid-row:1;grid-column:1"></div>
+        ${[...Array(s.N).keys()].map(c => `<div class="nono-hint-cell col" style="grid-row:1;grid-column:${c+2}">${s.colHints[c].join('<br/>')}</div>`).join('')}
+        ${[...Array(s.N).keys()].map(r => `<div class="nono-hint-cell row" style="grid-row:${r+2};grid-column:1">${s.rowHints[r].join(' ')}</div>`).join('')}
+        <div class="nono-grid-area" role="grid" tabindex="0" aria-label="Nonogram ${s.N} by ${s.N} grid. Arrow keys to navigate, Space to fill, F to X mark." aria-rowcount="${s.N}" aria-colcount="${s.N}" style="grid-row:2/span ${s.N};grid-column:2/span ${s.N};display:grid;grid-template-columns:repeat(${s.N},1fr);grid-template-rows:repeat(${s.N},1fr)">${cellsHtml}</div>
+      </div>
+      <div class="action-bar">
+        <button class="primary-btn" onclick="nonoCheck()">Check</button>
+        <button class="ghost-btn" onclick="state.nonogram=null;initNonogram();render()">Reset</button>
+      </div>
+      ${renderDotpadPreview()}
+    `;
+  }
+
+  function nonoClick(r, c) {
+    const s = state.nonogram;
+    s.cursor.r = r; s.cursor.c = c;
+    s.state[r][c] = s.state[r][c] === 1 ? 0 : 1;
+    if (s.state[r][c] === 1) SFX.fill(); else SFX.unfill();
+    nonoCheckLineComplete(r, c);
+    render();
+    speak(s.state[r][c] === 1 ? 'Filled' : 'Empty');
+  }
+
+  // 행/열이 정답과 일치하면 자동 음성 알림 (한 번만)
+  function nonoCheckLineComplete(r, c) {
+    const s = state.nonogram;
+    // Row r 체크
+    if (!s.completedRows.has(r)) {
+      let rowOk = true;
+      for (let cc=0; cc<s.N; cc++) {
+        if ((s.state[r][cc] === 1) !== (s.target[r][cc] === 1)) { rowOk = false; break; }
+      }
+      if (rowOk) {
+        s.completedRows.add(r);
+        SFX.lineComplete();
+        setTimeout(() => speak(`Row ${r+1} complete.`), 200);
+        toast(`✓ Row ${r+1} complete`, 1500);
+      }
+    }
+    // Col c 체크
+    if (!s.completedCols.has(c)) {
+      let colOk = true;
+      for (let rr=0; rr<s.N; rr++) {
+        if ((s.state[rr][c] === 1) !== (s.target[rr][c] === 1)) { colOk = false; break; }
+      }
+      if (colOk) {
+        s.completedCols.add(c);
+        SFX.lineComplete();
+        setTimeout(() => speak(`Column ${c+1} complete.`), 500);
+        toast(`✓ Column ${c+1} complete`, 1500);
+      }
+    }
+  }
+  window.nonoCheckLineComplete = nonoCheckLineComplete;
+  function nonoReadHints() {
+    const s = state.nonogram;
+    const rh = s.rowHints[s.cursor.r].join(' ');
+    const ch = s.colHints[s.cursor.c].join(' ');
+    const msg = `Row ${s.cursor.r+1} hint: ${rh}. Column ${s.cursor.c+1} hint: ${ch}.`;
+    toast(msg, 4000); speak(msg);
+  }
+  function nonoProgress() {
+    const s = state.nonogram;
+    let correct = 0, total = 0;
+    for (let r=0; r<s.N; r++) for (let c=0; c<s.N; c++) {
+      if (s.target[r][c] === 1) {
+        total++;
+        if (s.state[r][c] === 1) correct++;
+      }
+    }
+    const pct = total === 0 ? 0 : Math.round(100 * correct / total);
+    const msg = `Progress: ${pct} percent. ${correct} of ${total} filled correctly.`;
+    toast(msg, 3000); speak(msg);
+  }
+  window.nonoReadHints = nonoReadHints;
+  window.nonoProgress = nonoProgress;
+
+  function nonoX(r, c) {
+    const s = state.nonogram;
+    s.cursor.r = r; s.cursor.c = c;
+    s.state[r][c] = s.state[r][c] === 2 ? 0 : 2;
+    SFX.xMark();
+    render();
+    speak(s.state[r][c] === 2 ? 'X marked' : 'Cleared');
+  }
+  function nonoCheck() {
+    const s = state.nonogram;
+    let ok = true;
+    for (let r=0; r<s.N; r++) for (let c=0; c<s.N; c++) {
+      const expected = s.target[r][c] === 1;
+      const actual = s.state[r][c] === 1;
+      if (expected !== actual) { ok = false; }
+    }
+    if (ok) { SFX.win(); toast('☆ Picture revealed!', 3000); speak('Solved.'); }
+    else { SFX.checkPartial(); toast('Not quite there'); speak('Not yet.'); }
+  }
+
+  // ============================================================
+  // MAZE
+  // ============================================================
+  function initMaze() {
+    const N = MAZE_BY_DIFF[state.difficulty.maze];
+    // N은 홀수여야 함 (모두 홀수: 7, 11, 15)
+    const grid = Array.from({length: N}, () => Array(N).fill(1));
+    function carve(r, c) {
+      grid[r][c] = 0;
+      const dirs = [[-2,0],[2,0],[0,-2],[0,2]].sort(() => Math.random() - 0.5);
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr, nc = c + dc;
+        if (nr > 0 && nr < N-1 && nc > 0 && nc < N-1 && grid[nr][nc] === 1) {
+          grid[r + dr/2][c + dc/2] = 0;
+          carve(nr, nc);
+        }
+      }
+    }
+    carve(1, 1);
+    state.maze = {
+      N, grid,
+      player: { r: 1, c: 1 },
+      goal: { r: N-2, c: N-2 },
+      won: false,
+    };
+  }
+
+  function renderMaze() {
+    const s = state.maze;
+    let cellsHtml = '';
+    for (let r=0; r<s.N; r++) for (let c=0; c<s.N; c++) {
+      let cls = 'maze-cell';
+      if (s.grid[r][c] === 1) cls += ' wall';
+      if (s.player.r === r && s.player.c === c) cls += ' player';
+      if (s.goal.r === r && s.goal.c === c) cls += ' goal';
+      cellsHtml += `<div class="${cls}" role="gridcell"></div>`;
+    }
+
+    $('screen').innerHTML = `
+      ${renderHeader('Navigate the maze', `${s.N} × ${s.N} · Player at row ${s.player.r+1}, col ${s.player.c+1}${s.won ? ' · ☆ Won!' : ''}`, `Stage 4 · Maze · ${DIFF_LABEL[state.difficulty.maze]}`)}
+      <div class="tools-bar">
+        <button class="tool-btn" onclick="mazeAutoStep()"><span class="ico">▶▶</span>Auto to fork</button>
+        <button class="tool-btn" onclick="mazeDescribe()"><span class="ico">📢</span>Describe</button>
+        <button class="tool-btn" onclick="announceContextHelp()"><span class="ico">?</span>Help</button>
+      </div>
+      <div class="key-hints"><b>F1</b> up · <b>F2</b> down · <b>Pan L</b> left · <b>Pan R</b> right · <b>Pan All</b> describe surroundings</div>
+      <div class="maze-grid" role="grid" tabindex="0" aria-label="Maze ${s.N} by ${s.N}. Arrow keys to move player to goal." aria-rowcount="${s.N}" aria-colcount="${s.N}" style="grid-template-columns:repeat(${s.N},1fr)">${cellsHtml}</div>
+      <div class="maze-controls">
+        <button class="num-btn empty"></button>
+        <button class="num-btn" onclick="mazeMove(-1, 0)">▲</button>
+        <button class="num-btn empty"></button>
+        <button class="num-btn" onclick="mazeMove(0, -1)">◀</button>
+        <button class="num-btn" onclick="mazeMove(1, 0)">▼</button>
+        <button class="num-btn" onclick="mazeMove(0, 1)">▶</button>
+      </div>
+      <div class="action-bar" style="margin-top:10px">
+        <button class="primary-btn" onclick="state.maze=null;initMaze();render()">New Maze</button>
+        <button class="ghost-btn" onclick="mazeDescribe()">Describe</button>
+      </div>
+      ${renderDotpadPreview()}
+    `;
+  }
+
+  function mazeMove(dr, dc) {
+    const s = state.maze;
+    if (s.won) return;
+    const nr = s.player.r + dr;
+    const nc = s.player.c + dc;
+    if (nr<0||nr>=s.N||nc<0||nc>=s.N) { SFX.wall(); return; }
+    if (s.grid[nr][nc] === 1) { SFX.wall(); toast('Wall'); speak('Wall.'); return; }
+    s.player.r = nr; s.player.c = nc;
+    if (s.player.r === s.goal.r && s.player.c === s.goal.c) {
+      s.won = true;
+      SFX.goal();
+      toast('☆ Reached the goal!', 3000); speak('Goal reached.');
+    } else {
+      SFX.step();
+    }
+    render();
+    speak(['up','down','left','right'][dr === -1 ? 0 : dr === 1 ? 1 : dc === -1 ? 2 : 3] + (s.won ? '. Goal reached.' : '.'));
+  }
+
+  // 갈림길(2개 이상 출구) 또는 막다른 길까지 자동 이동
+  function mazeAutoStep() {
+    const s = state.maze;
+    if (s.won) return;
+    // 현재 진입 방향 추정: 이전 위치 기억
+    let lastDr = 0, lastDc = 0;
+    let steps = 0;
+    while (steps < 50) {
+      const exits = [];
+      const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+      for (const [dr, dc] of dirs) {
+        const nr = s.player.r + dr, nc = s.player.c + dc;
+        if (nr<0||nr>=s.N||nc<0||nc>=s.N) continue;
+        if (s.grid[nr][nc] === 0) exits.push([dr, dc]);
+      }
+      // 이전 방향 빼고 남은 길
+      const forward = exits.filter(([dr, dc]) => !(dr === -lastDr && dc === -lastDc));
+      if (forward.length === 0) break; // 막다른 길
+      if (forward.length >= 2 && steps > 0) break; // 갈림길
+      const [dr, dc] = forward[0];
+      s.player.r += dr; s.player.c += dc;
+      lastDr = dr; lastDc = dc;
+      steps++;
+      if (s.player.r === s.goal.r && s.player.c === s.goal.c) {
+        s.won = true;
+        toast('☆ Reached the goal!', 3000); speak('Goal reached.');
+        break;
+      }
+    }
+    render();
+    const msg = `Moved ${steps} steps. Row ${s.player.r+1}, col ${s.player.c+1}.`;
+    if (!s.won) speak(msg);
+  }
+  window.mazeAutoStep = mazeAutoStep;
+
+  function mazeDescribe() {
+    const s = state.maze;
+    const dirs = [
+      ['up', -1, 0],['down', 1, 0],
+      ['left', 0, -1],['right', 0, 1]
+    ];
+    const open = dirs.filter(([_, dr, dc]) => {
+      const nr = s.player.r + dr, nc = s.player.c + dc;
+      return nr>=0 && nr<s.N && nc>=0 && nc<s.N && s.grid[nr][nc] === 0;
+    }).map(d => d[0]);
+    const dist = Math.abs(s.goal.r - s.player.r) + Math.abs(s.goal.c - s.player.c);
+    const msg = `Player at row ${s.player.r+1} column ${s.player.c+1}. Open: ${open.join(', ') || 'none'}. Goal ${dist} steps away.`;
+    toast(msg, 3500);
+    speak(msg);
+  }
+
+  // ============================================================
+  // DOT PAD PREVIEW + ACTUAL DISPLAY
+  // ============================================================
+  // Each Dot Pad cell = 2 cols × 3 rows of dots = 6 dots / cell
+  // Dot Pad has 60 cells (30 cols × 2 rows) for text mode,
+  // OR 300 cells (30 × 10) for graphic mode.
+  // For puzzles we use graphic mode — 30 cells wide × 10 cells tall.
+  // We'll preview a 30×3 strip (just one row of the puzzle status).
+
+  function renderDotpadPreview() {
+    // Full 30 × 10 cell preview (2400 dots) — reflects actual graphic output
+    const hex = (state.screen !== 'launcher') ? renderPuzzleAsGraphicHex() : '0'.repeat(600);
+    let cellsHtml = '';
+    for (let i = 0; i < DP_W * DP_H; i++) {
+      const byte = parseInt(hex.substring(i*2, i*2+2), 16) || 0;
+      let dotsHtml = '';
+      // 8 dots per cell — show all 8 (standard 6 + 2 bottom for 8-dot mode)
+      for (let b = 0; b < 8; b++) {
+        const up = (byte >> b) & 1;
+        dotsHtml += `<div class="dp-d d${b+1} ${up?'up':''}"></div>`;
+      }
+      cellsHtml += `<div class="dp-c">${dotsHtml}</div>`;
+    }
+    // Status text line (20 cells)
+    const statusText = (state.screen !== 'launcher') ? renderStatusText() : 'DotPuzzle';
+    return `
+      <div class="dotpad-preview">
+        <div class="dotpad-preview-label">DOT PAD PREVIEW · 30 × 10 cells · 2400 pins ${state.dotpadConnected ? '· LIVE' : '· simulated'}</div>
+        <div class="dotpad-preview-grid full">${cellsHtml}</div>
+        <div class="dotpad-text-line"><span class="tl-label">TEXT</span><span class="tl-content">${statusText}</span></div>
+      </div>
+    `;
+  }
+
+
+
+  // ============================================================
+  // DOT PAD GEOMETRY (v0.4 — full-pad rendering)
+  // 그래픽 영역: 30 cells wide × 10 cells tall = 300 cells × 8 dots = 2400 dots
+  // 텍스트 라인: 20 cells separate (grade-1 ASCII braille)
+  // ============================================================
+  const DP_W = 30, DP_H = 10, DP_TEXT_CELLS = 20;
+
+  // puzzle NxN → cellW × cellH (Dot Pad cells per puzzle cell), with offset to center
+  function dpLayout(N, fillHeight) {
+    // fillHeight=true → stretch vertically too (Nonogram/Sudoku); else proportional
+    const cellW = Math.max(1, Math.min(8, Math.floor(DP_W / N)));
+    let cellH;
+    if (N <= 10) {
+      cellH = Math.max(1, Math.min(cellW, Math.floor(DP_H / N)));
+      // For square-ish puzzles, prefer matching cellH ≤ cellW since Dot Pad cells are taller (2x4)
+    } else {
+      cellH = 1; // viewport mode
+    }
+    const totalW = cellW * N;
+    const totalH = cellH * Math.min(N, DP_H);
+    const offsetX = Math.floor((DP_W - totalW) / 2);
+    const offsetY = Math.floor((DP_H - totalH) / 2);
+    return { cellW, cellH, offsetX, offsetY };
+  }
+
+  // Place a block at cell (col, row) of size (cellW, cellH) using a pattern
+  // pattern can be: number (uniform), or 2D array [dy][dx] of bytes
+  function dpSetBlock(cells, col, row, cellW, cellH, pattern) {
+    for (let dy = 0; dy < cellH; dy++) {
+      for (let dx = 0; dx < cellW; dx++) {
+        const c = col + dx, r = row + dy;
+        if (c < 0 || c >= DP_W || r < 0 || r >= DP_H) continue;
+        let v;
+        if (typeof pattern === 'number') v = pattern;
+        else if (pattern[dy] && pattern[dy][dx] !== undefined) v = pattern[dy][dx];
+        else v = 0;
+        cells[r * DP_W + c] = v & 0xFF;
+      }
+    }
+  }
+
+  // Outline a block (perimeter dots) — used for cursor
+  function dpOutline(cells, col, row, cellW, cellH, val) {
+    if (cellW <= 1 && cellH <= 1) {
+      // Single cell — set whole cell
+      const c = col, r = row;
+      if (c >= 0 && c < DP_W && r >= 0 && r < DP_H) cells[r * DP_W + c] |= val;
+      return;
+    }
+    // Top + bottom rows
+    for (let dx = 0; dx < cellW; dx++) {
+      const c = col + dx;
+      if (c < 0 || c >= DP_W) continue;
+      if (row >= 0 && row < DP_H) cells[row * DP_W + c] |= 0x09; // dots 1+4 (top)
+      const rb = row + cellH - 1;
+      if (rb >= 0 && rb < DP_H && rb !== row) cells[rb * DP_W + c] |= 0x24; // dots 3+6 (bottom)
+    }
+    // Left + right columns
+    for (let dy = 0; dy < cellH; dy++) {
+      const r = row + dy;
+      if (r < 0 || r >= DP_H) continue;
+      const cl = col;
+      if (cl >= 0 && cl < DP_W) cells[r * DP_W + cl] |= 0x07; // dots 1+2+3 (left col)
+      const cr = col + cellW - 1;
+      if (cr >= 0 && cr < DP_W && cr !== cl) cells[r * DP_W + cr] |= 0x38; // dots 4+5+6 (right col)
+    }
+  }
+
+  // Convert dot-state byte (graphics: 6 bits dot1-6 + 2 extra dots 7-8) to hex string
+  function dpCellsToHex(cells) {
+    let hex = '';
+    for (let i = 0; i < DP_W * DP_H; i++) {
+      hex += (cells[i] & 0xFF).toString(16).padStart(2, '0').toUpperCase();
+    }
+    return hex;
+  }
+
+  // ============================================================
+  // ASCII → Grade-1 braille hex (for 20-cell text line)
+  // ============================================================
+  const BRL_LETTER = {
+    a:0x01, b:0x03, c:0x09, d:0x19, e:0x11, f:0x0B, g:0x1B, h:0x13, i:0x0A, j:0x1A,
+    k:0x05, l:0x07, m:0x0D, n:0x1D, o:0x15, p:0x0F, q:0x1F, r:0x17, s:0x0E, t:0x1E,
+    u:0x25, v:0x27, w:0x3A, x:0x2D, y:0x3D, z:0x35,
+  };
+  const BRL_PUNCT = { ' ':0x00, '.':0x32, ',':0x02, '-':0x24, '/':0x0C, ':':0x12, ';':0x06, '?':0x26, '!':0x16, '=':0x3F };
+  const BRL_NUMERIC_PREFIX = 0x3C;
+  const BRL_CAPITAL_PREFIX = 0x20;
+
+  function asciiToBrailleHex(text, maxCells) {
+    let cells = [];
+    let numericMode = false;
+    for (const ch of text) {
+      if (cells.length >= maxCells) break;
+      if (ch >= '0' && ch <= '9') {
+        if (!numericMode) { cells.push(BRL_NUMERIC_PREFIX); numericMode = true; if (cells.length >= maxCells) break; }
+        const idx = ch === '0' ? 9 : (ch.charCodeAt(0) - 48 - 1);
+        const letter = 'abcdefghij'[idx];
+        cells.push(BRL_LETTER[letter] || 0);
+      } else if (ch >= 'A' && ch <= 'Z') {
+        numericMode = false;
+        cells.push(BRL_CAPITAL_PREFIX); if (cells.length >= maxCells) break;
+        cells.push(BRL_LETTER[ch.toLowerCase()] || 0);
+      } else if (ch >= 'a' && ch <= 'z') {
+        numericMode = false;
+        cells.push(BRL_LETTER[ch] || 0);
+      } else {
+        numericMode = false;
+        cells.push(BRL_PUNCT[ch] !== undefined ? BRL_PUNCT[ch] : 0);
+      }
+    }
+    // Pad to maxCells
+    while (cells.length < maxCells) cells.push(0);
+    return cells.slice(0, maxCells).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join('');
+  }
+
+  // ============================================================
+  // DOT PAD ACTUAL DEVICE — graphic mode (multi-line)
+  // ============================================================
+  // Dot Pad graphic data: hex string, each byte = 1 cell (2×3 dot pattern).
+  // 30 cols × 10 rows = 300 cells = 600 hex chars.
+  function pushToDotpad() {
+    if (!state.dotpadConnected || !window.DotPad) return;
+    const hex = renderPuzzleAsGraphicHex();
+    try {
+      window.DotPad.sdk.displayGraphicData(hex);
+    } catch(e) { console.warn('[DotPad] graphic push failed:', e); }
+    // 20-cell 텍스트 라인 — 현재 상태 압축 표시
+    try {
+      const status = renderStatusText();
+      const txtHex = asciiToBrailleHex(status, DP_TEXT_CELLS);
+      if (window.DotPad.sdk.displayTextData) window.DotPad.sdk.displayTextData(txtHex);
+    } catch(e) { console.warn('[DotPad] text push failed:', e); }
+  }
+
+  // ============================================================
+  // 텍스트 라인 (20 cells = ~20 chars) status 생성
+  // ============================================================
+  function renderStatusText() {
+    if (state.screen === 'launcher') return 'DotPuzzle';
+    if (state.screen === 'sudoku') {
+      const s = state.sudoku;
+      const v = s.grid[s.cursor.r][s.cursor.c];
+      return 'R' + (s.cursor.r+1) + 'C' + (s.cursor.c+1) + ' ' + (v || '-');
+    }
+    if (state.screen === 'minesweeper') {
+      const s = state.minesweeper;
+      let st;
+      if (s.revealed[s.cursor.r][s.cursor.c]) {
+        const v = s.grid[s.cursor.r][s.cursor.c];
+        st = v === -1 ? 'mine' : v === 0 ? 'safe' : ('n' + v);
+      } else st = s.flagged[s.cursor.r][s.cursor.c] ? 'flag' : 'hide';
+      return 'R' + (s.cursor.r+1) + 'C' + (s.cursor.c+1) + ' ' + st;
+    }
+    if (state.screen === 'nonogram') {
+      const s = state.nonogram;
+      const v = s.state[s.cursor.r][s.cursor.c];
+      const st = v === 1 ? 'fill' : v === 2 ? 'x' : 'mt';
+      return 'R' + (s.cursor.r+1) + 'C' + (s.cursor.c+1) + ' ' + st;
+    }
+    if (state.screen === 'maze') {
+      const s = state.maze;
+      return 'R' + (s.player.r+1) + 'C' + (s.player.c+1) + (s.won ? ' WIN' : '');
+    }
+    return '';
+  }
+  window.renderStatusText = renderStatusText;
+
+
+  // ============================================================
+  // BRAILLE NUMERIC patterns (Sudoku / Minesweeper digits)
+  // 점자 숫자 = numeric prefix ⠼ (0x3C) + letter a-j for 1-0
+  // ============================================================
+  const BRL_NUM_PREFIX = 0x3C; // ⠼
+  const BRL_NUM = {
+    1: 0x01, 2: 0x03, 3: 0x09, 4: 0x19, 5: 0x11,
+    6: 0x0B, 7: 0x1B, 8: 0x13, 9: 0x0A, 0: 0x1A
+  };
+
+  // Sudoku 사이즈별 Dot Pad 레이아웃 (cellW × cellH + 박스 divider 위치)
+  // vDivs: 박스 경계가 cells[c]와 cells[c+1] 사이에 들어가는 column index들
+  // hDivs: 같은 방식 row
+  const SUDOKU_LAYOUT = {
+    // divThick = 박스 divider 두께 (cells). 2면 더 명확한 그리드 + 닷패드 전체 채움
+    4: { cellW: 7, cellH: 2, vDivs: [1], hDivs: [1], divThick: 2 },  // 4*7+2=30W, 4*2+2=10H — fills entire 30×10
+    6: { cellW: 4, cellH: 1, vDivs: [2], hDivs: [1, 3], divThick: 2 },  // 6*4+2=26W, 6+4=10H — fills 10 rows
+    9: { cellW: 3, cellH: 1, vDivs: [2, 5], hDivs: [], divThick: 1 },  // 9*3+2=29W, 9H — 2-thick면 31열로 over
+  };
+
+  // Build 30x10 grid hex from current puzzle — FULL PAD utilization
+  // Each puzzle cell expands to (cellW × cellH) Dot Pad cells based on puzzle size
+  function renderPuzzleAsGraphicHex() {
+    const cells = new Array(DP_W * DP_H).fill(0);
+
+    // ─── Sudoku ────────────────────────────────────────────
+    if (state.screen === 'sudoku') {
+      const s = state.sudoku;
+      const L = SUDOKU_LAYOUT[s.N] || SUDOKU_LAYOUT[9];
+      const { cellW, cellH, vDivs, hDivs, divThick } = L;
+      const dt = divThick || 1;
+      const totalW = s.N * cellW + vDivs.length * dt;
+      const totalH = s.N * cellH + hDivs.length * dt;
+      const ox = Math.max(0, Math.floor((DP_W - totalW) / 2));
+      const oy = Math.max(0, Math.floor((DP_H - totalH) / 2));
+
+      // 각 puzzle 셀의 실제 Dot Pad 위치 계산 (divider 누적 offset)
+      function vOff(c) { return vDivs.filter(d => c > d).length * dt; }
+      function hOff(r) { return hDivs.filter(d => r > d).length * dt; }
+
+      // 1) 각 셀 — 점자 숫자 (numeric prefix + digit letter)
+      for (let r = 0; r < s.N; r++) {
+        for (let c = 0; c < s.N; c++) {
+          const v = s.grid[r][c];
+          const dcol = ox + c * cellW + vOff(c);
+          const drow = oy + r * cellH + hOff(r);
+          const padX = Math.floor((cellW - 2) / 2);
+          const padY = Math.floor((cellH - 1) / 2);
+          const ddc = dcol + padX;
+          const ddr = drow + padY;
+          if (v && BRL_NUM[v] !== undefined) {
+            // 디지트 — numeric prefix + letter, cellW 안에서 가로/세로 중앙
+            if (ddr < DP_H) {
+              if (ddc < DP_W) cells[ddr * DP_W + ddc] = BRL_NUM_PREFIX;
+              if (ddc + 1 < DP_W) cells[ddr * DP_W + ddc + 1] = BRL_NUM[v];
+            }
+            // Given underline 제거 (v0.17) — 노이즈 원인.
+            // given vs user 구분은 voice/SFX로 충분 (cursor 이동 시 "given X" / "user X" 발화,
+            // given에 입력 시도 시 SFX.given 낮은 buzz + "Cannot edit fixed cell")
+          }
+          // 빈 셀은 진짜 empty — center marker 제거 (v0.15의 노이즈 fix)
+          // Cursor — blink 상태일 때만 frame 그림
+          if (r === s.cursor.r && c === s.cursor.c && state.sudokuBlinkOn) {
+            for (let dy = 0; dy < cellH; dy++) for (let dx = 0; dx < cellW; dx++) {
+              const rr = drow + dy, cc = dcol + dx;
+              if (cc < 0 || cc >= DP_W || rr < 0 || rr >= DP_H) continue;
+              let mark = 0;
+              if (dy === 0) mark |= 0x09;
+              if (dy === cellH - 1) mark |= 0xC0;
+              if (dx === 0) mark |= 0x47;
+              if (dx === cellW - 1) mark |= 0xB8;
+              cells[rr * DP_W + cc] |= mark;
+            }
+          }
+        }
+      }
+
+      // 2) 세로 박스 divider — 첫 번째 cell만 (16번째 col 제거)
+      // 패턴: 0xFF (full 8-dot, dots 1-8 모두 포함)
+      // `|=` 사용 → 교차점에서 horizontal 0xE4와 OR 결합되어 0xFF 유지
+      vDivs.forEach((divCol, idx) => {
+        const dcol = ox + (divCol + 1) * cellW + idx * dt;
+        for (let dy = 0; dy < totalH; dy++) {
+          const drow = oy + dy;
+          if (drow >= DP_H) continue;
+          if (dcol < DP_W) cells[drow * DP_W + dcol] |= 0xFF;
+        }
+      });
+
+      // 3) 가로 박스 divider — 첫 번째 row만 (6번째 row 제거)
+      // 패턴: 0xE4 (dots 3+6+7+8)
+      // `|=` 사용 → 교차점 (col 14, row 4)에서 vertical 0xFF와 OR → 0xFF (dots 1,2,4,5 살아남음)
+      // 비교차 cells (row 4의 다른 cols): 0 | 0xE4 = 0xE4
+      hDivs.forEach((divRow, idx) => {
+        const drow = oy + (divRow + 1) * cellH + idx * dt;
+        for (let dx = 0; dx < totalW; dx++) {
+          const dcol = ox + dx;
+          if (dcol >= DP_W) continue;
+          if (drow < DP_H) cells[drow * DP_W + dcol] |= 0xE4;
+        }
+      });
+
+      // 4) 셀 사이 boundary 제거 — 셀 구분은 빈 공간(centered digit padding)으로
+    } else if (state.screen === 'minesweeper') {
+      const s = state.minesweeper;
+      const L = dpLayout(s.N, true);
+      for (let r=0; r<s.N; r++) for (let c=0; c<s.N; c++) {
+        const col = L.offsetX + c * L.cellW;
+        const row = L.offsetY + r * L.cellH;
+        if (s.revealed[r][c]) {
+          const v = s.grid[r][c];
+          if (v === -1) {
+            // mine = solid block (all dots up)
+            dpSetBlock(cells, col, row, L.cellW, L.cellH, 0xFF);
+          } else if (v > 0) {
+            // Number — 점자 숫자 (cellW ≥ 2면 prefix+letter, 아니면 dot count fallback)
+            if (L.cellW >= 2 && BRL_NUM[v] !== undefined) {
+              const padX = Math.floor((L.cellW - 2) / 2);
+              const padY = Math.floor((L.cellH - 1) / 2);
+              const mc = col + padX;
+              const mr = row + padY;
+              if (mc < DP_W && mr < DP_H) cells[mr * DP_W + mc] = BRL_NUM_PREFIX;
+              if (mc + 1 < DP_W && mr < DP_H) cells[mr * DP_W + mc + 1] = BRL_NUM[v];
+            } else {
+              // Fallback: dot count
+              const dots = Math.min(6, v);
+              let pattern = 0;
+              for (let i = 0; i < dots; i++) pattern |= (1 << i);
+              dpSetBlock(cells, col, row, L.cellW, L.cellH, pattern);
+            }
+          }
+          // safe revealed (v=0) → empty (no dots)
+        } else if (s.flagged[r][c]) {
+          // flag — X pattern (dots 2+5)
+          dpSetBlock(cells, col, row, L.cellW, L.cellH, 0x12);
+        } else {
+          // hidden — dots 1+4 (top corners) so still feel-able
+          dpSetBlock(cells, col, row, L.cellW, L.cellH, 0x09);
+        }
+        if (r === s.cursor.r && c === s.cursor.c) {
+          // Cursor frame (outline 외각만)
+          for (let dy = 0; dy < L.cellH; dy++) for (let dx = 0; dx < L.cellW; dx++) {
+            const rr = row + dy, cc = col + dx;
+            if (cc < 0 || cc >= DP_W || rr < 0 || rr >= DP_H) continue;
+            let mark = 0;
+            if (dy === 0) mark |= 0x09;
+            if (dy === L.cellH - 1) mark |= 0xC0;
+            if (dx === 0) mark |= 0x47;
+            if (dx === L.cellW - 1) mark |= 0xB8;
+            cells[rr * DP_W + cc] |= mark;
+          }
+        }
+        // 셀 boundary 제거 — 셀 content 차이(hidden/flag/digit)로 구분
+      }
+    } else if (state.screen === 'nonogram') {
+      const s = state.nonogram;
+      const L = dpLayout(s.N, true);
+      for (let r=0; r<s.N; r++) for (let c=0; c<s.N; c++) {
+        const col = L.offsetX + c * L.cellW;
+        const row = L.offsetY + r * L.cellH;
+        if (s.state[r][c] === 1) {
+          // filled = solid block (모든 dot up = 가장 강한 촉각)
+          dpSetBlock(cells, col, row, L.cellW, L.cellH, 0xFF);
+        } else if (s.state[r][c] === 2) {
+          // X mark = 대각선 2개 dot
+          dpSetBlock(cells, col, row, L.cellW, L.cellH, 0x12);
+        }
+        // empty = 0 (skip)
+        if (r === s.cursor.r && c === s.cursor.c) {
+          // 8-dot cursor frame (Sudoku/Minesweeper와 동일 패턴)
+          for (let dy = 0; dy < L.cellH; dy++) for (let dx = 0; dx < L.cellW; dx++) {
+            const rr = row + dy, cc = col + dx;
+            if (cc < 0 || cc >= DP_W || rr < 0 || rr >= DP_H) continue;
+            let mark = 0;
+            if (dy === 0) mark |= 0x09;
+            if (dy === L.cellH - 1) mark |= 0xC0;
+            if (dx === 0) mark |= 0x47;
+            if (dx === L.cellW - 1) mark |= 0xB8;
+            cells[rr * DP_W + cc] |= mark;
+          }
+        }
+      }
+    } else if (state.screen === 'maze') {
+      // Maze full-pad rendering (v0.22):
+      //  - Fixed 2 × 2 braille cells per maze cell → fills all 10 dot-pad rows
+      //    (5 visible maze rows × 2-cell tall = 10 rows; uses the bottom rows)
+      //  - Walls become 2 braille cells thick on every side (solid 0xFF block)
+      //  - Goal: hollow square (corners + center cross) — distinct from wall + ball
+      //  - Player: large round ball with hollow corners; BLINKS (full ↔ blank)
+      //    so a blind user can locate position in real time via the pulsing dots
+      const s = state.maze;
+      const cellW = 2, cellH = 2;
+      const rowsShown = Math.floor(DP_H / cellH);          // 5
+      const colsShown = Math.floor(DP_W / cellW);          // 15
+      // Player-centered vertical viewport when maze taller than 5
+      const startR = (s.N <= rowsShown)
+        ? 0
+        : Math.max(0, Math.min(s.N - rowsShown, s.player.r - Math.floor(rowsShown / 2)));
+      // Horizontal: center if narrower than 15, else 0 (15×15 fits exactly)
+      const totalW = cellW * Math.min(s.N, colsShown);
+      const offsetX = Math.max(0, Math.floor((DP_W - totalW) / 2));
+      const offsetY = (s.N <= rowsShown) ? Math.floor((DP_H - cellH * s.N) / 2) : 0;
+      // Wall = 1-dot-thick perimeter outline of the 2×2 maze cell (4×8 dot grid).
+      // Cell encoding for the 4-corner frame:
+      //   TL: top row + left col = 0x4F
+      //   TR: top row + right col = 0xB9
+      //   BL: bottom row + left col = 0xC7
+      //   BR: bottom row + right col = 0xF8
+      const WALL = [[0x4F, 0xB9], [0xC7, 0xF8]];
+      // Player = cross / plus shape (십자).
+      // 2×2 braille cells = 4×8 dot grid; vertical bar fills middle 2 cols (rows
+      // 0–7), horizontal bar fills middle 2 rows (cols 0–3) — overlapping at
+      // the center to form a clean plus that's tactile-distinct from walls.
+      //   . # # .
+      //   . # # .
+      //   . # # .
+      //   # # # #     horizontal arm (row 3)
+      //   # # # #     horizontal arm (row 4)
+      //   . # # .
+      //   . # # .
+      //   . # # .
+      const BALL = [[0xF8, 0xC7], [0xB9, 0x4F]];
+      // Goal pattern — hollow square (top/bottom borders + side bars) so it
+      // feels like a "frame" instead of a solid block
+      //   # # # #   cell(0,0): dot 1+2+3+4 (top + left)        → 0x0F
+      //   # . . #   cell(1,0): dot 1+2+3+8 (top + right side)
+      // Simpler: top row dot1+4 borders; left/right col borders only.
+      const GOAL = [
+        [0x47, 0xB8],   // top: left col dots 1+2+3+7, right col dots 4+5+6+8
+        [0x47, 0xB8],   // bottom: same — gives a vertical-bars frame
+      ];
+      for (let dy = 0; dy < rowsShown; dy++) {
+        const r = startR + dy;
+        if (r >= s.N) break;
+        const row = offsetY + dy * cellH;
+        for (let c = 0; c < Math.min(s.N, colsShown); c++) {
+          const col = offsetX + c * cellW;
+          if (s.grid[r][c] === 1) {
+            // Wall = 1-dot-thick grid outline (frame around the 4×8 dot grid).
+            // Adjacent walls naturally form a continuous grid lattice, while
+            // isolated walls show as hollow rectangles — gives the maze a
+            // "graph paper" feel instead of solid filled blocks.
+            //   # # # #
+            //   # . . #
+            //   # . . #
+            //   # . . #
+            //   # . . #
+            //   # . . #
+            //   # . . #
+            //   # # # #
+            dpSetBlock(cells, col, row, cellW, cellH, WALL);
+          }
+          if (s.goal.r === r && s.goal.c === c) {
+            dpSetBlock(cells, col, row, cellW, cellH, GOAL);
+          }
+          if (s.player.r === r && s.player.c === c) {
+            // Blink: full ball when On, blank when Off — pulse at the player position
+            if (state.mazeBlinkOn) {
+              dpSetBlock(cells, col, row, cellW, cellH, BALL);
+            }
+            // else: empty (player position "disappears" briefly each blink cycle)
+          }
+        }
+      }
+    }
+    return dpCellsToHex(cells);
+  }
+
+  // ============================================================
+  // DOT PAD INPUT — key handling
+  // ============================================================
+  // ============================================================
+  // CONTEXT HELP (F3+F4) — A.T. Guys 스타일
+  // ============================================================
+  function getContextHelp() {
+    if (state.screen === 'launcher') {
+      return 'DotPuzzle Pack main menu. F1 previous game. F2 next game. F3 to start. Pan left and right also work. Press difficulty chip on screen to change. Press F3 plus F4 for help. Press F1 plus F4 to return here from any screen.';
+    }
+    if (state.screen === 'sudoku') {
+      const s = state.sudoku;
+      if (s.N === 4) {
+        return `Sudoku 4 by 4 Easy. Pan left and right move to previous and next cell, typewriter style. F1, F2, F3, F4 directly enter digits 1, 2, 3, 4. Pressing the same digit again clears the cell. Given cells cannot be edited; voice announces 'given' when you move to them and 'Cannot edit fixed cell' if you try to change them. F1 plus F2 reads current row. F2 plus F3 reads current column. F1 plus F3 reads the 2 by 2 box. F2 plus F4 checks the puzzle. F1 plus F4 home. F3 plus F4 help. Cursor blinks on Dot Pad to mark your position.`;
+      }
+      return `Sudoku ${s.N} by ${s.N}, difficulty ${DIFF_LABEL[state.difficulty.sudoku]}. F1 row up, F2 row down, pan left and right for columns. F3 cycles digit at cursor. F4 checks the puzzle. On screen, use Read row, What's missing, Check buttons. F1 plus F4 home. F3 plus F4 help.`;
+    }
+    if (state.screen === 'minesweeper') {
+      const s = state.minesweeper;
+      return `Minesweeper ${s.N} by ${s.N} with ${s.MINES} mines, difficulty ${DIFF_LABEL[state.difficulty.minesweeper]}. F1 row up, F2 row down, pan left and right for columns. F3 reveals current cell. F4 flags or unflags. Pan center reads board summary. First click is always safe. Invalid taps produce an error sound. Chain opens of safe areas are voiced with cell count. On screen use Safe hint and Read around for help. F1 plus F4 home. F3 plus F4 help.`;
+    }
+    if (state.screen === 'nonogram') {
+      const s = state.nonogram;
+      return `Nonogram ${s.N} by ${s.N}, difficulty ${DIFF_LABEL[state.difficulty.nonogram]}. On Dot Pad, filled cells are full 8-dot blocks, X marks are 2 dots middle. Cursor shows 4-edge frame. F1 row up, F2 row down, pan left and right for columns. F3 fills or empties. F4 marks X or clears. Completed rows and columns are announced automatically. On screen use Read hints and Progress. F1 plus F4 home. F3 plus F4 help.`;
+    }
+    if (state.screen === 'maze') {
+      const s = state.maze;
+      return `Maze ${s.N} by ${s.N}, difficulty ${DIFF_LABEL[state.difficulty.maze]}. On Dot Pad, walls feel solid (8 dots), player feels medium (4 dots in middle), goal feels light (2 dots). F1 move up, F2 move down, pan left for left, pan right for right. Pan all describes surroundings. On screen, Auto to fork advances to the next junction. F1 plus F4 home. F3 plus F4 help.`;
+    }
+    return 'DotPuzzle Pack. F1 plus F4 to return home. F3 plus F4 for help.';
+  }
+
+  function announceContextHelp() {
+    const text = getContextHelp();
+    if (state.ttsOn) { try { window.speechSynthesis.cancel(); } catch(e){} speak(text); }
+    if (state.dotpadConnected && typeof brailleSetText === 'function') {
+      // 점자 영역은 brailleSetText 없으니 displayTextData 직접 호출
+      try {
+        // 압축된 키 안내만 짧게 점자에
+        const compact = state.screen === 'launcher'
+          ? 'Menu F3 start F1/F2 nav'
+          : state.screen + ' F3 sel F4 mark F1+F4 home';
+        // No braille helper in this app yet — display via Dot Pad text line
+        if (window.DotPad && window.DotPad.sdk && window.DotPad.sdk.displayTextData) {
+          // Convert text to braille hex by simple ascii table (handled later if liblouis added)
+          // For now, push the text via Dot Pad text area as raw text-mode bytes is non-trivial.
+          // Skip braille — voice carries the help.
+        }
+      } catch(e){}
+    }
+    toast('Help · F1+F4 home, F3+F4 help', 3000);
+  }
+
+  function goHomeShortcut() {
+    if (state.screen === 'launcher') {
+      announceContextHelp(); // 이미 홈이면 help 발화
+      return;
+    }
+    speak('Home.');
+    goLauncher();
+  }
+  window.announceContextHelp = announceContextHelp;
+  window.goHomeShortcut = goHomeShortcut;
+
+  function onDotpadKey(device, keyCode, msg) {
+    if (!window.DotPad) return;
+    const KC = window.DotPad.KeyCodes;
+    // 전역 콤보 키 — A.T. Guys 패턴
+    if (keyCode === KC.KeyFunction34) { announceContextHelp(); return; }
+    if (keyCode === KC.KeyFunction14) { goHomeShortcut(); return; }
+
+    // Sudoku 4×4 전용 콤보 키 (long-press 대체)
+    if (state.screen === 'sudoku' && state.sudoku && state.sudoku.N === 4) {
+      if (keyCode === KC.KeyFunction12) { sudokuReadRow(); return; }
+      if (keyCode === KC.KeyFunction23) { sudokuReadCol(); return; }
+      if (keyCode === KC.KeyFunction13) { sudokuReadBox(); return; }
+      if (keyCode === KC.KeyFunction24) { sudokuCheck(); return; }
+    }
+
+    if (state.screen === 'launcher') {
+      // F1/F2 = navigate game cards · F3 = select
+      const cards = Array.from(document.querySelectorAll('.game-card'));
+      if (keyCode === KC.KeyFunction1) state.dotpadCursor = (state.dotpadCursor - 1 + cards.length) % cards.length;
+      else if (keyCode === KC.KeyFunction2) state.dotpadCursor = (state.dotpadCursor + 1) % cards.length;
+      else if (keyCode === KC.KeyFunction3) { cards[state.dotpadCursor]?.click(); return; }
+      dotpadHighlight();
+      speak(cards[state.dotpadCursor]?.querySelector('.game-card-title')?.textContent || '');
+      return;
+    }
+    // Game screens
+    if (keyCode === KC.PanningAll) {
+      // Replay context
+      if (state.screen === 'maze') return mazeDescribe();
+      const p = document.querySelector('.game-sub')?.textContent || '';
+      speak(p);
+      return;
+    }
+    if (state.screen === 'sudoku') {
+      const s = state.sudoku;
+      if (s.N === 4) {
+        // 4×4 전용 — F1-F4 = 숫자 1-4 직접 입력 (토글), Pan L/R = typewriter
+        if (keyCode === KC.PanningLeft) { sudokuPrevCell(); return; }
+        if (keyCode === KC.PanningRight) { sudokuNextCell(); return; }
+        if (keyCode === KC.KeyFunction1) { sudokuInputN(1); return; }
+        if (keyCode === KC.KeyFunction2) { sudokuInputN(2); return; }
+        if (keyCode === KC.KeyFunction3) { sudokuInputN(3); return; }
+        if (keyCode === KC.KeyFunction4) { sudokuInputN(4); return; }
+        return;
+      }
+      // 6×6 / 9×9 기존 매핑 유지
+      if (keyCode === KC.KeyFunction1) s.cursor.r = (s.cursor.r - 1 + s.N) % s.N;
+      else if (keyCode === KC.KeyFunction2) s.cursor.r = (s.cursor.r + 1) % s.N;
+      else if (keyCode === KC.PanningLeft) s.cursor.c = (s.cursor.c - 1 + s.N) % s.N;
+      else if (keyCode === KC.PanningRight) s.cursor.c = (s.cursor.c + 1) % s.N;
+      else if (keyCode === KC.KeyFunction3) {
+        if (!s.given[s.cursor.r][s.cursor.c]) {
+          s.grid[s.cursor.r][s.cursor.c] = (s.grid[s.cursor.r][s.cursor.c] + 1) % (s.N + 1);
+        }
+      } else if (keyCode === KC.KeyFunction4) {
+        sudokuCheck(); return;
+      }
+      render();
+      const cell_v = s.grid[s.cursor.r][s.cursor.c];
+      speak('Row ' + (s.cursor.r+1) + ' col ' + (s.cursor.c+1) + ': ' + (cell_v || 'empty'));
+    } else if (state.screen === 'minesweeper') {
+      const s = state.minesweeper;
+      if (keyCode === KC.KeyFunction1) s.cursor.r = (s.cursor.r - 1 + s.N) % s.N;
+      else if (keyCode === KC.KeyFunction2) s.cursor.r = (s.cursor.r + 1) % s.N;
+      else if (keyCode === KC.PanningLeft) s.cursor.c = (s.cursor.c - 1 + s.N) % s.N;
+      else if (keyCode === KC.PanningRight) s.cursor.c = (s.cursor.c + 1) % s.N;
+      else if (keyCode === KC.KeyFunction3) { msClick(s.cursor.r, s.cursor.c); return; }
+      else if (keyCode === KC.KeyFunction4) { msFlag(s.cursor.r, s.cursor.c); return; }
+      else if (keyCode === KC.PanningAll) {
+        // Tier 1 standard: board summary (mines remaining, flags placed, % revealed)
+        const flagsLeft = s.MINES - s.flagged.flat().filter(Boolean).length;
+        const total = s.N * s.N;
+        const revealed = s.revealed.flat().filter(Boolean).length;
+        const pct = Math.round(revealed / (total - s.MINES) * 100);
+        speak('Board: ' + s.MINES + ' mines, ' + flagsLeft + ' flags left, ' + pct + ' percent revealed.');
+        return;
+      }
+      render();
+      const v = s.grid[s.cursor.r][s.cursor.c];
+      const status = s.revealed[s.cursor.r][s.cursor.c] ? (v === -1 ? 'mine' : v > 0 ? v + ' nearby' : 'empty') :
+        s.flagged[s.cursor.r][s.cursor.c] ? 'flagged' : 'hidden';
+      speak('Row ' + (s.cursor.r+1) + ' col ' + (s.cursor.c+1) + ': ' + status);
+    } else if (state.screen === 'nonogram') {
+      const s = state.nonogram;
+      if (keyCode === KC.KeyFunction1) s.cursor.r = (s.cursor.r - 1 + s.N) % s.N;
+      else if (keyCode === KC.KeyFunction2) s.cursor.r = (s.cursor.r + 1) % s.N;
+      else if (keyCode === KC.PanningLeft) s.cursor.c = (s.cursor.c - 1 + s.N) % s.N;
+      else if (keyCode === KC.PanningRight) s.cursor.c = (s.cursor.c + 1) % s.N;
+      else if (keyCode === KC.KeyFunction3) { nonoClick(s.cursor.r, s.cursor.c); return; }
+      else if (keyCode === KC.KeyFunction4) { nonoX(s.cursor.r, s.cursor.c); return; }
+      render();
+      const v = s.state[s.cursor.r][s.cursor.c];
+      const status = v === 1 ? 'filled' : v === 2 ? 'x marked' : 'empty';
+      const hint = 'Row hint ' + s.rowHints[s.cursor.r].join(' ') + '. Col hint ' + s.colHints[s.cursor.c].join(' ');
+      speak('Row ' + (s.cursor.r+1) + ' col ' + (s.cursor.c+1) + ': ' + status + '. ' + hint);
+    } else if (state.screen === 'maze') {
+      if (keyCode === KC.KeyFunction1) mazeMove(-1, 0);
+      else if (keyCode === KC.KeyFunction2) mazeMove(1, 0);
+      else if (keyCode === KC.PanningLeft) mazeMove(0, -1);
+      else if (keyCode === KC.PanningRight) mazeMove(0, 1);
+    }
+  }
+
+  function dotpadHighlight() {
+    document.querySelectorAll('.dotpad-focus').forEach(el => el.classList.remove('dotpad-focus'));
+    if (state.screen === 'launcher') {
+      const cards = document.querySelectorAll('.game-card');
+      if (cards[state.dotpadCursor]) cards[state.dotpadCursor].classList.add('dotpad-focus');
+    }
+  }
+
+  // ============================================================
+  // DOT PAD CONNECT
+  // ============================================================
+  function dotpadAvailable() {
+    if (window._dotpadLoadError) {
+      alert('Dot Pad SDK failed to load: ' + window._dotpadLoadError);
+      return false;
+    }
+    if (!(window.DotPad && window.DotPad.sdk)) {
+      alert('Dot Pad SDK still loading — please wait a moment and try again.');
+      return false;
+    }
+    return true;
+  }
+  function openDpOverlay() { $('dp-overlay').classList.add('active'); }
+  function closeDpOverlay() { $('dp-overlay').classList.remove('active'); }
+
+  async function connectBle() {
+    if (!dotpadAvailable()) { alert('Dot Pad SDK not loaded'); return; }
+    try {
+      const device = await window.DotPad.scanner.startBleScan();
+      if (!device) return;
+      window.DotPad.sdk.setCallBack(onDotpadMessage, onDotpadKey);
+      const connected = await window.DotPad.sdk.connectBleDevice(device);
+      if (connected) {
+        state.dotpadConnected = true;
+        state.dotpadDevice = connected;
+        state.dotpadName = device.name || 'Dot Pad';
+        SFX.win();
+        closeDpOverlay();
+        speak('Dot Pad connected. F1 and F2 move cursor. F3 select. F4 toggle mark.');
+        render();
+      }
+    } catch (e) {
+      alert('BLE failed: ' + (e.message || e));
+    }
+  }
+
+  async function connectUsb() {
+    if (!dotpadAvailable()) { alert('Dot Pad SDK not loaded'); return; }
+    try {
+      const device = await window.DotPad.scanner.startUsbScan();
+      if (!device) return;
+      window.DotPad.sdk.setCallBack(onDotpadMessage, onDotpadKey);
+      const connected = await window.DotPad.sdk.connectUsbDevice(device);
+      if (connected) {
+        state.dotpadConnected = true;
+        state.dotpadDevice = connected;
+        state.dotpadName = 'USB Dot Pad';
+        SFX.win();
+        closeDpOverlay();
+        speak('Dot Pad connected. F1 and F2 move cursor. F3 select. F4 toggle mark.');
+        render();
+      }
+    } catch (e) {
+      alert('USB failed: ' + (e.message || e));
+    }
+  }
+
+  function onDotpadMessage(device, code, msg) {
+    if (!window.DotPad) return;
+    const DC = window.DotPad.DataCodes || {};
+    if (code === DC.Connected) {
+      state.dotpadConnected = true;
+      render();
+    } else if (code === DC.Disconnected) {
+      state.dotpadConnected = false;
+      render();
+    }
+  }
+
+  // ============================================================
+  // KEYBOARD SHORTCUTS (desktop testing)
+  // ============================================================
+  document.addEventListener('keydown', (e) => {
+    // 전역 단축키 (인풋 제외)
+    if (!e.target.matches('input, textarea')) {
+      if (e.key === '?' || e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        announceContextHelp();
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        goHomeShortcut();
+        return;
+      }
+    }
+    if (state.screen === 'maze' && !e.target.matches('input, textarea')) {
+      if (e.key === 'ArrowUp') { e.preventDefault(); mazeMove(-1, 0); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); mazeMove(1, 0); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); mazeMove(0, -1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); mazeMove(0, 1); }
+    } else if (state.screen === 'sudoku' && !e.target.matches('input, textarea')) {
+      const s = state.sudoku;
+      if (e.key === 'ArrowUp') { e.preventDefault(); s.cursor.r = (s.cursor.r - 1 + s.N) % s.N; render(); SFX.move(); sudokuAnnounceCursor(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); s.cursor.r = (s.cursor.r + 1) % s.N; render(); SFX.move(); sudokuAnnounceCursor(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault();
+        if (s.N === 4) sudokuPrevCell();
+        else { s.cursor.c = (s.cursor.c - 1 + s.N) % s.N; render(); SFX.move(); }
+      }
+      else if (e.key === 'ArrowRight') { e.preventDefault();
+        if (s.N === 4) sudokuNextCell();
+        else { s.cursor.c = (s.cursor.c + 1) % s.N; render(); SFX.move(); }
+      }
+      else if (/^[0-9]$/.test(e.key)) {
+        const n = parseInt(e.key);
+        if (n > 0 && n <= s.N) {
+          if (s.N === 4) sudokuInputN(n); // 4×4 toggle
+          else sudokuInput(n);
+        } else if (n === 0) sudokuInput(0);
+      }
+    } else if ((state.screen === 'minesweeper' || state.screen === 'nonogram') && !e.target.matches('input, textarea')) {
+      const s = state.screen === 'minesweeper' ? state.minesweeper : state.nonogram;
+      if (e.key === 'ArrowUp') { e.preventDefault(); s.cursor.r = (s.cursor.r - 1 + s.N) % s.N; render(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); s.cursor.r = (s.cursor.r + 1) % s.N; render(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); s.cursor.c = (s.cursor.c - 1 + s.N) % s.N; render(); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); s.cursor.c = (s.cursor.c + 1) % s.N; render(); }
+      else if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        if (state.screen === 'minesweeper') msClick(s.cursor.r, s.cursor.c);
+        else nonoClick(s.cursor.r, s.cursor.c);
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (state.screen === 'minesweeper') msFlag(s.cursor.r, s.cursor.c);
+        else nonoX(s.cursor.r, s.cursor.c);
+      }
+    }
+  });
+
+  // ============================================================
+  // BOOT
+  // ============================================================
+  // expose for inline onclick handlers
+  window.startGame = startGame;
+  window.goLauncher = goLauncher;
+  window.toggleTts = toggleTts;
+  window.openDpOverlay = openDpOverlay;
+  window.closeDpOverlay = closeDpOverlay;
+  window.connectBle = connectBle;
+  window.connectUsb = connectUsb;
+  window.sudokuClick = sudokuClick;
+  window.sudokuInput = sudokuInput;
+  window.sudokuCheck = sudokuCheck;
+  window.sudokuReset = sudokuReset;
+  window.msClick = msClick;
+  window.msFlag = msFlag;
+  window.nonoClick = nonoClick;
+  window.nonoX = nonoX;
+  window.nonoCheck = nonoCheck;
+  window.mazeMove = mazeMove;
+  window.mazeDescribe = mazeDescribe;
+  window.initMinesweeper = initMinesweeper;
+  window.initMaze = initMaze;
+  window.initNonogram = initNonogram;
+  window.state = state;
+
+  // DotArcade 딥링크: ?game=sudoku|minesweeper|nonogram|maze 로 해당 퍼즐에 바로 진입
+  // (iframe SDK가 특정 퍼즐을 지정해 임베드할 때 사용)
+  (function dotArcadeDeepLink() {
+    try {
+      const g = new URLSearchParams(location.search).get('game');
+      const valid = ['sudoku', 'minesweeper', 'nonogram', 'maze'];
+      if (g && valid.includes(g)) { startGame(g); return; }
+    } catch (e) {}
+    render();
+  })();
+  </script>
+</body>
+</html>
