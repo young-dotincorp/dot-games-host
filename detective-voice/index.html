@@ -1,0 +1,3731 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Detective Voice — The Last Customer</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" as="style" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
+<!-- liblouis WASM (점자 변환 엔진) — 영어 grade-2 + 한국어 -->
+<script>
+  window.LiblouisReady = false;
+  window._liblouisLoadError = null;
+</script>
+<script src="liblouis/build-no-tables-utf16.js" onerror="window._liblouisLoadError='build'"></script>
+<script src="liblouis/easy-api.js" onerror="window._liblouisLoadError='easy-api'"></script>
+<script>
+  (function() {
+    if (!window.liblouis || !window.liblouisBuild) {
+      console.warn('[liblouis] build or easy-api failed to load — falling back to grade-1 mapping');
+      return;
+    }
+    try {
+      // easy-api는 window.liblouis로 사용 (그리고 setLiblouisBuild 필요 없음 — 자동 감지)
+      // 첫 호출 시 테이블 lazy load
+      window.liblouis.enableOnDemandTableLoading('liblouis/tables/');
+      window.LiblouisReady = true;
+      window.dispatchEvent(new Event('liblouis-ready'));
+      console.log('[liblouis] ready · version:', window.liblouis.version());
+    } catch (e) {
+      console.warn('[liblouis] init failed:', e);
+      window._liblouisLoadError = e.message;
+    }
+  })();
+</script>
+
+<style>
+  :root {
+    --bg: #000;
+    --fg: #f4f1e8;
+    --fg-soft: #c9c3b3;
+    --fg-dim: #7a7568;
+    --fg-faint: #8a8478; /* WCAG AA 4.5:1 on #000 (was #4a463c = 2.3:1) */
+    --accent: #f4b54a;
+    --accent-dim: #a87f30;
+    --warn: #e87d4f;
+    --good: #9fc270;
+    --line: #2a2a2a;
+    --line-soft: #181818;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ============ A11Y v11 — Focus indicators (WCAG 2.4.7) ============ */
+  /* Visible focus for keyboard users — :focus-visible only triggers via Tab, not mouse click */
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 3px solid var(--accent) !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 1px var(--bg), 0 0 0 4px var(--accent), 0 0 12px rgba(244,181,74,0.4) !important;
+  }
+  /* Skip link */
+  .skip-link {
+    position: fixed; top: -100px; left: 16px; z-index: 9999;
+    background: var(--accent); color: var(--bg);
+    padding: 12px 20px; font-weight: 700; font-size: 14px;
+    text-decoration: none; border-radius: 6px;
+    transition: top 0.15s;
+  }
+  .skip-link:focus { top: 8px; }
+
+  *::selection { background: var(--accent); color: var(--bg); }
+
+  html, body {
+    height: 100%;
+    background: #000;
+    color: var(--fg);
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 3px),
+      #050505;
+    min-height: 100vh;
+  }
+
+  /* 픽셀 아트 SVG는 유지 — pixelated rendering */
+  .pix-art, .npc-card .portrait, .splash-art {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+
+  /* ============ 외부 헤더 ============ */
+  .lab-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 250;
+    background: rgba(5,5,5,0.94);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--fg-faint);
+    display: flex;
+    flex-direction: column;
+    padding: 10px 24px 0;
+    color: var(--fg-dim);
+    font-size: 13px;
+    gap: 0;
+  }
+  .lab-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+  @media (max-width: 540px) {
+    .lab-header { padding: 8px 14px 0; }
+    .lab-header .brand-sub { display: none; }
+    .lab-header .controls { gap: 4px; }
+    .lab-btn { padding: 11px 12px; font-size: 12px; min-height: 44px; }
+  }
+
+  /* Always-visible Dot Pad keymap strip */
+  .lab-keymap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 8px 0;
+    margin-top: 6px;
+    border-top: 1px dashed var(--fg-faint);
+    font-size: 12px;
+    color: var(--fg-soft);
+    line-height: 1.2;
+  }
+  .lab-keymap .km-label {
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 10px;
+    margin-right: 4px;
+  }
+  .lab-keymap .km {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    color: var(--fg-soft);
+  }
+  .lab-keymap kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    background: var(--bg);
+    border: 1px solid var(--fg-faint);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0;
+  }
+  @media (max-width: 540px) {
+    .lab-keymap { gap: 4px 8px; font-size: 11px; padding: 6px 0; }
+    .lab-keymap .km-label { display: none; }
+    .lab-keymap kbd { min-width: 20px; height: 20px; font-size: 10px; padding: 0 4px; }
+  }
+  .lab-header .brand {
+    color: var(--accent);
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    font-size: 13px;
+  }
+  .lab-header .brand-sub {
+    font-size: 11px;
+    color: var(--fg-faint);
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+    font-weight: 400;
+  }
+  .lab-header .controls { display: flex; gap: 6px; }
+
+  /* ── 임베드 모드 (TW Embed Spec) — 브랜딩 최소화 + exit 버튼 ── */
+  .dv-exit { display: none; }
+  body.embed .dv-exit { display: inline-flex; }
+  body.embed .lab-header .brand,
+  body.embed .lab-header .brand-sub { display: none; }
+  body.embed .lab-header-top { justify-content: flex-end; }
+  .lab-btn {
+    background: var(--bg);
+    border: 1px solid var(--fg-faint);
+    color: var(--fg-soft);
+    padding: 11px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .lab-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .lab-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+
+
+  /* Dot Pad cursor highlight */
+  .dotpad-focus, .dotpad-focus:hover {
+    outline: 3px solid var(--accent) !important;
+    outline-offset: 2px;
+    box-shadow: 0 0 12px var(--accent), inset 0 0 0 1px var(--accent);
+    position: relative;
+    z-index: 5;
+  }
+  .dotpad-focus::before {
+    content: "▸";
+    position: absolute;
+    left: -16px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  /* Dot Pad header button + popup */
+  .dotpad-wrap { position: relative; }
+  .dotpad-btn { display: inline-flex; align-items: center; gap: 6px; }
+  .dot-led {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--fg-faint); transition: background 0.2s, box-shadow 0.2s;
+  }
+  .dotpad-btn.connected .dot-led {
+    background: var(--good); box-shadow: 0 0 8px var(--good);
+    animation: dotpad-pulse 2s ease-in-out infinite;
+  }
+  .dotpad-btn.connected {
+    border-color: var(--good); color: var(--good);
+  }
+  @keyframes dotpad-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .dotpad-popup {
+    position: absolute; top: calc(100% + 6px); right: 0;
+    background: var(--bg-elev);
+    border: 1px solid var(--accent);
+    padding: 12px;
+    min-width: 200px;
+    z-index: 150;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  }
+  .dotpad-popup::before {
+    content: ''; position: absolute; top: -1px; left: -1px;
+    width: 8px; height: 8px; background: var(--accent);
+  }
+  .dotpad-popup::after {
+    content: ''; position: absolute; bottom: -1px; right: -1px;
+    width: 8px; height: 8px; background: var(--accent);
+  }
+  .dotpad-popup-title {
+    font-size: 11px; letter-spacing: 0.12em; color: var(--accent);
+    font-weight: 700; margin-bottom: 8px; text-transform: uppercase;
+  }
+  .dotpad-popup-status {
+    font-size: 12px; color: var(--fg-soft); margin-bottom: 10px;
+    padding-bottom: 8px; border-bottom: 1px dashed var(--fg-faint);
+    line-height: 1.5;
+  }
+  .dotpad-popup-btn {
+    display: block; width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--fg-faint); color: var(--fg);
+    padding: 8px 10px; font-size: 12px; cursor: pointer;
+    font-family: inherit; margin-bottom: 5px; text-align: left;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .dotpad-popup-btn:hover {
+    border-color: var(--accent); color: var(--accent);
+  }
+  .dotpad-popup-btn.dotpad-popup-danger:hover {
+    border-color: var(--warn); color: var(--warn);
+  }
+  .dotpad-popup-btn:disabled {
+    opacity: 0.4; cursor: not-allowed;
+  }
+  .dotpad-popup-hint {
+    font-size: 10px; color: var(--fg-faint); margin-top: 6px;
+    line-height: 1.5;
+  }
+
+
+  /* ============ 웹앱 컨테이너 (v10) ============ */
+  .page {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 130px 20px 64px;
+    position: relative;
+  }
+  @media (min-width: 640px) {
+    .page { padding: 134px 32px 80px; }
+  }
+  @media (min-width: 1024px) {
+    .page { max-width: 880px; padding: 138px 48px 96px; }
+  }
+  @media (max-width: 540px) {
+    .page { padding-top: 118px; }
+  }
+  @media (min-width: 1280px) {
+    .page { max-width: 960px; }
+  }
+  @media (max-width: 400px) {
+    .page { padding: 80px 16px 56px; }
+  }
+  @media (max-width: 540px) {
+    .page { padding-top: 80px; }
+  }
+
+
+  /* Audio indicator — lab-header 옆에 inline */
+  .audio-status-float {
+    display: inline-flex; align-items: center;
+    margin-right: 6px;
+    pointer-events: none;
+  }
+
+  /* 누아르 스캔라인 — body 전체에 살짝 */
+  .page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.10) 3px, rgba(0,0,0,0.10) 4px);
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: multiply;
+    opacity: 0.4;
+  }
+
+  .app-shell {
+    position: relative; z-index: 2;
+    overflow: visible;
+  }
+
+  /* ============ 컴포넌트 ============ */
+  .pix-tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    padding: 3px 9px;
+    margin-bottom: 10px;
+    background: var(--bg);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .pix-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--fg);
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+  }
+  .pix-sub {
+    font-size: 12px;
+    color: var(--fg-dim);
+    margin-bottom: 14px;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+
+  .pix-box {
+    background: var(--bg);
+    border: 1px solid var(--fg-faint);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  /* 진행바 */
+  .progress {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    margin-bottom: 16px;
+  }
+  .progress .seg { height: 6px; background: var(--line); }
+  .progress .seg.active { background: var(--accent); }
+  .progress .seg.done { background: var(--accent-dim); }
+
+  /* Aria 음성 박스 */
+  .aria-bubble {
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    position: relative;
+    animation: fadein 0.3s ease-out;
+  }
+  .aria-bubble::before, .aria-bubble::after {
+    content: "";
+    position: absolute;
+    width: 8px; height: 8px;
+    background: var(--accent);
+  }
+  .aria-bubble::before { top: -1px; left: -1px; }
+  .aria-bubble::after { bottom: -1px; right: -1px; }
+
+  .aria-bubble .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .aria-bubble .label .pulse {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: blink 1s ease-in-out infinite;
+  }
+  .aria-bubble .text {
+    font-size: 14px;
+    color: var(--fg);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    font-weight: 400;
+  }
+  .aria-bubble .speak-btn {
+    margin-top: 10px;
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 5px 11px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+  }
+  .aria-bubble .speak-btn:hover { background: var(--accent); color: var(--bg); }
+
+  @keyframes fadein {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  /* 사운드 웨이브 */
+  .speaking-bars {
+    display: inline-flex;
+    gap: 2px;
+    align-items: end;
+    height: 10px;
+  }
+  .speaking-bars span {
+    width: 2px;
+    background: var(--accent);
+    animation: bar 0.4s ease-in-out infinite;
+  }
+  .speaking-bars span:nth-child(1) { animation-delay: 0s; height: 30%; }
+  .speaking-bars span:nth-child(2) { animation-delay: 0.1s; height: 80%; }
+  .speaking-bars span:nth-child(3) { animation-delay: 0.2s; height: 50%; }
+  .speaking-bars span:nth-child(4) { animation-delay: 0.3s; height: 100%; }
+  .speaking-bars span:nth-child(5) { animation-delay: 0.15s; height: 60%; }
+  @keyframes bar {
+    0%, 100% { transform: scaleY(0.4); }
+    50% { transform: scaleY(1); }
+  }
+
+  /* 픽셀 아트 컨테이너 */
+  .pix-art {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #000;
+    border: 1px solid var(--fg-faint);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .pix-art svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
+  }
+  .pix-art-evidence {
+    aspect-ratio: 5/3;
+    border: 1px solid var(--accent-dim);
+  }
+
+  /* 카드 */
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--fg-faint);
+    padding: 11px 13px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    position: relative;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card:hover .card-title { color: var(--accent); }
+  .card.found { border-color: var(--good); }
+  .card.found::before {
+    content: "✓";
+    position: absolute;
+    top: 8px; right: 12px;
+    color: var(--good);
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .card.locked { opacity: 0.4; cursor: not-allowed; }
+  .card-title {
+    font-size: 14px;
+    color: var(--fg);
+    margin-bottom: 2px;
+    font-weight: 600;
+  }
+  .card-sub {
+    font-size: 12px;
+    color: var(--fg-dim);
+    line-height: 1.5;
+  }
+
+  .scene-block { margin-top: 14px; }
+  .scene-block-label {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--fg-dim);
+    margin-bottom: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* NPC 카드 */
+  .npc-card {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+    padding: 0;
+    overflow: hidden;
+  }
+  .npc-card .portrait {
+    width: 64px;
+    flex-shrink: 0;
+    background: #000;
+    border-right: 1px solid var(--fg-faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .npc-card .portrait svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
+  }
+  .npc-card .info {
+    flex: 1;
+    padding: 9px 12px;
+  }
+  .npc-card .info .name {
+    font-size: 14px;
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .npc-card .info .name .age {
+    font-size: 11px;
+    color: var(--fg-faint);
+    margin-left: 6px;
+    font-weight: 400;
+  }
+  .npc-card .info .role {
+    font-size: 12px;
+    color: var(--fg-dim);
+    margin-top: 2px;
+  }
+  .npc-card .anxiety {
+    margin-top: 6px;
+    height: 4px;
+    background: var(--line);
+    position: relative;
+  }
+  .npc-card .anxiety .fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.5s ease-out;
+  }
+
+  /* 단서 발견 배너 */
+  .clue-banner {
+    background: var(--bg);
+    border: 1px solid var(--good);
+    padding: 9px 12px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: var(--good);
+    text-align: center;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+  .clue-banner::before { content: "▸ "; opacity: 0.7; }
+
+  /* NPC 라인 */
+  .npc-line {
+    background: var(--bg);
+    border-left: 3px solid var(--accent);
+    padding: 11px 14px;
+    margin: 8px 0;
+    font-size: 14px;
+    color: var(--fg-soft);
+    white-space: pre-wrap;
+    line-height: 1.7;
+  }
+  .npc-line .who {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    margin-bottom: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  /* 질문 버튼 */
+  .question-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .q-btn {
+    background: var(--bg);
+    border: 1px solid var(--fg-faint);
+    color: var(--fg-soft);
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1.5;
+    font-weight: 400;
+  }
+  .q-btn:hover { border-color: var(--accent); color: var(--fg); }
+  .q-btn.asked { opacity: 0.4; }
+  .q-btn.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-style: dashed;
+  }
+  .q-btn .lock-note {
+    font-size: 11px;
+    color: var(--fg-faint);
+    display: block;
+    margin-top: 3px;
+  }
+
+  /* 자유 입력 */
+  .free-input {
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    padding: 12px;
+    margin-top: 12px;
+    position: relative;
+  }
+  .free-input::before, .free-input::after {
+    content: "";
+    position: absolute;
+    width: 8px; height: 8px;
+    background: var(--accent);
+  }
+  .free-input::before { top: -1px; left: -1px; }
+  .free-input::after { bottom: -1px; right: -1px; }
+  .free-input .label {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .free-input textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--fg-faint);
+    color: var(--fg);
+    padding: 9px 11px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: none;
+    min-height: 60px;
+    border-radius: 0;
+    line-height: 1.6;
+  }
+  .free-input textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  .free-input button {
+    width: 100%;
+    margin-top: 8px;
+    background: var(--accent);
+    color: var(--bg);
+    border: 0;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    font-weight: 700;
+  }
+  .free-input button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Notes */
+  .notebook {
+    background: var(--bg);
+    border: 1px solid var(--fg-faint);
+    padding: 16px;
+    margin-bottom: 12px;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 25px, rgba(244,181,74,0.06) 25px, rgba(244,181,74,0.06) 26px);
+  }
+  .notebook .nb-title {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--fg-faint);
+    padding-bottom: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .notebook ul { list-style: none; }
+  .notebook li {
+    padding: 9px 0;
+    font-size: 13px;
+    color: var(--fg-soft);
+    line-height: 1.6;
+    border-bottom: 1px dashed var(--fg-faint);
+  }
+  .notebook li:last-child { border-bottom: 0; }
+  .notebook li::before {
+    content: "▸";
+    color: var(--accent);
+    margin-right: 8px;
+  }
+  .notebook .empty {
+    color: var(--fg-dim);
+    font-size: 13px;
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  /* 큰 액션 버튼 */
+  .primary-btn {
+    width: 100%;
+    background: var(--accent);
+    color: var(--bg);
+    border: 0;
+    padding: 13px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    margin-top: 12px;
+    position: relative;
+    font-weight: 700;
+  }
+  .primary-btn::before, .primary-btn::after {
+    content: "";
+    position: absolute;
+    width: 4px; height: 4px;
+    background: var(--bg);
+  }
+  .primary-btn::before { top: 0; left: 0; }
+  .primary-btn::after { bottom: 0; right: 0; }
+  .primary-btn:hover { background: var(--fg); }
+
+  .ghost-btn {
+    width: 100%;
+    background: transparent;
+    color: var(--fg-soft);
+    border: 1px solid var(--fg-faint);
+    padding: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  .ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Deduction */
+  .deduction-form label {
+    display: block;
+    font-size: 11px;
+    color: var(--fg-dim);
+    margin-top: 14px;
+    margin-bottom: 5px;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  
+    
+    /* Notes — 단서 버튼 (Dot Pad cursor 친화) */
+    .clue-btn { display:block; width:100%; text-align:left; background:transparent;
+      border:1.5px solid var(--fg-faint); color:var(--fg-soft); padding:11px 14px;
+      margin:6px 0; font-size:13px; font-family:inherit; cursor:pointer;
+      letter-spacing:0.02em; line-height:1.5; transition:all 0.15s; }
+    .clue-btn:hover { border-color:var(--fg-dim); color:var(--fg); background:rgba(255,255,255,0.03); }
+    .clue-btn.dotpad-focus { outline:3px solid var(--accent); outline-offset:2px; }
+    /* Deduction button group — Dot Pad 친화 */
+    .ded-group { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+    .ded-opt-btn { background:transparent; border:1.5px solid var(--fg-faint); color:var(--fg-soft);
+      padding:9px 13px; font-size:13px; font-family:inherit; cursor:pointer; letter-spacing:0.03em;
+      transition:all 0.15s; }
+    .ded-opt-btn:hover { border-color:var(--fg-dim); color:var(--fg); background:rgba(255,255,255,0.03); }
+    .ded-opt-btn.active { background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:700; }
+    .ded-opt-btn.dotpad-focus { outline:3px solid var(--accent); outline-offset:2px; }
+    .deduction-form select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--fg-faint);
+    color: var(--fg);
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='6'><polygon points='0,0 8,0 4,6' fill='%23f4b54a'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  .deduction-form select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+
+  /* Ending */
+  .ending {
+    text-align: center;
+    padding: 24px 18px;
+    margin-top: 8px;
+    border: 2px solid var(--accent);
+    background: var(--bg);
+    position: relative;
+    animation: fadein 0.5s ease-out;
+  }
+  .ending.bad { border-color: var(--warn); }
+  .ending.conviction { border-color: var(--accent-dim); }
+  .ending::before, .ending::after {
+    content: "";
+    position: absolute;
+    width: 12px; height: 12px;
+    background: var(--accent);
+  }
+  .ending.bad::before, .ending.bad::after { background: var(--warn); }
+  .ending::before { top: -2px; left: -2px; }
+  .ending::after { bottom: -2px; right: -2px; }
+  .ending .badge {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+  .ending.bad .badge { color: var(--warn); }
+  .ending h3 {
+    font-size: 20px;
+    margin-bottom: 12px;
+    color: var(--fg);
+    font-weight: 700;
+  }
+  .ending p {
+    font-size: 13px;
+    color: var(--fg-soft);
+    line-height: 1.7;
+  }
+  .ending .reputation {
+    margin-top: 16px;
+    display: inline-block;
+    padding: 7px 16px;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  /* 오버레이 */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(2px);
+  }
+  .overlay-card {
+    background: var(--bg);
+    border: 2px solid var(--accent);
+    padding: 24px;
+    max-width: 460px;
+    width: 100%;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .overlay-card::before, .overlay-card::after {
+    content: "";
+    position: absolute;
+    width: 12px; height: 12px;
+    background: var(--accent);
+  }
+  .overlay-card::before { top: -2px; left: -2px; }
+  .overlay-card::after { bottom: -2px; right: -2px; }
+  .overlay-card h2 {
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    margin-bottom: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .overlay-card p {
+    font-size: 13px;
+    color: var(--fg-soft);
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+  .overlay-card .voice-section {
+    background: var(--line-soft);
+    padding: 12px;
+    margin-bottom: 12px;
+    border-left: 2px solid var(--accent-dim);
+  }
+  .overlay-card .voice-section h3 {
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .overlay-card .voice-section p {
+    font-size: 11px;
+    color: var(--fg-dim);
+    margin-bottom: 8px;
+  }
+  .overlay-card label {
+    display: block;
+    font-size: 11px;
+    color: var(--fg-dim);
+    margin-bottom: 4px;
+    margin-top: 8px;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+  .overlay-card input, .overlay-card select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--fg-faint);
+    color: var(--fg);
+    padding: 9px 11px;
+    font-family: inherit;
+    font-size: 13px;
+    margin-bottom: 6px;
+    border-radius: 0;
+  }
+  .overlay-card input:focus, .overlay-card select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  .overlay-card .footnote {
+    font-size: 11px;
+    color: var(--fg-faint);
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+  .overlay-card .options { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+
+  /* 타이핑 점 */
+  .typing { display: inline-flex; gap: 4px; margin: 8px 0; }
+  .typing span {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: blink 0.6s ease-in-out infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Splash */
+  .splash {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 150;
+    transition: opacity 0.5s ease-out;
+    padding: 140px 24px 32px;
+    overflow-y: auto;
+  }
+  .splash.hidden { opacity: 0; pointer-events: none; }
+  .splash .splash-art {
+    width: 220px;
+    height: 220px;
+    margin-bottom: 24px;
+    max-width: 50vw; max-height: 50vw;
+  }
+  @media (min-width: 640px) {
+    .splash .splash-art { width: 280px; height: 280px; }
+  }
+  @media (min-width: 1024px) {
+    .splash .splash-art { width: 360px; height: 360px; }
+  }
+  .splash .splash-art svg { width: 100%; height: 100%; shape-rendering: crispEdges; image-rendering: pixelated; }
+  .splash .logo-mark {
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .splash .logo-title {
+    font-size: 30px;
+    color: var(--fg);
+    text-align: center;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  @media (min-width: 640px) { .splash .logo-title { font-size: 42px; } }
+  @media (min-width: 1024px) { .splash .logo-title { font-size: 56px; } }
+  .splash .logo-sub {
+    font-size: 12px;
+    color: var(--fg-dim);
+    margin-top: 14px;
+    letter-spacing: 0.05em;
+    font-weight: 400;
+  }
+  .splash .start {
+    margin-top: 32px;
+    background: var(--accent);
+    color: var(--bg);
+    border: 0;
+    padding: 13px 36px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    position: relative;
+    font-weight: 700;
+  }
+  .splash .start::before, .splash .start::after {
+    content: "";
+    position: absolute;
+    width: 4px; height: 4px;
+    background: var(--bg);
+  }
+  .splash .start::before { top: 0; left: 0; }
+  .splash .start::after { bottom: 0; right: 0; }
+  .splash .signal {
+    margin-top: 24px;
+    font-size: 12px;
+    color: var(--fg-dim);
+    letter-spacing: 0.1em;
+    animation: blink 1.6s ease-in-out infinite;
+    text-align: center;
+  }
+  @media (min-width: 640px) {
+    .splash .signal { font-size: 13px; }
+  }
+
+  .audio-status {
+    font-size: 10px;
+    color: var(--fg-dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* Nano Banana 이미지 통합용 */
+  .pix-art img, .pix-art .pix-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    display: block;
+  }
+  .npc-card .portrait img, .npc-card .portrait .pix-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 25%;
+    image-rendering: pixelated;
+    display: block;
+  }
+  .splash-art img, .splash-art .pix-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    display: block;
+  }
+
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<div class="lab-header" role="banner">
+  <div class="lab-header-top">
+    <div>
+      <div class="brand">DOT GAMES</div>
+      <div class="brand-sub">Detective Voice — Demo v7</div>
+    </div>
+    <div class="controls" role="toolbar" aria-label="App controls">
+      <button class="lab-btn dv-exit" id="btn-exit" type="button" aria-label="Close game" onclick="dvRequestExit()">✕</button>
+      <span class="audio-status-float"><span class="audio-status" id="audio-indicator"></span></span>
+      <div class="dotpad-wrap">
+        <button class="lab-btn dotpad-btn" id="btn-dotpad" type="button" aria-label="Connect Dot Pad braille display" aria-haspopup="dialog">
+          <span class="dot-led" id="dotpad-led"></span><span id="btn-dotpad-label">Dot Pad</span>
+        </button>
+        <div class="dotpad-popup" id="dotpad-popup" hidden role="dialog" aria-labelledby="dotpad-popup-title">
+          <div class="dotpad-popup-title" id="dotpad-popup-title">Connect a Dot Pad</div>
+          <div class="dotpad-popup-status" id="dotpad-popup-status"></div>
+          <button class="dotpad-popup-btn" id="dotpad-ble-btn" type="button" aria-label="Connect Dot Pad via Bluetooth">📶 Bluetooth</button>
+          <button class="dotpad-popup-btn" id="dotpad-usb-btn" type="button" aria-label="Connect Dot Pad via USB cable">🔗 USB</button>
+          <button class="dotpad-popup-btn dotpad-popup-danger" id="dotpad-disconnect-btn" type="button" hidden aria-label="Disconnect Dot Pad">Disconnect</button>
+          <div class="dotpad-popup-hint" id="dotpad-popup-hint">Chrome/Edge desktop only · HTTPS required</div>
+        </div>
+      </div>
+      <button class="lab-btn" id="btn-lang" aria-label="Toggle language between English and Korean">EN</button>
+      <button class="lab-btn" id="btn-bgm" aria-label="Toggle background music" aria-pressed="false">BGM</button>
+      <button class="lab-btn" id="btn-tts" aria-label="Toggle voice playback" aria-pressed="true">Voice</button>
+      <button class="lab-btn" id="btn-settings" aria-label="Open settings — API keys and voice selection">Settings</button>
+    </div>
+  </div>
+  <div class="lab-keymap" id="lab-keymap" role="region" aria-label="Dot Pad key map — always visible">
+    <span class="km-label" id="km-label">Dot Pad</span>
+    <span class="km"><kbd>F1</kbd><span id="km-f1">Prev</span></span>
+    <span class="km"><kbd>F2</kbd><span id="km-f2">Next</span></span>
+    <span class="km"><kbd>F3</kbd><span id="km-f3">Select</span></span>
+    <span class="km"><kbd>F4</kbd><span id="km-f4">Notes</span></span>
+    <span class="km"><kbd aria-label="Left pan">⟨</kbd><span id="km-panl">Page −</span></span>
+    <span class="km"><kbd aria-label="Right pan">⟩</kbd><span id="km-panr">Page +</span></span>
+    <span class="km"><kbd aria-label="Center pan">⊙</kbd><span id="km-panc">Replay</span></span>
+  </div>
+</div>
+
+<div class="splash" id="splash" role="dialog" aria-labelledby="splash-title" aria-describedby="splash-signal">
+  <div class="splash-art" id="splash-art" aria-hidden="true"></div>
+  <p class="logo-mark">DETECTIVE VOICE</p>
+  <h1 class="logo-title" id="splash-title">The Last Customer</h1>
+  <p class="logo-sub" id="splash-sub">Signature Case #1</p>
+  <button class="start" onclick="hideSplash()" id="splash-start" type="button" aria-label="Start the case">▶ Start</button>
+  <p class="signal" id="splash-signal">Don't look at the screen. Listen.</p>
+</div>
+
+<main class="page" id="main-content" role="main">
+  <div class="app-shell" id="shell" aria-label="Game content"></div>
+</main>
+
+<!-- 설정 오버레이 -->
+<div class="overlay" id="overlay" style="display:none;" role="dialog" aria-labelledby="setup-title" aria-modal="true">
+  <div class="overlay-card">
+    <h2 id="setup-title">SETUP — API Keys (optional)</h2>
+    <p id="setup-desc">With keys, free-form typing (AI responses) and natural voice are enabled. Without keys, the demo runs in click-mode with system voice. Keys are stored only in this browser session.</p>
+
+    <label id="setup-lang-label" for="in-lang-select">Language (언어)</label>
+    <select id="setup-lang">
+      <option value="en">English</option>
+      <option value="ko">한국어</option>
+    </select>
+
+    <div class="voice-section">
+      <h3 id="setup-voice-title">🎙 Voice — free options (in order of quality)</h3>
+      <p id="setup-voice-desc">1st <strong>Microsoft Azure</strong> (500K chars/month free, neural voices)<br/>
+      2nd <strong>Web Speech API</strong> (no key, OS voice — macOS Yuna is good, Windows is average)<br/>
+      <em style="color:var(--fg-faint)">Without keys, system voice is used automatically</em></p>
+
+      <div id="setup-azure-key-block">
+      <label id="setup-az-key-label">AZURE SPEECH KEY (optional)</label>
+      <input type="password" id="az-key" placeholder="32-character key" autocomplete="off" />
+
+      <label id="setup-az-region-label">AZURE REGION (optional, default: koreacentral)</label>
+      <select id="az-region">
+        <option value="koreacentral" data-en="koreacentral (Korea, fastest)" data-ko="koreacentral (한국, 가장 빠름)">koreacentral (Korea, fastest)</option>
+        <option value="eastus">eastus</option>
+        <option value="westus">westus</option>
+        <option value="westeurope">westeurope</option>
+        <option value="southeastasia">southeastasia</option>
+      </select>
+      </div>
+
+      <label id="setup-voice-label">VOICE</label>
+      <select id="az-voice">
+        <option value="en-US-AriaNeural" data-en="Aria (Female, warm — English)" data-ko="Aria (여성, 따뜻 — 영어)">Aria (Female, warm — English)</option>
+        <option value="en-US-JennyNeural" data-en="Jenny (Female, friendly — English)" data-ko="Jenny (여성, 친근 — 영어)">Jenny (Female, friendly — English)</option>
+        <option value="en-GB-SoniaNeural" data-en="Sonia (Female, British — English)" data-ko="Sonia (여성, 영국 — 영어)">Sonia (Female, British — English)</option>
+        <option value="en-US-GuyNeural" data-en="Guy (Male, calm — English)" data-ko="Guy (남성, 차분 — 영어)">Guy (Male, calm — English)</option>
+        <option value="ko-KR-SunHiNeural" data-en="SunHi (Female, warm — Korean)" data-ko="SunHi (여성, 따뜻 — 한국어)">SunHi (Female, warm — Korean)</option>
+        <option value="ko-KR-JiMinNeural" data-en="JiMin (Female, lively — Korean)" data-ko="JiMin (여성, 발랄 — 한국어)">JiMin (Female, lively — Korean)</option>
+        <option value="ko-KR-YuJinNeural" data-en="YuJin (Female, soft — Korean)" data-ko="YuJin (여성, 차분 — 한국어)">YuJin (Female, soft — Korean)</option>
+        <option value="ko-KR-InJoonNeural" data-en="InJoon (Male, serious — Korean)" data-ko="InJoon (남성, 진지 — 한국어)">InJoon (Male, serious — Korean)</option>
+        <option value="ko-KR-BongJinNeural" data-en="BongJin (Male, warm — Korean)" data-ko="BongJin (남성, 친근 — 한국어)">BongJin (Male, warm — Korean)</option>
+      </select>
+    </div>
+    <div class="voice-section" id="setup-ai-section">
+      <h3 id="setup-ai-title">🤖 AI free-form responses (optional)</h3>
+      <p id="setup-ai-desc">With key, NPCs respond to free typing. ~$0.10 per case.</p>
+      <label id="setup-anth-key-label">ANTHROPIC API KEY</label>
+      <input type="password" id="anth-key" placeholder="sk-ant-..." autocomplete="off" />
+    </div>
+
+    <div class="footnote" id="setup-footnote">
+      Azure: portal.azure.com → Speech resource (free F0 tier)<br/>
+      Anthropic: console.anthropic.com<br/>
+      Keys are cleared on session end.
+    </div>
+
+    <div class="options">
+      <button class="primary-btn" id="setup-save-btn" onclick="saveSettings()">▶ Save and start</button>
+      <button class="ghost-btn" id="setup-skip-btn" onclick="skipSettings()">Start without keys (system voice)</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  // Dot Pad Web SDK 로드 (ES module). window.DotPad로 전역 노출하여 vanilla script에서 사용.
+  import { DotPadSDK, DotPadScanner, DisplayMode, DataCodes, KeyCodes }
+    from "./dotpad-sdk/DotPadSDK-3.0.0.js";
+  window.DotPad = {
+    sdk: new DotPadSDK(),
+    scanner: new DotPadScanner(),
+    DisplayMode, DataCodes, KeyCodes
+  };
+  // SDK 로드 완료 신호
+  window.dispatchEvent(new Event('dotpad-ready'));
+</script>
+<script>
+// ============================================================
+// 사건 데이터
+// ============================================================
+const CASE_KO = {
+  premise: `강남 골목 깊숙한 곳, 작은 와인바 '루나'. 어젯밤 폐점 직후 사장 정민호 씨가 가게 안에서 시신으로 발견됐어요. 사인은 둔기에 의한 후두부 외상.
+
+가게 안엔 폐점 시각인 밤 11시 30분 이후의 결제 기록이 한 건 더 있었어요. 살해 추정 시각의 마지막 손님 4명, 그리고 사장에게 빚이 있던 절친 한 명.
+
+의뢰인은 정민호 씨의 누나로, "동생은 누구한테 원한 살 사람이 아니다"라고 해요.
+
+자, 시작할 준비가 되셨다면, 어디서부터 보시겠어요?`,
+  scenes: [
+    { id: "scene_crime_scene", name: "와인바 '루나' — 사건 현장", art: 'wine_bar',
+      objects: [
+        { name: "시신 주변", revealsId: "ev_broken_bottle",
+          desc: "정 사장의 머리 근처에 깨진 와인병 하나가 떨어져 있어요. 라벨이 절반쯤 떨어져 있지만 '샤또 마고'로 보여요. 단면에 정 사장의 혈흔이 묻어 있어요." },
+        { name: "카운터 위 — POS 영수증", revealsId: "ev_receipt_2342",
+          desc: "POS 영수증이 한 장 그대로 놓여 있어요. 폐점 12분 후인 밤 11시 42분, 박준영 명의 카드로 '샤또 마고 2015' 한 병, 35만원 결제." },
+        { name: "사장의 휴대폰", revealsId: "ev_text_message",
+          desc: "잠금이 풀려 있어요. 김유진이라는 이름과 6개월간 주고받은 메시지. 마지막 메시지는 사건 3일 전 — '준영이가 눈치챈 것 같아. 우리 정리하자.'" },
+        { name: "안쪽 와인 보관실", revealsId: "ev_wine_inventory",
+          desc: "사장의 손글씨 재고 장부예요. '샤또 마고 2015'는 사건 당일 마지막 1병이 밤 9시에 다른 손님에게 팔려서 0병이 됐다고 적혀 있어요. 다음 입고는 다음 주." }
+      ] },
+    { id: "scene_alley", name: "가게 앞 골목", art: 'alley',
+      objects: [
+        { name: "편의점 CCTV 확인", revealsId: "ev_cctv_outside",
+          desc: "편의점 CCTV에 박준영이 밤 10시 10분에 가게로 들어가는 모습, 그리고 자정 15분에 혼자 나와 택시를 잡는 모습이 또렷이 잡혀 있어요. 폐점 후 45분이나 더 머물렀어요." }
+      ] },
+    { id: "scene_morgue", name: "국과수 부검실", art: 'morgue',
+      objects: [
+        { name: "부검 보고서", revealsId: "ev_autopsy",
+          desc: "사인은 둔기에 의한 후두부 외상. 사망 추정 시각 밤 11시 30분에서 11시 45분 사이. 흉기는 두꺼운 유리로 추정 — 깨진 와인병과 일치해요." }
+      ] }
+  ],
+  npcs: [
+    { id: "park_junyoung", name: "박준영", age: 45, role: "용의자 · 절친 · 빚 3천만원",
+      anxietyStart: 35, portrait: 'park',
+      systemPromptExtra: `당신은 박준영, 45세 남성. 무역회사 운영. 정민호와 20년 절친.
+- 진실: 어젯밤 정민호와 단둘이 남았을 때 와인병으로 후두부를 가격해 살해했다. 동기는 아내 김유진과 정민호의 6개월 비밀 연애를 알게 됐고, 빚을 빌미로 추궁하다 우발적으로 저질렀다. 알리바이를 만들려 본인 카드로 23:42에 '샤또 마고 2015' 한 병을 결제했다.
+- 거짓말 #1 (영화): "어젯밤 아내랑 영화 '기생충'을 다시 봤다." 진실은 집에 도착했을 때 아내는 자고 있었고 영화는 안 봤다.
+- 거짓말 #2 (와인 결제): "샤또 마고 한 병을 사서 들고 갔다." 진실은 그 시점에 가게에 그 와인이 한 병도 없었다 — 알리바이 위조용이었다.
+- 거짓말 #3 (아내와 정민호): "둘이 친했다. 그게 다예요." 진실은 정민호와 김유진이 6개월 연애 중이었음을 최근 알게 됐다.
+- 톤: 침착하지만 거짓말 시 손이 떨림.` },
+    { id: "kim_yujin", name: "김유진", age: 42, role: "박준영의 아내 · 정민호 비밀 연인",
+      anxietyStart: 60, portrait: 'kim',
+      systemPromptExtra: `당신은 김유진, 42세 여성. 미술학원 강사. 박준영의 아내.
+- 진실: 정민호와 6개월간 비밀 연인 관계였고, 정민호가 일본으로 떠나기 전 정리하기로 했다. 사건 소식에 충격과 죄책감. 어젯밤 11시쯤 잠들었고, 0시 30분경 차 시동 소리에 한 번 깼다. 남편이 영화를 같이 본 적은 없다.
+- 톤: 슬픔과 죄책감. 모든 질문에 솔직하게 답한다.` },
+    { id: "lee_minji", name: "이민지", age: 29, role: "와인바 직원 · 9시 30분 퇴근",
+      anxietyStart: 30, portrait: 'lee',
+      systemPromptExtra: `당신은 이민지, 29세 여성. 와인바 '루나' 직원.
+- 진실: 21:30에 퇴근. 사장이 박준영에게 3천만원을 빌려준 일을 안다. '샤또 마고 2015'는 21:00에 단골 최동수에게 마지막 한 병이 팔려 가게에 0병이 됐다.
+- 톤: 빠르게 말하고 자주 '음...'으로 시작.` },
+    { id: "choi_dongsoo", name: "최동수", age: 55, role: "단골 · 9시에 마지막 한 병 구매",
+      anxietyStart: 10, portrait: 'choi',
+      systemPromptExtra: `당신은 최동수, 55세 남성. 와인바 단골.
+- 진실: 21:00에 '샤또 마고 2015' 마지막 한 병을 샀다. 21:30에 가게 나와서 친구들과 노래방 갔고 새벽 2시까지였다.
+- 톤: 웃으면서 말함. 부산 사투리 살짝.` }
+  ],
+  evidenceMap: {
+    "ev_broken_bottle": "깨진 와인병 (샤또 마고 라벨, 정 사장의 혈흔) — 범행 도구.",
+    "ev_receipt_2342": "23:42 박준영 카드 결제 영수증 (샤또 마고 한 병).",
+    "ev_text_message": "정민호와 김유진의 6개월 비밀 연애 메시지.",
+    "ev_wine_inventory": "재고 장부 — 샤또 마고는 21:00에 마지막 한 병이 팔려 사건 당시 0병.",
+    "ev_cctv_outside": "편의점 CCTV — 박준영이 22:10 입장, 0:15 퇴장.",
+    "ev_autopsy": "부검 — 사망 시각 23:30~23:45, 흉기는 두꺼운 유리.",
+    "ev_wife_testimony": "김유진 증언 — 어젯밤 영화 본 적 없음, 남편 귀가는 0:30.",
+    "ev_text_message_confirm": "김유진 본인 확인 — 정민호와 6개월 비밀 연애.",
+    "ev_wine_inventory_oral": "직원 이민지 증언 — 21시에 최동수가 마지막 한 병 구매."
+  },
+  scriptedQuestions: {
+    park_junyoung: [
+      { q: "어젯밤 어디 있었어요?", a: "[한숨] 집에 있었어요. 아내랑 같이 영화 보고 잤습니다.", delta: 5 },
+      { q: "어떤 영화요?", a: "어... '기생충'이요. 다시 보고 있었어요.", delta: 5 },
+      { q: "사장한테 빚이 있었다고 들었는데", a: "[침묵] 누가 그래요? 그래요, 좀 빌렸어요. 갚으려 했어요.", delta: 10 },
+      { q: "23시 42분 영수증 봤어요. 와인 한 병 결제하셨던데", a: "샤또 마고 한 병 사서 들고 갔어요. 정민호가 마지막으로 권한 와인이라.", delta: 8, requires: "ev_receipt_2342" },
+      { q: "그날 가게엔 샤또 마고가 한 병도 없었어요. 21시에 다 팔렸거든요", a: "[떨림] 그럴 리가 없는데. 분명히... [작게] 분명히 결제했어요.", delta: 25, requires: "ev_wine_inventory" },
+      { q: "당신 아내는 어젯밤 영화 본 적 없다고 하던데요", a: "[침묵] 뭐라고요? 아내가 그렇게 말했어요? 뭔가 착각한 것 같은데.", delta: 20, requires: "ev_wife_testimony" },
+      { q: "정민호 사장과 부인 김유진 씨, 둘 사이 알고 계셨죠?", a: "[떨림] [한숨] 언제부터 알았어요? 정민호 그 새끼가, [침묵] 아내한테 손을 댔다고요.", delta: 30, requires: "ev_text_message" }
+    ],
+    kim_yujin: [
+      { q: "정민호 씨와 어떤 사이였나요?", a: "[침묵] 6개월 됐어요. 아무도 모르게. 그 사람이 일본으로 떠나기 전에 정리하기로 했었어요.", delta: 0, revealsId: "ev_text_message_confirm" },
+      { q: "어젯밤 남편이 들어온 시간을 기억하세요?", a: "11시쯤 잠들었는데, 차 시동 소리에 한 번 깼어요. 시계 보니 0시 30분이었어요.", delta: 0 },
+      { q: "남편이 어젯밤 같이 영화 봤다는데 사실인가요?", a: "[한숨] 아니요. 영화 같이 본 적 없어요. 어젯밤만이 아니라, 요즘은 그런 일이 거의 없어요.", delta: 0, revealsId: "ev_wife_testimony" }
+    ],
+    lee_minji: [
+      { q: "사장님과 박준영 씨 관계는 어땠어요?", a: "음... 친한 친구셨는데, 최근엔 좀 다투시는 분위기였어요. 박준영 씨가 자주 오셨고요.", delta: 5 },
+      { q: "샤또 마고 2015 와인은 가게에 있었나요?", a: "어, 그날 21시쯤 최동수 단골 손님이 마지막 한 병 사 가셨어요. 사장님이 직접 '이게 마지막'이라고 하셨어요.", delta: 0, revealsId: "ev_wine_inventory_oral" }
+    ],
+    choi_dongsoo: [
+      { q: "그날 무슨 와인 사 가셨어요?", a: "샤또 마고 2015. [웃음] 정 사장이 '이게 마지막 한 병이에요'라고 직접 건네줬는데, 다음 주에 입고된다고. 그게 마지막이 될 줄은 몰랐죠.", delta: 0 }
+    ]
+  }
+};
+
+const CASE_EN = {
+  premise: `Deep in a Gangnam alley, a small wine bar called 'Luna'. Last night, just after closing, the owner Jeong Min-ho was found dead inside his own shop. Cause of death — blunt force trauma to the back of the head.
+
+Inside the bar, there was one more payment recorded after the 11:30 PM closing time. Four customers were there during the estimated time of death, plus one close friend who owed him money.
+
+The client is Min-ho's older sister. She says, "My brother wasn't the kind of person anyone would hold a grudge against."
+
+So, detective. If you're ready to begin — where would you like to start?`,
+  scenes: [
+    { id: "scene_crime_scene", name: "Wine Bar 'Luna' — Crime Scene", art: 'wine_bar',
+      objects: [
+        { name: "Around the body", revealsId: "ev_broken_bottle",
+          desc: "A broken wine bottle lies near Min-ho's head. The label is half torn off, but you can still read 'Château Margaux.' The broken edge has the victim's blood on it." },
+        { name: "On the counter — POS receipt", revealsId: "ev_receipt_2342",
+          desc: "A POS receipt is still on the counter. Twelve minutes after closing, at 11:42 PM, Park Jun-young's card was charged for one Château Margaux 2015, 350,000 won." },
+        { name: "The victim's phone", revealsId: "ev_text_message",
+          desc: "The phone is unlocked. Six months of messages with someone named Kim Yu-jin. The last one, three days before the murder — 'I think Jun-young suspects. We have to end it.'" },
+        { name: "Inner wine cellar", revealsId: "ev_wine_inventory",
+          desc: "The owner's handwritten inventory ledger. 'Château Margaux 2015' — the last bottle sold at 9 PM that night, leaving zero. Next shipment scheduled for next week." }
+      ] },
+    { id: "scene_alley", name: "Alley outside the bar", art: 'alley',
+      objects: [
+        { name: "Check convenience store CCTV", revealsId: "ev_cctv_outside",
+          desc: "The convenience store CCTV across the street shows Park Jun-young entering the bar at 10:10 PM and leaving alone at 12:15 AM, hailing a taxi. He stayed 45 minutes after closing." }
+      ] },
+    { id: "scene_morgue", name: "National Forensic Service — Autopsy Room", art: 'morgue',
+      objects: [
+        { name: "Autopsy report", revealsId: "ev_autopsy",
+          desc: "Cause of death — blunt force trauma to the back of the skull. Estimated time of death between 11:30 PM and 11:45 PM. Weapon: thick glass — consistent with the broken wine bottle." }
+      ] }
+  ],
+  npcs: [
+    { id: "park_junyoung", name: "Park Jun-young", age: 45, role: "Suspect · Close friend · Owed 30M won",
+      anxietyStart: 35, portrait: 'park',
+      systemPromptExtra: `You are Park Jun-young, a 45-year-old Korean man. You run a small trading company. You were a 20-year close friend of the victim, Jeong Min-ho.
+- Truth: Last night, you were alone with Min-ho after closing and struck him in the back of the head with a wine bottle, killing him. Motive: you discovered Min-ho's 6-month secret affair with your wife Kim Yu-jin, confronted him under pretense of the debt, and lost control. To build an alibi, you used your own card at 11:42 PM to fake-purchase a Château Margaux 2015.
+- Lie #1 (movie): "I was home with my wife last night. We rewatched 'Parasite' together." Truth: When you got home, she was already asleep. You didn't watch any movie.
+- Lie #2 (wine purchase): "I bought a Château Margaux to take home — Min-ho recommended it as his last one." Truth: There was no Château Margaux left in the shop at 11:42 PM — it was a fake alibi receipt.
+- Lie #3 (wife and Min-ho): "They were friends. That's it." Truth: You recently discovered the 6-month affair.
+- Tone: Composed but your hands tremble when you lie. Speak in short, careful sentences.` },
+    { id: "kim_yujin", name: "Kim Yu-jin", age: 42, role: "Park's wife · Min-ho's secret lover",
+      anxietyStart: 60, portrait: 'kim',
+      systemPromptExtra: `You are Kim Yu-jin, a 42-year-old Korean woman. You teach at an art school. You are Park Jun-young's wife.
+- Truth: You and Jeong Min-ho were secret lovers for 6 months. He planned to leave for Japan and you agreed to end it. You're devastated and guilty. You fell asleep around 11 PM last night, briefly woke up around 12:30 AM to the sound of your husband's car. You did NOT watch any movie with him last night.
+- Tone: Grief and guilt. Answer all questions honestly. Soft, hesitant speech with pauses.` },
+    { id: "lee_minji", name: "Lee Min-ji", age: 29, role: "Wine bar employee · Left at 9:30 PM",
+      anxietyStart: 30, portrait: 'lee',
+      systemPromptExtra: `You are Lee Min-ji, a 29-year-old Korean woman. You work as the only employee at Wine Bar 'Luna'.
+- Truth: You left work at 9:30 PM last night. You know the owner lent Park Jun-young 30 million won. The Château Margaux 2015 was sold out at 9 PM — regular customer Choi Dong-soo bought the last bottle, and the owner himself said "this is the last one."
+- Tone: Fast-paced speech, often starting with "Um..." Slightly nervous but cooperative.` },
+    { id: "choi_dongsoo", name: "Choi Dong-soo", age: 55, role: "Regular customer · Bought the last bottle at 9 PM",
+      anxietyStart: 10, portrait: 'choi',
+      systemPromptExtra: `You are Choi Dong-soo, a 55-year-old Korean man. You're a regular customer at Wine Bar 'Luna'.
+- Truth: At 9 PM last night, you bought the last Château Margaux 2015. The owner handed it to you personally saying "this is our last one." You left around 9:30 PM and went to karaoke with friends until 2 AM.
+- Tone: Warm, chuckles a lot. Slight Busan dialect. Very cooperative.` }
+  ],
+  evidenceMap: {
+    "ev_broken_bottle": "Broken wine bottle (Château Margaux label, victim's blood) — murder weapon.",
+    "ev_receipt_2342": "11:42 PM receipt charged to Park Jun-young's card (one Château Margaux).",
+    "ev_text_message": "Six-month secret affair messages between Jeong Min-ho and Kim Yu-jin.",
+    "ev_wine_inventory": "Inventory ledger — Château Margaux sold out at 9 PM, zero bottles at murder time.",
+    "ev_cctv_outside": "Convenience store CCTV — Park entered at 10:10 PM, left at 12:15 AM alone.",
+    "ev_autopsy": "Autopsy — time of death 11:30 PM and 11:45 PM, weapon was thick glass.",
+    "ev_wife_testimony": "Kim Yu-jin's testimony — no movie last night, husband returned at 12:30 AM.",
+    "ev_text_message_confirm": "Kim Yu-jin confirmed — 6-month affair with Jeong Min-ho.",
+    "ev_wine_inventory_oral": "Lee Min-ji's testimony — Choi Dong-soo bought the last bottle at 9 PM."
+  },
+  scriptedQuestions: {
+    park_junyoung: [
+      { q: "Where were you last night?", a: "[sighs] At home. Watched a movie with my wife. Then slept.", delta: 5 },
+      { q: "What movie?", a: "Uh... 'Parasite.' We were rewatching it.", delta: 5 },
+      { q: "I heard you owed Min-ho money.", a: "[silence] ...Who told you that? Yeah. I borrowed some. I was going to pay it back. I really was.", delta: 10 },
+      { q: "I saw the 11:42 PM receipt. You paid for a wine.", a: "Right. Bought a Château Margaux to take home. Min-ho recommended it as the last one.", delta: 8, requires: "ev_receipt_2342" },
+      { q: "There were zero bottles of Château Margaux that night. The last one sold at 9 PM.", a: "[trembling] That... can't be. I'm sure I... [whispers] I'm sure I paid for it.", delta: 25, requires: "ev_wine_inventory" },
+      { q: "Your wife says you didn't watch any movie last night.", a: "[silence] What? She said that? She must be... confused. Tired.", delta: 20, requires: "ev_wife_testimony" },
+      { q: "You knew about Min-ho and your wife, didn't you?", a: "[trembling] [sighs] How long have you known? That bastard Min-ho... [silence] he laid his hands on my wife.", delta: 30, requires: "ev_text_message" }
+    ],
+    kim_yujin: [
+      { q: "What was your relationship with Min-ho?", a: "[silence] Six months. In secret. We agreed to end it before he left for Japan.", delta: 0, revealsId: "ev_text_message_confirm" },
+      { q: "Do you remember when your husband came home last night?", a: "I fell asleep around eleven. Woke once to the sound of his car. The clock said twelve thirty.", delta: 0 },
+      { q: "Your husband says you watched a movie together. Is that true?", a: "[sighs] No. We didn't. Not last night. Not for a long time, honestly.", delta: 0, revealsId: "ev_wife_testimony" }
+    ],
+    lee_minji: [
+      { q: "How were the owner and Park Jun-young getting along?", a: "Um... they were close friends, but recently it felt like they were arguing. Mr. Park came by often.", delta: 5 },
+      { q: "Did you have any Château Margaux 2015 in stock that night?", a: "Oh, around nine, our regular Choi Dong-soo bought the very last bottle. The boss said it himself — 'this is the last one.'", delta: 0, revealsId: "ev_wine_inventory_oral" }
+    ],
+    choi_dongsoo: [
+      { q: "What wine did you buy that night?", a: "Château Margaux 2015. [chuckles] Min-ho handed it to me himself, said 'this is the last one.' New shipment was coming next week. Didn't think it'd be his last sale ever.", delta: 0 }
+    ]
+  }
+};
+
+function L() { return state.lang === 'ko' ? CASE_KO : CASE_EN; }
+const CASE = new Proxy({}, { get: (_, prop) => L()[prop] });
+// ============================================================
+// 픽셀 아트 — 공통 defs
+// ============================================================
+const SVG_DEFS = `
+<defs>
+  <pattern id="dither-10" patternUnits="userSpaceOnUse" width="6" height="6"><rect width="1" height="1" fill="#f4f1e8"/></pattern>
+  <pattern id="dither-20" patternUnits="userSpaceOnUse" width="5" height="5"><rect width="1" height="1" fill="#f4f1e8"/></pattern>
+  <pattern id="dither-25" patternUnits="userSpaceOnUse" width="4" height="4"><rect width="1" height="1" fill="#f4f1e8"/></pattern>
+  <pattern id="dither-33" patternUnits="userSpaceOnUse" width="3" height="3"><rect width="1" height="1" fill="#f4f1e8"/></pattern>
+  <pattern id="dither-50" patternUnits="userSpaceOnUse" width="2" height="2"><rect width="1" height="1" fill="#f4f1e8"/><rect x="1" y="1" width="1" height="1" fill="#f4f1e8"/></pattern>
+  <pattern id="dither-67" patternUnits="userSpaceOnUse" width="3" height="3"><rect width="2" height="2" fill="#f4f1e8"/></pattern>
+  <pattern id="dither-75" patternUnits="userSpaceOnUse" width="4" height="4"><rect width="1" height="1" fill="#000"/></pattern>
+  <pattern id="dither-am" patternUnits="userSpaceOnUse" width="4" height="4"><rect width="1" height="1" fill="#f4b54a"/></pattern>
+  <pattern id="dither-am-h" patternUnits="userSpaceOnUse" width="2" height="2"><rect width="1" height="1" fill="#f4b54a"/></pattern>
+  <pattern id="brick-p" patternUnits="userSpaceOnUse" width="20" height="10">
+    <rect width="20" height="10" fill="#000"/>
+    <line x1="0" y1="0" x2="20" y2="0" stroke="#f4f1e8" stroke-width="0.4" opacity="0.4"/>
+    <line x1="0" y1="5" x2="20" y2="5" stroke="#f4f1e8" stroke-width="0.4" opacity="0.4"/>
+    <line x1="0" y1="0" x2="0" y2="5" stroke="#f4f1e8" stroke-width="0.4" opacity="0.4"/>
+    <line x1="10" y1="5" x2="10" y2="10" stroke="#f4f1e8" stroke-width="0.4" opacity="0.4"/>
+  </pattern>
+  <pattern id="wood-p" patternUnits="userSpaceOnUse" width="40" height="4">
+    <rect width="40" height="4" fill="#000"/>
+    <line x1="0" y1="0" x2="40" y2="0" stroke="#f4f1e8" stroke-width="0.3" opacity="0.45"/>
+    <line x1="0" y1="2" x2="24" y2="2" stroke="#f4f1e8" stroke-width="0.3" opacity="0.25"/>
+  </pattern>
+  <pattern id="tile-p" patternUnits="userSpaceOnUse" width="20" height="20">
+    <rect width="20" height="20" fill="none"/>
+    <line x1="20" y1="0" x2="20" y2="20" stroke="#f4f1e8" stroke-width="0.4" opacity="0.35"/>
+    <line x1="0" y1="20" x2="20" y2="20" stroke="#f4f1e8" stroke-width="0.4" opacity="0.35"/>
+  </pattern>
+  <pattern id="parquet-p" patternUnits="userSpaceOnUse" width="24" height="12">
+    <rect width="24" height="12" fill="#000"/>
+    <line x1="0" y1="6" x2="24" y2="6" stroke="#f4f1e8" stroke-width="0.3" opacity="0.4"/>
+    <line x1="12" y1="0" x2="12" y2="12" stroke="#f4f1e8" stroke-width="0.3" opacity="0.4"/>
+  </pattern>
+  <pattern id="hatch-p" patternUnits="userSpaceOnUse" width="6" height="6">
+    <line x1="0" y1="6" x2="6" y2="0" stroke="#f4f1e8" stroke-width="0.6" opacity="0.35"/>
+  </pattern>
+</defs>`;
+
+// ============================================================
+// 장면 픽셀 아트
+// ============================================================
+const ART = {
+  splash: `<img src="img/splash.png" alt="" data-alt-key="splash" class="pix-img" loading="lazy"/>`,
+  wine_bar: `<img src="img/wine_bar.png" alt="" data-alt-key="wine_bar" class="pix-img" loading="lazy"/>`,
+  alley: `<img src="img/alley.png" alt="" data-alt-key="alley" class="pix-img" loading="lazy"/>`,
+  morgue: `<img src="img/morgue.png" alt="" data-alt-key="morgue" class="pix-img" loading="lazy"/>`
+};
+
+// ============================================================
+// 단서별 픽셀 아트 (NEW in v4)
+// ============================================================
+const EVIDENCE_ART = {
+  ev_broken_bottle: `<img src="img/ev_broken_bottle.png" alt="" data-alt-key="ev_broken_bottle" class="pix-img" loading="lazy"/>`,
+  ev_receipt_2342: `<img src="img/ev_receipt.png" alt="" data-alt-key="ev_receipt_2342" class="pix-img" loading="lazy"/>`,
+  ev_text_message: `<img src="img/ev_text.png" alt="" data-alt-key="ev_text_message"준영이가 눈치챈 것 같아. 우리 정리하자"가 강조되어 있어요." class="pix-img" loading="lazy"/>`,
+  ev_wine_inventory: `<img src="img/ev_inventory.png" alt="" data-alt-key="ev_wine_inventory" class="pix-img" loading="lazy"/>`,
+  ev_cctv_outside: `<img src="img/ev_cctv.png" alt="" data-alt-key="ev_cctv_outside" class="pix-img" loading="lazy"/>`,
+  ev_autopsy: `<img src="img/ev_autopsy.png" alt="" data-alt-key="ev_autopsy" class="pix-img" loading="lazy"/>`
+};
+
+// ============================================================
+// NPC 픽셀 포트레이트
+// ============================================================
+const PORTRAITS = {
+  park: `<img src="img/npc_park.png" alt="" data-alt-key="park" class="pix-img" loading="lazy"/>`,
+  kim: `<img src="img/npc_kim.png" alt="" data-alt-key="kim" class="pix-img" loading="lazy"/>`,
+  lee: `<img src="img/npc_lee.png" alt="" data-alt-key="lee"민지" 명찰. 친근한 미소." class="pix-img" loading="lazy"/>`,
+  choi: `<img src="img/npc_choi.png" alt="" data-alt-key="choi" class="pix-img" loading="lazy"/>`
+};
+
+// ============================================================
+// 게임 상태
+// ============================================================
+
+// ============================================================
+// UI 텍스트 i18n
+// ============================================================
+const UI_TEXT = {
+  ko: {
+    // 헤더
+    brand: 'DOT GAMES',
+    brandSub: 'Detective Voice — Demo v7',
+    bgmBtn: 'BGM',
+    voiceBtn: '음성',
+    langBtn: '한국어',
+    settingsBtn: '설정',
+    // 진행/단계
+    stageBriefing: 'Stage 1 / Briefing',
+    stageInvestigation: 'Stage 2 / Investigation',
+    stageInterrogation: 'Stage 3 / Interrogation',
+    stageDeduction: 'Stage 4 / Deduction',
+    stageInvestigationShort: 'Investigation',
+    stageInterrogationShort: 'Interrogation',
+    stageCaseClosed: 'Case Closed',
+    stageCaseNotes: 'Case Notes',
+    // 타이틀
+    briefingTitle: '마지막 손님',
+    briefingSub: '시그니처 #1 · 약 30~50분',
+    invTitle: '어디부터 살펴볼까요?',
+    invSub: (n) => `발견한 단서 ${n}개`,
+    interTitle: '누구를 만나볼까요?',
+    interSub: '단서를 들이밀면 거짓말이 무너져요',
+    dedTitle: '추리할 시간',
+    dedSub: '범인·동기·증거 세 가지를 골라 고발하세요',
+    notesTitle: '발견된 단서',
+    notesSub: (n) => `${n}건 / 9건 가능`,
+    caseClosedTitle: '사건 종결',
+    // Aria 발화
+    ariaInvStart: '현장은 그대로예요. 어디부터 시작할까요?',
+    ariaInvContinue: '다음으로 어디 갈까요?',
+    ariaInter: '증인과 용의자 네 명이에요. 한 명씩 만나서 모순을 찾아내세요.',
+    ariaDed: '자, 누가 했다고 생각하시나요? 범인과 동기, 그리고 그걸 뒷받침하는 핵심 증거 세 가지를 골라주세요.',
+    // 버튼
+    btnStartCase: '▶ 사건 시작',
+    btnInterrogate: '▶ 인물 심문하러 가기',
+    btnContinue: '▶ 계속 조사하기',
+    btnGoToDeduction: '▶ 추리 단계로',
+    btnBackToScene: '▸ 현장으로 돌아가기',
+    btnAccuse: '▶ 고발한다',
+    btnContinueInter: '▸ 더 심문하기',
+    btnOtherPerson: '▸ 다른 인물 만나기',
+    btnNotes: (n) => `▸ 사건 노트 (${n}건)`,
+    btnNotesShort: '▸ 사건 노트',
+    btnReplay: '▶ 재생',
+    btnClose: '▶ 닫기',
+    btnRestart: '▶ 다시 시작',
+    btnAskQ: '▶ 질문하기',
+    btnAskQBusy: '응답 중...',
+    btnSettingsSave: '▶ 저장하고 시작',
+    btnSettingsSkip: '키 없이 시작 (시스템 음성)',
+    btnStart: '▶ 시작',
+    // 카드 상태
+    cardCollected: '단서 확보 완료 · 다시 클릭해서 보기',
+    cardExamine: '클릭해서 살펴보기',
+    cardAnxiety: (a) => `불안 ${a}/100`,
+    clueAdded: (name) => `신규 단서 — ${name}`,
+    notesEmpty: '아직 발견된 단서가 없어요.',
+    notesHeader: 'Recovered Evidence',
+    // 추리 폼
+    formCulprit: '범인',
+    formMotive: '동기',
+    formEv: (n) => `핵심 증거 ${n}`,
+    optSelect: '선택...',
+    motivePerfect: '아내와의 관계 + 빚',
+    motiveDebtOnly: '단순 빚 변제 갈등',
+    motiveAffair: '치정',
+    motiveOther: '기타',
+    // 결말
+    endingPerfectBadge: 'Perfect',
+    endingPerfectTitle: '완벽한 추리',
+    endingPerfectText: '법정에서 박준영은 결국 모든 것을 인정했어요. "그날 밤, 정민호가 마지막으로 권한 와인을 들고 나가는 척하고 싶었어요. 그 친구가 너무 미웠지만, 죽일 생각은 없었어요." 사건은 종결됐고, 의뢰인은 짧은 편지를 남겼어요. "동생이 마지막에 만난 사람이 누군지 알게 해줘서 고마워요."',
+    endingConvictionBadge: 'Conviction',
+    endingConvictionTitle: '부분 유죄',
+    endingConvictionText: '박준영은 기소됐지만 변호사의 반박으로 동기 입증이 약했어요. 살인보다 가벼운 과실치사로 감형됐어요.',
+    endingWrongBadge: 'Wrong Suspect',
+    endingWrongTitle: '잘못된 추리',
+    endingWrongText: '당신의 추리는 법정에서 무너졌어요. 진범은 자유로워졌어요.',
+    endingInconclBadge: 'Inconclusive',
+    endingInconclTitle: '미해결',
+    endingInconclText: '사건은 미해결로 분류됐어요. 콜드케이스 폴더에 들어갔어요.',
+    endingFooter: 'Demo v7 · 실제 게임은 화면 없이 음성으로 진행<br/>AI가 매번 새 사건 생성',
+    repPrefix: 'REP +',
+    // 스플래시
+    splashTitle: '마지막 손님',
+    splashSub: '시그니처 사건 #1',
+    splashSignal: '화면을 보지 마세요. 귀로 들으세요.',
+    dotpadKeyGuide: '닷 패드 사용 안내. F1 이전 항목. F2 다음 항목. F3 선택. F4 사건 노트 열기와 닫기. 좌측 팬 키 점자 이전 페이지. 우측 팬 키 점자 다음 페이지. 가운데 팬 키 현재 안내 음성 다시 듣기.',
+    btnKeyGuide: '▸ 닷 패드 키 안내 듣기',
+    btnBackToBriefing: '▸ 처음으로 돌아가기',
+    btnBackToStart: '▸ 시작 화면으로',
+    // 자유 입력
+    freeLabel: '▸ 자유 입력 (AI 모드)',
+    freePlaceholder: '자유롭게 질문하세요...',
+    orPreset: '— 또는 미리 준비된 질문 —',
+    detective: '탐정',
+    // Lock
+    cardLockNeeds: (key) => `단서 필요: ${key.replace('ev_', '').replace(/_/g, ' ')}`,
+    // 설정 모달
+    settingsTitle: 'SETUP — API 키 (선택)',
+    settingsDesc: '키를 입력하면 자유 타이핑(AI 응답)과 자연스러운 음성이 켜져요. 키 없이도 클릭 모드 + 시스템 음성으로 진행 가능해요. 키는 어디에도 전송되지 않고 브라우저 세션 안에서만 사용돼요.',
+    settingsLangLabel: '언어 (Language)',
+    settingsVoiceTitle: '🎙 음성 — 무료 옵션 (자연스러움 순)',
+    settingsVoiceDesc: '1순위 <strong>Microsoft Azure</strong> (월 50만 글자 무료, 신경망 보이스)<br/>2순위 <strong>Web Speech API</strong> (키 불필요, OS 보이스)<br/><em>키 없으면 자동으로 시스템 음성 사용</em>',
+    settingsAzKey: 'AZURE SPEECH KEY (선택)',
+    settingsAzRegion: 'AZURE REGION (선택, 기본: koreacentral)',
+    settingsAiTitle: '🤖 AI 자유 응답 (선택)',
+    settingsAiDesc: '키 입력 시 NPC 심문에서 자유 타이핑이 가능. 사건 1편당 약 $0.10.',
+    settingsAnthKey: 'ANTHROPIC API KEY',
+    settingsFoot: 'Azure 발급: portal.azure.com → Speech 리소스 (무료 F0 등급)<br/>Anthropic 발급: console.anthropic.com<br/>세션 종료 시 키는 자동으로 지워져요.',
+    dotpadTitle: '🔌 Dot Pad 연결 (선택)',
+    dotpadDesc: 'Dot Pad를 연결하면 단서와 장면의 촉각 일러스트가 자동으로 출력돼요. Chrome/Edge 데스크톱 필요 (Web Bluetooth/Serial). 사용 전 노트북 옆에 두고 페어링.',
+    dotpadConnected: '연결됨',
+    dotpadDisconnected: '연결되지 않음',
+    dotpadConnectBle: '📶 Bluetooth로 연결',
+    dotpadConnectUsb: '🔗 USB로 연결',
+    dotpadDisconnect: '연결 해제',
+    dotpadHeaderLabel: 'Dot Pad',
+    dotpadPopupTitle: 'Dot Pad 연결',
+    dotpadPopupHint: 'Chrome/Edge 데스크톱 · HTTPS 필수',
+    dotpadBlePopup: '📶 Bluetooth',
+    dotpadUsbPopup: '🔗 USB',
+    // Header keymap chips
+    kmLabel: '닷 패드',
+    kmF1: '이전',
+    kmF2: '다음',
+    kmF3: '선택',
+    kmF4: '노트',
+    kmPanL: '점자 이전',
+    kmPanR: '점자 다음',
+    kmPanC: '다시 듣기'
+  },
+  en: {
+    brand: 'DOT GAMES',
+    brandSub: 'Detective Voice — Demo v7',
+    bgmBtn: 'BGM',
+    voiceBtn: 'Voice',
+    langBtn: 'EN',
+    settingsBtn: 'Settings',
+    stageBriefing: 'Stage 1 / Briefing',
+    stageInvestigation: 'Stage 2 / Investigation',
+    stageInterrogation: 'Stage 3 / Interrogation',
+    stageDeduction: 'Stage 4 / Deduction',
+    stageInvestigationShort: 'Investigation',
+    stageInterrogationShort: 'Interrogation',
+    stageCaseClosed: 'Case Closed',
+    stageCaseNotes: 'Case Notes',
+    briefingTitle: 'The Last Customer',
+    briefingSub: 'Signature #1 · ~30-50 min',
+    invTitle: 'Where to start?',
+    invSub: (n) => `${n} clue${n===1?'':'s'} found`,
+    interTitle: 'Who would you like to interview?',
+    interSub: 'Present clues to break their lies',
+    dedTitle: 'Time to deduce',
+    dedSub: 'Choose the culprit, motive, and three key pieces of evidence',
+    notesTitle: 'Evidence Found',
+    notesSub: (n) => `${n} of 9 possible`,
+    caseClosedTitle: 'Case closed',
+    ariaInvStart: "The scene is untouched. Where would you like to begin?",
+    ariaInvContinue: "Where to next?",
+    ariaInter: "Four witnesses and suspects. Talk to each one and find the contradictions.",
+    ariaDed: "So. Who do you think did it? Choose the culprit, the motive, and three pieces of evidence to back it up.",
+    btnStartCase: '▶ Begin Case',
+    btnInterrogate: '▶ Interrogate suspects',
+    btnContinue: '▶ Continue investigating',
+    btnGoToDeduction: '▶ Go to deduction',
+    btnBackToScene: '▸ Back to scene',
+    btnAccuse: '▶ Accuse',
+    btnContinueInter: '▸ Keep interrogating',
+    btnOtherPerson: '▸ Interview someone else',
+    btnNotes: (n) => `▸ Case notes (${n})`,
+    btnNotesShort: '▸ Case notes',
+    btnReplay: '▶ Play',
+    btnClose: '▶ Close',
+    btnRestart: '▶ Restart',
+    btnAskQ: '▶ Ask',
+    btnAskQBusy: 'Responding...',
+    btnSettingsSave: '▶ Save and start',
+    btnSettingsSkip: 'Start without keys (system voice)',
+    btnStart: '▶ Start',
+    cardCollected: 'Clue collected · Click again to view',
+    cardExamine: 'Click to examine',
+    cardAnxiety: (a) => `Anxiety ${a}/100`,
+    clueAdded: (name) => `New clue — ${name}`,
+    notesEmpty: 'No clues discovered yet.',
+    notesHeader: 'Recovered Evidence',
+    formCulprit: 'Culprit',
+    formMotive: 'Motive',
+    formEv: (n) => `Key Evidence ${n}`,
+    optSelect: 'Select...',
+    motivePerfect: 'Affair with his wife + debt',
+    motiveDebtOnly: 'Debt repayment dispute',
+    motiveAffair: 'Romantic jealousy',
+    motiveOther: 'Other',
+    endingPerfectBadge: 'Perfect',
+    endingPerfectTitle: 'Perfect Deduction',
+    endingPerfectText: 'In court, Park Jun-young confessed everything. "That night, I wanted to look like I was leaving with the wine Min-ho recommended. I hated him so much, but I never meant to kill him." The case closes. The client — Min-ho\'s sister — leaves you a short letter: "Thank you for telling us who he was with at the end."',
+    endingConvictionBadge: 'Conviction',
+    endingConvictionTitle: 'Partial Conviction',
+    endingConvictionText: 'Park Jun-young was charged, but the defense weakened the motive. He was reduced to manslaughter.',
+    endingWrongBadge: 'Wrong Suspect',
+    endingWrongTitle: 'Wrong Deduction',
+    endingWrongText: "Your deduction collapsed in court. The real killer walks free.",
+    endingInconclBadge: 'Inconclusive',
+    endingInconclTitle: 'Unsolved',
+    endingInconclText: 'The case is filed as unsolved. It goes into the cold case folder.',
+    endingFooter: 'Demo v7 · Real game is voice-only<br/>AI generates a new case every time',
+    repPrefix: 'REP +',
+    splashTitle: 'The Last Customer',
+    splashSub: 'Signature Case #1',
+    splashSignal: "Don't look at the screen. Listen.",
+    dotpadKeyGuide: 'Dot Pad keys. F1 previous item. F2 next item. F3 select. F4 open and close case notes. Left pan key previous braille page. Right pan key next braille page. Center pan key replay current voice prompt.',
+    btnKeyGuide: '▸ Hear Dot Pad key guide',
+    btnBackToBriefing: '▸ Back to start',
+    btnBackToStart: '▸ Back to title screen',
+    freeLabel: '▸ Free input (AI mode)',
+    freePlaceholder: 'Ask anything...',
+    orPreset: '— or use a preset question —',
+    detective: 'Detective',
+    cardLockNeeds: (key) => `Needs clue: ${key.replace('ev_', '').replace(/_/g, ' ')}`,
+    settingsTitle: 'SETUP — API Keys (optional)',
+    settingsDesc: 'With keys, free-form typing (AI responses) and natural voice are enabled. Without keys, the demo runs in click-mode with system voice. Keys are stored only in this browser session.',
+    settingsLangLabel: 'Language (언어)',
+    settingsVoiceTitle: '🎙 Voice — free options (in order of quality)',
+    settingsVoiceDesc: '1st <strong>Microsoft Azure</strong> (500K chars/month free, neural voices)<br/>2nd <strong>Web Speech API</strong> (no key, OS voice)<br/><em>Without keys, system voice is used automatically</em>',
+    settingsAzKey: 'AZURE SPEECH KEY (optional)',
+    settingsAzRegion: 'AZURE REGION (optional, default: koreacentral)',
+    settingsAiTitle: '🤖 AI free-form responses (optional)',
+    settingsAiDesc: 'With key, NPCs respond to free typing. ~$0.10 per case.',
+    settingsAnthKey: 'ANTHROPIC API KEY',
+    settingsFoot: 'Azure: portal.azure.com → Speech resource (free F0 tier)<br/>Anthropic: console.anthropic.com<br/>Keys are cleared on session end.',
+    dotpadTitle: '🔌 Dot Pad (optional)',
+    dotpadDesc: 'Connect a Dot Pad to display tactile illustrations of clues and scenes. Requires Chrome/Edge desktop (Web Bluetooth/Serial). Place the device near your laptop and pair before playing.',
+    dotpadConnected: 'Connected',
+    dotpadDisconnected: 'Not connected',
+    dotpadConnectBle: '📶 Connect via Bluetooth',
+    dotpadConnectUsb: '🔗 Connect via USB',
+    dotpadDisconnect: 'Disconnect',
+    dotpadHeaderLabel: 'Dot Pad',
+    dotpadPopupTitle: 'Connect a Dot Pad',
+    dotpadPopupHint: 'Chrome/Edge desktop · HTTPS required',
+    dotpadBlePopup: '📶 Bluetooth',
+    dotpadUsbPopup: '🔗 USB',
+    // Header keymap chips
+    kmLabel: 'Dot Pad',
+    kmF1: 'Prev',
+    kmF2: 'Next',
+    kmF3: 'Select',
+    kmF4: 'Notes',
+    kmPanL: 'Page −',
+    kmPanR: 'Page +',
+    kmPanC: 'Replay'
+  }
+};
+function T() { return UI_TEXT[state.lang] || UI_TEXT.en; }
+
+// ============================================================
+// 언어 토글
+// ============================================================
+// 각 언어의 권장 (가장 자연스러운) Azure Neural voice
+const RECOMMENDED_VOICE = {
+  ko: 'ko-KR-SunHiNeural',  // 따뜻한 한국어 여성, Aria 캐릭터에 가장 잘 맞음
+  en: 'en-US-AriaNeural'    // 같은 이름의 영어 신경망 보이스 — 캐릭터 일치
+};
+
+function setLang(lang) {
+  const langChanged = state.lang !== lang;
+  state.lang = lang;
+  // 언어 변경 시 권장 voice로 강제 전환 (사용자가 SETUP에서 명시적으로 선택한 voice는 유지)
+  // localStorage에 voice가 저장되지 않은 경우엔 자동으로 권장 voice 사용
+  let savedVoice = null;
+  try { savedVoice = localStorage.getItem('dv_az_voice'); } catch(e) {}
+  if (langChanged || !savedVoice) {
+    state.azureVoice = RECOMMENDED_VOICE[lang] || 'en-US-AriaNeural';
+    // SETUP 모달의 voice select도 동기화
+    const vsel = document.getElementById('az-voice');
+    if (vsel) vsel.value = state.azureVoice;
+  }
+  // UI 텍스트 업데이트
+  updateStaticUI();
+  // 현재 화면 재렌더링
+  if (typeof render === 'function') render();
+  // 설정 패널 안의 lang select와 동기화
+  const sel = document.getElementById('setup-lang');
+  if (sel) sel.value = lang;
+  // 토글 버튼 라벨
+  const btn = document.getElementById('btn-lang');
+  if (btn) btn.textContent = lang === 'ko' ? 'KO' : 'EN';
+  try { localStorage.setItem('dv_lang', lang); } catch(e) {}
+}
+function toggleLang() {
+  setLang(state.lang === 'ko' ? 'en' : 'ko');
+}
+function updateStaticUI() {
+  const t = T();
+  const setIfExists = (id, txt) => { const el = document.getElementById(id); if (el) el.innerHTML = txt; };
+  setIfExists('splash-title', t.splashTitle);
+  setIfExists('splash-sub', t.splashSub);
+  setIfExists('splash-start', t.btnStart);
+  setIfExists('splash-signal', t.splashSignal);
+  setIfExists('setup-title', t.settingsTitle);
+  setIfExists('setup-desc', t.settingsDesc);
+  setIfExists('setup-lang-label', t.settingsLangLabel);
+  setIfExists('setup-voice-title', t.settingsVoiceTitle);
+  setIfExists('setup-voice-desc', t.settingsVoiceDesc);
+  setIfExists('setup-az-key-label', t.settingsAzKey);
+  setIfExists('setup-az-region-label', t.settingsAzRegion);
+  setIfExists('setup-ai-title', t.settingsAiTitle);
+  setIfExists('setup-ai-desc', t.settingsAiDesc);
+  setIfExists('setup-anth-key-label', t.settingsAnthKey);
+  setIfExists('setup-footnote', t.settingsFoot);
+  setIfExists('setup-save-btn', t.btnSettingsSave);
+  setIfExists('setup-skip-btn', t.btnSettingsSkip);
+  // 헤더 버튼들
+  const bgmB = document.getElementById('btn-bgm');
+  if (bgmB) bgmB.textContent = t.bgmBtn;
+  const voiceB = document.getElementById('btn-tts');
+  if (voiceB) voiceB.textContent = t.voiceBtn;
+  const setB = document.getElementById('btn-settings');
+  if (setB) setB.textContent = t.settingsBtn;
+  // SETUP 모달의 placeholder
+  const azKeyInput = document.getElementById('az-key');
+  if (azKeyInput) azKeyInput.placeholder = state.lang === 'ko' ? '32자리 키' : '32-character key';
+  const anthKeyInput = document.getElementById('anth-key');
+  if (anthKeyInput) anthKeyInput.placeholder = state.lang === 'ko' ? 'sk-ant-... (선택)' : 'sk-ant-... (optional)';
+  // VOICE 라벨
+  const voiceLabel = document.getElementById('setup-voice-label');
+  if (voiceLabel) voiceLabel.textContent = state.lang === 'ko' ? '보이스' : 'VOICE';
+  // select option들 (data-en, data-ko로 라벨 보존)
+  refreshAltText();
+  // Dot Pad header + popup
+  setIfExists('dotpad-popup-title', t.dotpadPopupTitle);
+  setIfExists('dotpad-popup-hint', t.dotpadPopupHint);
+  const dpBle = document.getElementById('dotpad-ble-btn');
+  if (dpBle) dpBle.textContent = t.dotpadBlePopup;
+  const dpUsb = document.getElementById('dotpad-usb-btn');
+  if (dpUsb) dpUsb.textContent = t.dotpadConnectUsb.replace('🔗 ', '🔗 ').replace('Connect via ', '').replace('로 연결', '');
+  if (dpUsb) dpUsb.textContent = t.dotpadUsbPopup;
+  const dpDis = document.getElementById('dotpad-disconnect-btn');
+  if (dpDis) dpDis.textContent = t.dotpadDisconnect;
+  // Header keymap chips (always-visible Dot Pad key guide)
+  setIfExists('km-label', t.kmLabel);
+  setIfExists('km-f1', t.kmF1);
+  setIfExists('km-f2', t.kmF2);
+  setIfExists('km-f3', t.kmF3);
+  setIfExists('km-f4', t.kmF4);
+  setIfExists('km-panl', t.kmPanL);
+  setIfExists('km-panr', t.kmPanR);
+  setIfExists('km-panc', t.kmPanC);
+  updateDotpadStatus();
+  document.querySelectorAll('#az-region option[data-en], #az-voice option[data-en]').forEach(opt => {
+    const newText = state.lang === 'ko' ? opt.getAttribute('data-ko') : opt.getAttribute('data-en');
+    if (newText) opt.textContent = newText;
+  });
+  // 프록시 모드면 키 UI 숨김 유지 (언어 전환 후에도)
+  if (typeof applyEmbedMode === 'function') applyEmbedMode();
+}
+
+
+const state = {
+  lang: 'en',
+  stage: 'briefing',
+  dotpadConnected: false,
+  dotpadDevice: null,
+  dotpadName: '',
+  dotpadCursor: 0,
+  braillePages: [],
+  brailleIdx: 0,
+  dotpadNotesOpen: false,
+  discovered: new Set(),
+  asked: {},
+  npcAnxiety: {},
+  ended: null,
+  currentNpc: null,
+  npcMessages: {},
+  anthKey: null,
+  // Azure Speech 키 — 사용자가 한 번 SETUP에서 입력하면 localStorage에 영구 저장
+  // (깃헙 공개 저장소라 코드에 직접 박지 않음 — Push Protection 차단)
+  azureKey: null,
+  azureRegion: 'koreacentral',
+  azureVoice: 'en-US-AriaNeural',
+  // DotArcade 호스트 프록시 모드 — apiBase가 설정되면 클라이언트에 키를 두지 않고
+  // DotArcade 백엔드 프록시로 Claude/TTS 호출을 위임한다. (DOTARCADE CONFIG 참조)
+  apiBase: null,
+  proxyMode: false,
+  embed: false,
+  aiMode: false,
+  bgmOn: false,
+  ttsOn: true,
+  aiBusy: false,
+  ttsPlaying: false
+};
+L().npcs.forEach(n => { state.npcAnxiety[n.id] = n.anxietyStart; state.npcMessages[n.id] = []; });
+
+// ============================================================
+// DotArcade 임베드 설정 (호스트 프록시 모드)
+// ============================================================
+// 우선순위: URL ?apiBase= > window.DOTARCADE_CONFIG.apiBase
+// apiBase가 설정되면 "프록시 모드"로 동작한다:
+//   - API 키를 클라이언트(iframe)에 두지 않는다.
+//   - Claude / Azure TTS 호출을 DotArcade 백엔드 프록시 엔드포인트로 위임한다.
+//   - 프록시가 서버 측에서 실제 키를 부착 + origin allowlist + rate limit으로 보호한다.
+// apiBase 미설정 시 기존 BYO-key 동작이 그대로 유지된다 (standalone github.io 배포 호환).
+(function initDotArcadeConfig() {
+  const cfg = (typeof window !== 'undefined' && window.DOTARCADE_CONFIG) || {};
+  let apiBase = cfg.apiBase || null;
+  try {
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('apiBase')) apiBase = qs.get('apiBase');
+    if (qs.get('embed') === '1') state.embed = true;
+  } catch (e) {}
+  if (apiBase) {
+    state.apiBase = String(apiBase).replace(/\/+$/, ''); // 끝 슬래시 제거
+    state.proxyMode = true;
+    state.embed = true;
+    state.aiMode = true; // 프록시가 키를 보유하므로 자유응답 항상 가능
+    console.log('[DotArcade] proxy mode ·', state.apiBase);
+  }
+  // 부모(임베더)가 명시적으로 lang/voice를 줄 수도 있음
+  if (cfg.lang === 'ko' || cfg.lang === 'en') state.lang = cfg.lang;
+  if (cfg.voice) state.azureVoice = cfg.voice;
+  if (state.embed) { try { document.body.classList.add('embed'); } catch (e) {} }
+})();
+
+// ── 부모(TW)와의 표준 postMessage 통신 (TW Embed Spec) ──
+function dvPostToParent(msg) {
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(Object.assign({ source: 'dotarcade' }, msg), '*');
+    }
+  } catch (e) {}
+}
+let _dvLastPostedH = 0;
+function dvPostResize() {
+  const h = Math.ceil(document.documentElement.scrollHeight);
+  if (h && h !== _dvLastPostedH) { _dvLastPostedH = h; dvPostToParent({ type: 'resize', height: h }); }
+}
+function dvRequestExit() { dvPostToParent({ type: 'exit' }); }
+window.dvRequestExit = dvRequestExit;
+
+// liblouis 로드 완료 후 현재 화면 점자 자동 갱신
+window.addEventListener('liblouis-ready', () => {
+  if (state.dotpadConnected && typeof syncDotpadToScreen === 'function') {
+    setTimeout(syncDotpadToScreen, 100);
+  }
+});
+
+// ============================================================
+// BGM (그대로)
+// ============================================================
+let audioCtx = null;
+let bgmNodes = null;
+
+// ============================================================
+// Dot Pad 통합 (Web SDK 3.0.0 + DTMS)
+// ============================================================
+
+
+// 이미지 alt 텍스트 i18n (lang에 따라 동적 갱신)
+const ALT_I18N = {
+  splash: {
+    ko: "안테나가 솟은 CRT 텔레비전 안에 사운드 웨이브가 흐르고 있어요. Detective Voice의 타이틀 이미지.",
+    en: "A CRT television with antennas, a sound waveform flowing on its screen. The Detective Voice title image."
+  },
+  wine_bar: {
+    ko: "강남 와인바 루나의 사건 현장. 와인 보관대 앞 바닥에 사장이 쓰러져 있고 노란 폴리스 라인이 위쪽을 가로지르고 있어요.",
+    en: "The Luna wine bar crime scene in Gangnam. The owner lies on the floor in front of a wine rack, with yellow police tape across the top of the frame."
+  },
+  alley: {
+    ko: "비 내리는 한밤의 골목. 가로등이 노란 빛을 비추고 맞은편엔 24시간 편의점이 있어요.",
+    en: "A midnight alley with rain falling. A street lamp casts amber light, with a 24-hour convenience store across the way."
+  },
+  morgue: {
+    ko: "국과수 부검실. 검안대 위 시신이 흰 시트에 덮여 있고 천장 형광등이 빛을 비춰요.",
+    en: "The National Forensic Service autopsy room. A body covered by a white sheet lies on the examination table, with a ceiling fluorescent light shining down."
+  },
+  ev_broken_bottle: {
+    ko: "깨진 와인병 — 샤또 마고 2015 라벨이 반쯤 떨어져 있고 끝부분이 깨졌어요. 혈흔과 유리 조각이 흩어져 있어요.",
+    en: "A broken wine bottle — the Château Margaux 2015 label is half torn off and the base is shattered. Blood stains and glass fragments are scattered around."
+  },
+  ev_receipt_2342: {
+    ko: "POS 영수증 — 11시 42분 18초에 박준영 카드로 샤또 마고 2015 결제. 시간이 노란색으로 강조되어 있어요.",
+    en: "A POS receipt — at 11:42:18 PM, charged to Park Jun-young's card for one Château Margaux 2015. The time is highlighted in amber."
+  },
+  ev_text_message: {
+    ko: "휴대폰 메시지 — 김유진과의 대화. 마지막 메시지에 '준영이가 눈치챈 것 같아. 우리 정리하자'가 강조되어 있어요.",
+    en: "A phone message — conversation with Kim Yu-jin. The last message reads 'I think Jun-young suspects. We have to end it' and is highlighted."
+  },
+  ev_wine_inventory: {
+    ko: "와인 재고 장부 — 5월 7일 손글씨로 적힌 와인 목록. 샤또 마고 2015가 노란색 강조 라인에 X 표시되어 있어요.",
+    en: "A handwritten wine inventory ledger dated May 7. The Château Margaux 2015 entry is highlighted in amber and marked with a red X."
+  },
+  ev_cctv_outside: {
+    ko: "편의점 CCTV — 자정 15분에 루나 와인바에서 박준영이 나오는 모습이 잡혀 있어요. SUSPECT 빨간 화살표 표시.",
+    en: "Convenience store CCTV — Park Jun-young is captured leaving the Luna wine bar at 12:15 AM. A red SUSPECT arrow points to him."
+  },
+  ev_autopsy: {
+    ko: "부검 보고서 — 사인은 둔기에 의한 후두부 외상, 사망 시각 11시 30분에서 11시 45분 사이. CONFIRMED 빨간 도장.",
+    en: "Autopsy report — cause of death is blunt force trauma to the back of the head, time of death between 11:30 PM and 11:45 PM. A red CONFIRMED stamp is visible."
+  },
+  park: {
+    ko: "박준영, 45세 남성. 검은 정장에 노란 넥타이. 가는 눈, 다물린 입.",
+    en: "Park Jun-young, a 45-year-old man. Black suit with an amber tie. Narrow eyes, closed mouth."
+  },
+  kim: {
+    ko: "김유진, 42세 여성. 긴 검은 머리, 눈물 흔적, 슬픈 표정. 노란 귀걸이와 목걸이.",
+    en: "Kim Yu-jin, a 42-year-old woman. Long black hair, tear tracks, sorrowful expression. Amber earrings and necklace."
+  },
+  lee: {
+    ko: "이민지, 29세 여성. 포니테일에 노란 묶음. 노란 앞치마에 '민지' 명찰. 친근한 미소.",
+    en: "Lee Min-ji, a 29-year-old woman. Ponytail with amber hair tie. Amber apron with a 'Min-ji' nametag. Friendly smile."
+  },
+  choi: {
+    ko: "최동수, 55세 남성. B 로고 야구모자, 콧수염, 환한 미소. 체크 셔츠.",
+    en: "Choi Dong-soo, a 55-year-old man. Baseball cap with a B logo, mustache, broad smile. Plaid shirt."
+  }
+};
+
+// 화면에 그려진 모든 img의 alt를 현재 lang에 맞춰 갱신
+function refreshAltText() {
+  document.querySelectorAll('img[data-alt-key]').forEach(img => {
+    const key = img.getAttribute('data-alt-key');
+    const t = ALT_I18N[key];
+    if (t) img.setAttribute('alt', (t[state.lang] || t.en || ''));
+  });
+}
+
+// 게임 이벤트 → dtms 파일 매핑
+const DTMS_MAP = {
+  // 화면
+  splash: 'dtms/splash.dtms',
+  // 장면
+  scene_crime_scene: 'dtms/wine_bar.dtms',
+  scene_alley: 'dtms/alley.dtms',
+  scene_morgue: 'dtms/morgue.dtms',
+  // 단서
+  ev_broken_bottle: 'dtms/ev_broken_bottle.dtms',
+  ev_receipt_2342: 'dtms/ev_receipt.dtms',
+  ev_text_message: 'dtms/ev_text.dtms',
+  ev_wine_inventory: 'dtms/ev_inventory.dtms',
+  ev_cctv_outside: 'dtms/ev_cctv.dtms',
+  ev_autopsy: 'dtms/ev_autopsy.dtms',
+  // NPC
+  park_junyoung: 'dtms/npc_park.dtms',
+  kim_yujin: 'dtms/npc_kim.dtms',
+  lee_minji: 'dtms/npc_lee.dtms',
+  choi_dongsoo: 'dtms/npc_choi.dtms'
+};
+
+let dotpadReady = false;
+window.addEventListener('dotpad-ready', () => { dotpadReady = true; });
+
+function dotpadAvailable() {
+  return dotpadReady && !!window.DotPad;
+}
+
+// 닷패드 연결 시 키 안내 음성 + 점자 (한 번만)
+let _dotpadGuideAnnounced = false;
+function announceDotpadKeyGuide() {
+  if (_dotpadGuideAnnounced) return;
+  _dotpadGuideAnnounced = true;
+  setTimeout(() => {
+    const guide = T().dotpadKeyGuide;
+    if (!guide) return;
+    if (state.ttsOn) {
+      // 이전 발화 중단 후 키 안내 우선
+      try { stopSpeaking(); } catch(e){}
+      speak(guide);
+    }
+    if (state.dotpadConnected) brailleSetText(guide);
+    console.log('[Dot Pad] key guide announced');
+  }, 600);
+}
+
+async function connectDotpadBle() {
+  if (!dotpadAvailable()) { alert('Dot Pad SDK not loaded'); return; }
+  try {
+    const device = await window.DotPad.scanner.startBleScan();
+    if (!device) return;
+    window.DotPad.sdk.setCallBack(onDotpadMessage, onDotpadKey);
+    const connected = await window.DotPad.sdk.connectBleDevice(device);
+    if (connected) {
+      state.dotpadDevice = connected;
+      state.dotpadConnected = true;
+      state.dotpadName = device.name || 'Dot Pad';
+      updateDotpadStatus();
+      toggleDotpadPopup(false);
+      announceDotpadKeyGuide(); // 연결 직후 키 안내 음성 + 점자
+    }
+  } catch (e) {
+    console.error('BLE connect failed:', e);
+    alert('BLE connection failed: ' + (e.message || e));
+  }
+}
+
+async function connectDotpadUsb() {
+  if (!dotpadAvailable()) { alert('Dot Pad SDK not loaded'); return; }
+  try {
+    const device = await window.DotPad.scanner.startUsbScan();
+    if (!device) return;
+    window.DotPad.sdk.setCallBack(onDotpadMessage, onDotpadKey);
+    const connected = await window.DotPad.sdk.connectUsbDevice(device);
+    if (connected) {
+      state.dotpadDevice = connected;
+      state.dotpadConnected = true;
+      state.dotpadName = 'USB Dot Pad';
+      updateDotpadStatus();
+      toggleDotpadPopup(false);
+      announceDotpadKeyGuide(); // 연결 직후 키 안내 음성 + 점자
+    }
+  } catch (e) {
+    console.error('USB connect failed:', e);
+    alert('USB connection failed: ' + (e.message || e));
+  }
+}
+
+function _clearDotpadFocus() {
+  document.querySelectorAll('.dotpad-focus').forEach(el => el.classList.remove('dotpad-focus'));
+}
+function disconnectDotpad() {
+  _clearDotpadFocus();
+  if (!dotpadAvailable()) return;
+  try { window.DotPad.sdk.disconnect(state.dotpadDevice); } catch(e){}
+  state.dotpadConnected = false;
+  state.dotpadDevice = null;
+  state.dotpadName = '';
+  updateDotpadStatus();
+}
+
+function onDotpadMessage(device, code, msg) {
+  if (!window.DotPad) return;
+  const DC = window.DotPad.DataCodes;
+  if (code === DC.Disconnected) {
+    state.dotpadConnected = false;
+    state.dotpadDevice = null;
+    state.dotpadName = '';
+    updateDotpadStatus();
+  } else if (code === DC.Connected) {
+    state.dotpadConnected = true;
+    state.dotpadDevice = device;
+    state.dotpadName = device.connectDevice?.name || state.dotpadName || 'Dot Pad';
+    updateDotpadStatus();
+    // 연결 시점에 화면 상태에 따라 dtms·점자 즉시 출력
+    setTimeout(syncDotpadToScreen, 200);
+  } else if (code === DC.DeviceName) {
+    state.dotpadName = msg || state.dotpadName;
+    updateDotpadStatus();
+  }
+}
+
+function onDotpadKey(device, keyCode, msg) {
+  if (!window.DotPad) return;
+  const KC = window.DotPad.KeyCodes;
+  switch (keyCode) {
+    case KC.KeyFunction1: dotpadMove(-1); break;          // 이전 항목
+    case KC.KeyFunction2: dotpadMove(1); break;           // 다음 항목
+    case KC.KeyFunction3: dotpadSelect(); break;          // 선택
+    case KC.KeyFunction4: dotpadToggleNotes(); break;     // 사건 노트 토글
+    case KC.PanningLeft:  dotpadBraillePage(-1); break;   // 점자 이전 페이지
+    case KC.PanningRight: dotpadBraillePage(1); break;    // 점자 다음 페이지
+    case KC.PanningAll:   dotpadReplay(); break;          // 음성·점자 처음부터 다시
+    default: break;
+  }
+}
+
+// 현재 화면에서 cursor가 이동 가능한 항목 목록
+// 보이는 + 비활성 아닌 항목만 필터
+function _visibleFilter(els) {
+  return els.filter(el => {
+    if (!el) return false;
+    if (el.disabled) return false;
+    if (el.hidden) return false;
+    // offsetParent === null이면 hidden 또는 display:none
+    if (el.offsetParent === null && el.tagName !== 'OPTION') return false;
+    // 부모가 hidden 모달이면 제외
+    const overlay = el.closest('.overlay');
+    if (overlay && overlay.style.display === 'none') return false;
+    const splashEl = el.closest('.splash');
+    if (splashEl && splashEl.classList.contains('hidden')) return false;
+    return true;
+  });
+}
+function _scope(selectors) {
+  // .app-shell 안의 항목 우선 (게임 화면), 없으면 전역
+  const shell = document.getElementById('shell');
+  if (shell) {
+    const found = Array.from(shell.querySelectorAll(selectors));
+    if (found.length) return _visibleFilter(found);
+  }
+  return _visibleFilter(Array.from(document.querySelectorAll(selectors)));
+}
+function dotpadCurrentItems() {
+  // splash가 떠 있으면 — 시작 버튼이 우선
+  const splashEl = document.getElementById('splash');
+  if (splashEl && !splashEl.classList.contains('hidden')) {
+    return _visibleFilter([splashEl.querySelector('.start')]);
+  }
+  if (state.ended) {
+    return _scope('.primary-btn');
+  }
+  if (state.dotpadNotesOpen || document.querySelector('.notebook')) {
+    return _scope('.aria-bubble .speak-btn, .clue-btn, .primary-btn');
+  }
+  if (state.stage === 'briefing') {
+    return _scope('.aria-bubble .speak-btn, .primary-btn');
+  }
+  if (state.stage === 'investigation') {
+    return _scope('.aria-bubble .speak-btn, .scene-block .card, .primary-btn, .ghost-btn');
+  }
+  if (state.stage === 'interrogation' && !state.currentNpc) {
+    return _scope('.aria-bubble .speak-btn, .npc-card, .primary-btn, .ghost-btn');
+  }
+  if (state.stage === 'interrogation' && state.currentNpc) {
+    return _scope('.aria-bubble .speak-btn, .q-btn:not([disabled]), .primary-btn, .ghost-btn');
+  }
+  if (state.stage === 'deduction') {
+    return _scope('.aria-bubble .speak-btn, .ded-opt-btn, .primary-btn, .ghost-btn');
+  }
+  return [];
+}
+
+// 항목의 점자/음성용 라벨 추출
+function dotpadItemText(item) {
+  if (!item) return '';
+  // 카드형 (단서·NPC)
+  const title = item.querySelector('.card-title, .info .name');
+  const sub = item.querySelector('.card-sub, .info .role');
+  if (title) {
+    const t = title.textContent.trim();
+    const s = sub ? sub.textContent.trim() : '';
+    return s ? (t + ' — ' + s) : t;
+  }
+  // 질문 버튼
+  if (item.classList.contains('q-btn')) {
+    const lock = item.querySelector('.lock-note');
+    let txt = item.textContent;
+    if (lock) txt = txt.replace(lock.textContent, '');
+    return txt.replace(/^[✓\s]+/, '').trim();
+  }
+  // 일반 버튼
+  return item.textContent.trim().replace(/[▶▸◀✓]/g, '').trim();
+}
+
+function dotpadHighlight() {
+  document.querySelectorAll('.dotpad-focus').forEach(el => el.classList.remove('dotpad-focus'));
+  const items = dotpadCurrentItems();
+  if (!items.length) return;
+  if (state.dotpadCursor >= items.length) state.dotpadCursor = 0;
+  if (state.dotpadCursor < 0) state.dotpadCursor = items.length - 1;
+  const el = items[state.dotpadCursor];
+  if (el) {
+    el.classList.add('dotpad-focus');
+    try { el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch(e){}
+  }
+}
+
+function dotpadMove(dir) {
+  const items = dotpadCurrentItems();
+  if (!items.length) return;
+  state.dotpadCursor = (state.dotpadCursor + dir + items.length) % items.length;
+  dotpadHighlight();
+  const text = dotpadItemText(items[state.dotpadCursor]);
+  if (!text) return;
+  // 점자 갱신
+  brailleSetText(text);
+  // 음성 출력 — 이전 발화는 중단하고 현재 항목 즉시 발화 (스크린리더 스타일)
+  if (state.ttsOn) {
+    try { stopSpeaking(); } catch(e){}
+    speak(text);
+  }
+}
+
+function dotpadSelect() {
+  const items = dotpadCurrentItems();
+  if (!items.length) return;
+  const el = items[state.dotpadCursor];
+  if (el) el.click();
+}
+
+function dotpadReplay() {
+  // 현재 화면의 첫 Aria 발화 + 점자 처음으로
+  const bubble = document.querySelector('.aria-bubble .text');
+  if (bubble) {
+    const text = (bubble.innerText || bubble.textContent || '').trim();
+    if (text) {
+      if (typeof speak === 'function') speak(text);
+      brailleSetText(text);
+    }
+  }
+}
+
+function dotpadBraillePage(dir) {
+  if (!state.braillePages.length) {
+    console.log('[Braille] no pages — page navigation ignored');
+    flashBrailleHint('No braille pages available');
+    return;
+  }
+  if (state.braillePages.length === 1) {
+    console.log('[Braille] only 1 page — page navigation noop');
+    flashBrailleHint('Only 1 page · ' + state.braillePages.length + '/' + state.braillePages.length);
+    return;
+  }
+  state.brailleIdx = (state.brailleIdx + dir + state.braillePages.length) % state.braillePages.length;
+  showBraillePage();
+  console.log('[Braille] page', (state.brailleIdx+1), '/', state.braillePages.length, '→', state.braillePages[state.brailleIdx]);
+  flashBrailleHint('Page ' + (state.brailleIdx+1) + ' / ' + state.braillePages.length);
+}
+
+// 점자 페이지 카운터 시각 피드백 (화면에 잠시 표시)
+function flashBrailleHint(msg) {
+  let el = document.getElementById('braille-hint');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'braille-hint';
+    el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--bg);padding:8px 16px;font-size:13px;font-weight:700;z-index:9999;border:2px solid var(--bg);box-shadow:0 4px 12px rgba(0,0,0,0.5);transition:opacity 0.3s;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._hideT);
+  el._hideT = setTimeout(() => { el.style.opacity = '0'; }, 1500);
+}
+
+function dotpadToggleNotes() {
+  if (document.querySelector('.notebook')) {
+    // 이미 노트 화면 → 닫기 (render로 복귀)
+    if (typeof render === 'function') render();
+    state.dotpadNotesOpen = false;
+  } else {
+    if (typeof showNotes === 'function') showNotes();
+    state.dotpadNotesOpen = true;
+  }
+}
+
+// 점자 영역 (20셀 = 40 hex chars)
+function showBraillePage() {
+  if (!state.braillePages.length || !window.DotPad || !state.dotpadConnected) return;
+  try {
+    window.DotPad.sdk.displayTextData(state.braillePages[state.brailleIdx]);
+  } catch(e) {}
+}
+
+// 워드랩 — hex 문자열을 셀 단위 페이지로 자르되, 공백(00) 경계 우선
+function chunkBrailleHexByWords(hex, cellsPerPage) {
+  const cellChars = 2; // 1 cell = 2 hex chars (8-bit)
+  const pageChars = cellsPerPage * cellChars; // 40 chars per page
+  const pages = [];
+  let pos = 0;
+  while (pos < hex.length) {
+    let end = Math.min(pos + pageChars, hex.length);
+    // 페이지가 끝나는 위치가 단어 중간이면 (00 셀 전까지) 뒤로 줄임
+    if (end < hex.length) {
+      // 페이지 안에서 마지막 공백(00) 위치 찾기
+      let lastSpace = -1;
+      for (let i = end - cellChars; i >= pos + cellChars; i -= cellChars) {
+        if (hex.substring(i, i + cellChars) === '00') {
+          lastSpace = i + cellChars; // 공백 직후를 다음 페이지로
+          break;
+        }
+      }
+      if (lastSpace > pos) {
+        end = lastSpace;
+      }
+      // 공백 없으면 그냥 잘라냄 (긴 단어 hyphenless wrap)
+    }
+    let chunk = hex.substring(pos, end);
+    // 선행 공백 제거 (이전 페이지 끝 단어 잘림 흔적)
+    while (chunk.startsWith('00') && chunk.length > 0) chunk = chunk.substring(2);
+    if (chunk.length > 0) {
+      pages.push(chunk.padEnd(pageChars, '0'));
+    }
+    pos = end;
+  }
+  if (pages.length === 0) pages.push('0'.repeat(pageChars));
+  return pages;
+}
+
+function brailleSetText(text) {
+  if (!text || !state.dotpadConnected) { state.braillePages = []; return; }
+  const cleanText = String(text).replace(/\[(.*?)\]/g, '').trim();
+  console.log('[Braille] input · lang:', state.lang, '· chars:', cleanText.length, '· preview:', cleanText.substring(0,40));
+  const hex = textToBrailleHex(cleanText, state.lang);
+  state.braillePages = [];
+  if (!hex || hex.length === 0) {
+    console.warn('[Braille] EMPTY hex · lang:', state.lang, '· text:', cleanText.substring(0,40));
+    // 한국어가 비었을 때 — 영문 transliteration 시도 (마지막 안전망)
+    if (state.lang === 'ko') {
+      const fallback = textToBrailleHex(cleanText, 'en');
+      if (fallback) {
+        state.braillePages = chunkBrailleHexByWords(fallback, 20);
+        state.brailleIdx = 0;
+        showBraillePage();
+        console.log('[Braille] ko empty → en fallback applied · pages:', state.braillePages.length);
+        flashBrailleHint('ko empty · en fallback');
+      } else {
+        flashBrailleHint('Braille empty (ko)');
+      }
+    }
+    return;
+  }
+  // 워드랩 — 공백(00 hex pair) 경계에서 잘라 단어 중간 깨지지 않게
+  state.braillePages = chunkBrailleHexByWords(hex, 20); // 20 cells per page
+  state.brailleIdx = 0;
+  showBraillePage();
+  console.log('[Braille] new text · pages:', state.braillePages.length, '· text:', cleanText.substring(0,60) + (cleanText.length > 60 ? '...' : ''));
+  if (state.braillePages.length > 1) {
+    flashBrailleHint('Page 1 / ' + state.braillePages.length + ' · ← → to scroll');
+  }
+}
+
+// 영어 grade-1 점자 매핑 (dot pattern → 8-bit hex)
+const BRAILLE_EN_MAP = {
+  'a':'1','b':'12','c':'14','d':'145','e':'15','f':'124','g':'1245',
+  'h':'125','i':'24','j':'245','k':'13','l':'123','m':'134','n':'1345',
+  'o':'135','p':'1234','q':'12345','r':'1235','s':'234','t':'2345',
+  'u':'136','v':'1236','w':'2456','x':'1346','y':'13456','z':'1356',
+  ',':'2',';':'23',':':'25','.':'256','?':'236','!':'235',
+  "'":'3','-':'36','(':'2356',')':'2356','/':'34','"':'2356',
+  ' ':'0','\n':'0','\t':'0'
+};
+const BRAILLE_DIGIT_MAP = {
+  '1':'1','2':'12','3':'14','4':'145','5':'15','6':'124','7':'1245','8':'125','9':'24','0':'245'
+};
+function _dotsToHex(dots) {
+  let bits = 0;
+  for (const d of dots) {
+    if (d === '0' || !d) continue;
+    const n = parseInt(d, 10);
+    if (n >= 1 && n <= 8) bits |= (1 << (n - 1));
+  }
+  return bits.toString(16).padStart(2, '0').toUpperCase();
+}
+
+// 점자 유니코드 문자열 → 8-bit hex
+function brailleUnicodeToHex(s) {
+  let hex = '';
+  let skipped = 0;
+  for (const c of s) {
+    const code = c.codePointAt(0);
+    if (code >= 0x2800 && code <= 0x28FF) {
+      const dots = code - 0x2800; // 0~255, 각 bit가 dot 1~8
+      hex += dots.toString(16).padStart(2, '0').toUpperCase();
+    } else if (c === ' ' || c === '\u00a0') {
+      hex += '00';
+    } else if (c === '\n' || c === '\r' || c === '\t') {
+      hex += '00';
+    } else {
+      // 그 외 문자 — liblouis가 변환 못한 텍스트. 카운트만.
+      skipped++;
+    }
+  }
+  if (skipped > 0 && skipped > s.length * 0.5) {
+    console.warn('[braille hex] too many non-braille chars skipped:', skipped, '/', s.length, '· first 16:', s.substring(0,16));
+  }
+  return hex;
+}
+
+// liblouis로 텍스트 → 점자 hex (grade-2)
+function _liblouisToHex(text, lang) {
+  if (!window.LiblouisReady || !window.liblouis) {
+    console.log('[liblouis] not ready — LiblouisReady:', window.LiblouisReady);
+    return null;
+  }
+  // 언어별 테이블 우선순위 — 한국어는 g2/g1/2006-g1 순으로 fallback
+  const tables = (lang === 'ko')
+    ? ['ko-g2.ctb', 'ko-g1.ctb', 'ko-2006-g1.ctb']
+    : ['en-us-g2.ctb', 'en-us-g1.ctb'];
+
+  // 한국어는 NFC와 NFD 둘 다 시도 (자모 분해 후 더 잘 처리되는 경우 있음)
+  const variants = (lang === 'ko')
+    ? [text, text.normalize('NFD'), text.normalize('NFC')]
+    : [text];
+
+  for (const table of tables) {
+    for (const variant of variants) {
+      try {
+        const brl = window.liblouis.translateString(table, variant);
+        if (brl) {
+          const hex = brailleUnicodeToHex(brl);
+          if (hex && hex.length > 0) {
+            console.log('[liblouis] OK · table:', table, '· input chars:', variant.length, '· brl chars:', brl.length, '· hex chars:', hex.length, '· preview:', brl.substring(0,16));
+            return hex;
+          } else {
+            console.log('[liblouis] empty hex · table:', table, '· brl:', JSON.stringify(brl.substring(0,16)));
+          }
+        }
+      } catch (e) {
+        console.warn('[liblouis] table failed:', table, e.message || e);
+      }
+    }
+  }
+  console.warn('[liblouis] all tables failed for lang:', lang, '· input:', text.substring(0,40));
+  return null;
+}
+
+function textToBrailleHex(text, lang) {
+  if (!text) return '';
+  // 1순위 — liblouis grade-2 (영어·한국어 정식 점자)
+  const lou = _liblouisToHex(text, lang);
+  if (lou !== null) return lou;
+  // 2순위 — 한국어는 fallback 없음 (점자 비움)
+  if (lang === 'ko') return '';
+  // 영어 grade-1
+  let hex = '';
+  let inNumber = false;
+  const lower = text.toLowerCase();
+  for (let i = 0; i < lower.length; i++) {
+    const ch = lower[i];
+    // 숫자
+    if (/[0-9]/.test(ch)) {
+      if (!inNumber) {
+        hex += _dotsToHex('3456'); // 숫자 prefix #
+        inNumber = true;
+      }
+      hex += _dotsToHex(BRAILLE_DIGIT_MAP[ch]);
+      continue;
+    } else if (inNumber && ch !== ' ') {
+      // 공백 외 글자가 오면 숫자 모드 종료
+      inNumber = false;
+    } else if (ch === ' ') {
+      // 공백은 숫자 모드 끊지 않음
+    }
+    // 대문자 prefix (lower이라 무시)
+    const dot = BRAILLE_EN_MAP[ch];
+    if (dot !== undefined) {
+      hex += _dotsToHex(dot);
+    } else {
+      // 알 수 없는 문자 — 공백 처리
+      hex += '00';
+    }
+  }
+  return hex;
+}
+
+
+
+function updateDotpadStatus() {
+  const t = T();
+  // 헤더 버튼
+  const btn = document.getElementById('btn-dotpad');
+  const label = document.getElementById('btn-dotpad-label');
+  if (btn) btn.classList.toggle('connected', state.dotpadConnected);
+  if (label) label.textContent = state.dotpadConnected
+    ? (state.dotpadName ? state.dotpadName : t.dotpadConnected)
+    : t.dotpadHeaderLabel;
+  // popup 상태
+  const status = document.getElementById('dotpad-popup-status');
+  if (status) {
+    status.innerHTML = state.dotpadConnected
+      ? `<span style="color:var(--good)">●</span> ${t.dotpadConnected}<br/><strong>${state.dotpadName || 'Dot Pad'}</strong>`
+      : `<span style="color:var(--fg-faint)">○</span> ${t.dotpadDisconnected}`;
+  }
+  // popup 버튼 표시·활성
+  const bleBtn = document.getElementById('dotpad-ble-btn');
+  const usbBtn = document.getElementById('dotpad-usb-btn');
+  const disBtn = document.getElementById('dotpad-disconnect-btn');
+  if (bleBtn) bleBtn.hidden = state.dotpadConnected;
+  if (usbBtn) usbBtn.hidden = state.dotpadConnected;
+  if (disBtn) disBtn.hidden = !state.dotpadConnected;
+}
+
+function toggleDotpadPopup(force) {
+  const pop = document.getElementById('dotpad-popup');
+  if (!pop) return;
+  const open = force !== undefined ? force : pop.hasAttribute('hidden');
+  if (open) pop.removeAttribute('hidden'); else pop.setAttribute('hidden', '');
+}
+
+// DTMS 파일 로드 + 첫 페이지 표시
+const _dtmsCache = {};
+async function showOnDotpad(key) {
+  if (!state.dotpadConnected || !dotpadAvailable()) return;
+  const path = DTMS_MAP[key];
+  if (!path) return;
+  try {
+    let dtms = _dtmsCache[path];
+    if (!dtms) {
+      const res = await fetch(path);
+      if (!res.ok) {
+        console.warn('DTMS not found:', path);
+        return;
+      }
+      dtms = await res.json();
+      _dtmsCache[path] = dtms;
+    }
+    if (!dtms.items || !dtms.items.length) return;
+    const item = dtms.items[0];
+    if (item.graphic && item.graphic.data) {
+      window.DotPad.sdk.displayGraphicData(item.graphic.data);
+    }
+    // 점자 텍스트(있는 경우)
+    if (item.braille && item.braille.data) {
+      window.DotPad.sdk.displayTextData(item.braille.data);
+    } else if (item.text && item.text.data) {
+      window.DotPad.sdk.displayTextData(item.text.data);
+    }
+  } catch (e) {
+    console.warn('Dot Pad display failed:', e);
+  }
+}
+
+function clearDotpad() {
+  if (!state.dotpadConnected || !dotpadAvailable()) return;
+  try { window.DotPad.sdk.displayAllDown(); } catch(e){}
+}
+
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function startBGM() {
+  if (bgmNodes) return;
+  ensureAudio();
+  const bufferSize = audioCtx.sampleRate * 2;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let lastOut = 0;
+  for (let i = 0; i < bufferSize; i++) {
+    const white = Math.random() * 2 - 1;
+    data[i] = (lastOut + (0.02 * white)) / 1.02;
+    lastOut = data[i];
+    data[i] *= 3.5;
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer; noise.loop = true;
+  const noiseFilter = audioCtx.createBiquadFilter();
+  noiseFilter.type = 'lowpass'; noiseFilter.frequency.value = 600;
+  const noiseGain = audioCtx.createGain(); noiseGain.gain.value = 0.035;
+  noise.connect(noiseFilter).connect(noiseGain).connect(audioCtx.destination);
+  noise.start();
+  const drone = audioCtx.createOscillator();
+  drone.type = 'sine'; drone.frequency.value = 55;
+  const droneGain = audioCtx.createGain();
+  droneGain.gain.value = 0.025;
+  drone.connect(droneGain).connect(audioCtx.destination);
+  drone.start();
+  const scale = [220, 277.18, 329.63, 349.23, 415.30];
+  function playNote() {
+    if (!bgmNodes) return;
+    const freq = scale[Math.floor(Math.random() * scale.length)];
+    const osc = audioCtx.createOscillator();
+    osc.type = 'triangle'; osc.frequency.value = freq;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0, audioCtx.currentTime);
+    g.gain.linearRampToValueAtTime(0.018, audioCtx.currentTime + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.8);
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 2);
+    setTimeout(playNote, 4500 + Math.random() * 6000);
+  }
+  setTimeout(playNote, 2500);
+  bgmNodes = { noise, drone };
+}
+function stopBGM() {
+  if (bgmNodes) {
+    try { bgmNodes.noise.stop(); bgmNodes.drone.stop(); } catch(e) {}
+    bgmNodes = null;
+  }
+}
+
+// ============================================================
+// TTS — Azure 우선, Web Speech 폴백
+// ============================================================
+let currentAudio = null;
+let preferredVoiceKo = null;
+let preferredVoiceEn = null;
+function loadVoices() {
+  if (!window.speechSynthesis) return;
+  const voices = speechSynthesis.getVoices();
+  // 한국어 voice — Yuna, Seoyeon 우선 (macOS premium)
+  preferredVoiceKo =
+    voices.find(v => /yuna|seoyeon/i.test(v.name) && v.lang.startsWith('ko')) ||
+    voices.find(v => v.lang.startsWith('ko-KR') && /female|f$/i.test(v.name)) ||
+    voices.find(v => v.lang.startsWith('ko-KR')) ||
+    voices.find(v => v.lang.startsWith('ko'));
+  // 영어 voice — 품질 좋은 것 우선 선택. macOS legacy (Albert, Bahh, Bells, Cellos, Fred, Junior, Kathy, Whisper 등)
+  // 와 Microsoft 저품질 voice 회피. Google/Premium/Enhanced 표시된 것 또는 표준 이름 우선.
+  const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+  const isLowQuality = (name) => /albert|bahh|bells|boing|bubbles|cellos|deranged|good news|hysterical|junior|pipe organ|trinoids|whisper|zarvox|bad news|kathy/i.test(name);
+  preferredVoiceEn =
+    // 1순위: Google US English (Chrome 내장, 고품질)
+    englishVoices.find(v => /Google US English/i.test(v.name)) ||
+    // 2순위: macOS premium "Samantha", "Alex", "Ava", "Karen"
+    englishVoices.find(v => /^(Samantha|Ava|Alex|Karen|Allison|Susan|Tessa)$/i.test(v.name) && v.lang === 'en-US') ||
+    englishVoices.find(v => /^(Samantha|Ava|Alex|Karen|Allison|Susan|Tessa)/i.test(v.name)) ||
+    // 3순위: Microsoft Aria/Jenny/Guy Neural (Edge/Windows)
+    englishVoices.find(v => /Aria|Jenny|Guy|Davis|Sara|Emma/i.test(v.name) && /Neural|Online/i.test(v.name)) ||
+    // 4순위: en-US default & 저품질 회피
+    englishVoices.find(v => v.lang === 'en-US' && v.default && !isLowQuality(v.name)) ||
+    englishVoices.find(v => v.lang === 'en-US' && !isLowQuality(v.name)) ||
+    englishVoices.find(v => !isLowQuality(v.name)) ||
+    englishVoices[0];
+  console.log('[voices] loaded', { en: preferredVoiceEn && preferredVoiceEn.name, ko: preferredVoiceKo && preferredVoiceKo.name, total: voices.length });
+}
+if (window.speechSynthesis) {
+  speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();
+}
+
+// XML 이스케이프
+function escapeSsml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+// 디렉션 토큰 → SSML break 변환 + 자연스러운 호흡
+function textToSsml(text, voice) {
+  // voice prefix 기반 xml:lang 결정 — 먼저 계산해야 시간 표기 처리에서 참조 가능
+  // (v11.2: 이전엔 xmlLang을 선언 전에 참조해서 TDZ ReferenceError 발생 → Azure path 항상 실패)
+  const voiceName = voice || state.azureVoice || '';
+  let xmlLang = 'en-US';
+  if (voiceName.startsWith('ko-')) xmlLang = 'ko-KR';
+  else if (voiceName.startsWith('en-GB-')) xmlLang = 'en-GB';
+  else if (voiceName.startsWith('en-')) xmlLang = 'en-US';
+
+  // [침묵] [한숨] 같은 토큰을 살짝 pause + 톤 변화로
+  let processed = text
+    .replace(/\[침묵\]|\[silence\]/gi, '<break time="600ms"/>')
+    .replace(/\[한숨\]|\[sighs?\]/gi, '<break time="400ms"/>')
+    .replace(/\[떨림\]|\[trembling\]/gi, '<break time="200ms"/>')
+    .replace(/\[작게\]|\[whispers?\]/gi, '<prosody volume="-30%">')
+    .replace(/\[웃음\]|\[chuckles?\]|\[laughs?\]/gi, '<break time="300ms"/>')
+    .replace(/\[(.*?)\]/g, ''); // 그 외 토큰 제거
+  // [작게] 닫지 않은 prosody 닫기
+  const opens = (processed.match(/<prosody/g) || []).length;
+  const closes = (processed.match(/<\/prosody>/g) || []).length;
+  for (let i = 0; i < opens - closes; i++) processed += '</prosody>';
+  // 마침표/물음표/느낌표 뒤에 짧은 호흡
+  processed = processed.replace(/([.?!])\s/g, '$1 <break time="200ms"/> ');
+  // 시간 표기 (HH:MM 또는 HH:MM AM/PM) — 영어 lang일 때 say-as로 명확히
+  if (xmlLang.startsWith('en-')) {
+    processed = processed.replace(/\b(\d{1,2}):(\d{2})(\s*(?:AM|PM|am|pm))?\b/g,
+      (m, h, mm, ap) => `<say-as interpret-as="time" format="hms12">${h}:${mm}${ap||''}</say-as>`);
+  }
+  // SSML에서 voice name이 비어 있으면 voice element 없이 fallback (안 그러면 Azure 400)
+  if (!voiceName) {
+    return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${xmlLang}">
+      <prosody rate="-3%" pitch="0%">${processed}</prosody>
+    </speak>`;
+  }
+  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${xmlLang}">
+    <voice name="${voiceName}">
+      <prosody rate="-3%" pitch="0%">${processed}</prosody>
+    </voice>
+  </speak>`;
+}
+
+// 같은 텍스트가 이미 발화 중일 때 중복 호출 무시 — 끊김 방지
+let _lastSpokenText = '';
+let _lastSpokenAt = 0;
+
+async function speak(text, opts = {}) {
+  if (!state.ttsOn) { console.warn('[speak] aborted: ttsOn=false'); return; }
+  const cleanedPreview = (text || '').replace(/\[(.*?)\]/g, '').trim();
+  if (!cleanedPreview) { console.warn('[speak] aborted: empty text'); return; }
+  // 직전 발화와 같은 텍스트이고 1.5초 이내면 무시 (race condition 방어)
+  const now = Date.now();
+  if (cleanedPreview === _lastSpokenText && (now - _lastSpokenAt) < 1500 && state.ttsPlaying) {
+    console.log('[speak] DEDUPE — same text within 1.5s, ignoring');
+    return;
+  }
+  _lastSpokenText = cleanedPreview;
+  _lastSpokenAt = now;
+
+  console.log('[speak] called', { ttsOn: state.ttsOn, hasAzure: !!state.azureKey, textLen: cleanedPreview.length, sample: cleanedPreview.slice(0, 60) });
+  // 호출자 추적 — call stack 일부 출력
+  try { throw new Error('trace'); } catch(e) {
+    const lines = (e.stack || '').split('\n').slice(2, 6).map(s => s.trim()).join(' ← ');
+    console.log('[speak] caller:', lines);
+  }
+  stopSpeaking();
+  const cleaned = cleanedPreview;
+  state.ttsPlaying = true;
+  updateAudioIndicator();
+
+  // 1순위: Azure (프록시 모드면 DotArcade 프록시 경유, 아니면 BYO-key 직접 호출)
+  if (state.proxyMode || state.azureKey) {
+    try {
+      const voice = opts.voice || state.azureVoice;
+      const ssml = textToSsml(text, voice);
+      let res;
+      if (state.proxyMode) {
+        // 프록시: 키 없이 SSML + voice를 보내면 서버가 Azure 키/region을 부착
+        res = await fetch(`${state.apiBase}/detective-voice/tts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ssml, voice })
+        });
+      } else {
+        res = await fetch(`https://${state.azureRegion}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+          method: 'POST',
+          headers: {
+            'Ocp-Apim-Subscription-Key': state.azureKey,
+            'Content-Type': 'application/ssml+xml',
+            'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3',
+            'User-Agent': 'detective-voice-demo'
+          },
+          body: ssml
+        });
+      }
+      if (!res.ok) throw new Error(await res.text());
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      currentAudio = audio;
+      audio.onended = () => {
+        state.ttsPlaying = false;
+        updateAudioIndicator();
+        if (opts.onend) opts.onend();
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = () => {
+        state.ttsPlaying = false;
+        updateAudioIndicator();
+      };
+      await audio.play();
+      return;
+    } catch (e) {
+      console.warn('Azure TTS failed, fallback:', e);
+    }
+  }
+
+  // 폴백: Web Speech API
+  if (!window.speechSynthesis) {
+    console.warn('[speak] speechSynthesis unavailable');
+    state.ttsPlaying = false; updateAudioIndicator(); return;
+  }
+  // Chrome 알려진 버그: cancel() 직후 speak()하면 발화가 dropped → 0ms 지연으로 task 분리
+  // 또 paused 상태면 speak() 무시 → 강제 resume
+  try {
+    if (speechSynthesis.paused) speechSynthesis.resume();
+  } catch(e){}
+  const utter = new SpeechSynthesisUtterance(cleaned);
+  // utter.lang은 텍스트 언어 기준: state.lang === 'ko' 우선, 아니면 azureVoice prefix
+  const voicePrefix = (state.azureVoice || '').split('-')[0];
+  const isKo = (state.lang === 'ko' || voicePrefix === 'ko');
+  utter.lang = isKo ? 'ko-KR' : 'en-US';
+  // 영어는 pitch/rate 변동 최소화 — macOS/Chrome 영어 voice가 pitch shift 시 robotic해짐
+  // 한국어는 자연스러운 narrator 톤 유지
+  if (isKo) {
+    utter.rate = opts.rate || 0.95;
+    utter.pitch = opts.npc ? 0.95 : 1.05;
+  } else {
+    utter.rate = opts.rate || 1.0;   // 영어는 표준 속도
+    utter.pitch = opts.npc ? 0.95 : 1.0;  // 영어는 narrator도 표준 pitch (NPC만 약간 낮춤)
+  }
+  // 언어별 최적 voice 명시적 선택 — 브라우저 default가 저품질 legacy voice일 수 있음
+  if (isKo && preferredVoiceKo) {
+    utter.voice = preferredVoiceKo;
+  } else if (!isKo && preferredVoiceEn) {
+    utter.voice = preferredVoiceEn;
+  }
+  console.log('[speak] WebSpeech utter', { lang: utter.lang, voice: utter.voice && utter.voice.name, rate: utter.rate, pitch: utter.pitch });
+  utter.onstart = () => console.log('[speak] WebSpeech started');
+  utter.onend = () => {
+    console.log('[speak] WebSpeech ended');
+    state.ttsPlaying = false;
+    updateAudioIndicator();
+    if (opts.onend) opts.onend();
+  };
+  utter.onerror = (ev) => {
+    console.warn('[speak] SpeechSynthesis error:', ev.error || ev);
+    state.ttsPlaying = false;
+    updateAudioIndicator();
+  };
+  // cancel과 speak를 같은 tick에 쌓으면 Chrome이 둘 다 무시 — 0ms task로 분리
+  setTimeout(() => {
+    try {
+      console.log('[speak] enqueueing utter');
+      speechSynthesis.speak(utter);
+      // Chrome 15s timeout 버그 우회 — 발화 도중 주기적으로 pause/resume
+      if (window._ttsKeepAlive) clearInterval(window._ttsKeepAlive);
+      window._ttsKeepAlive = setInterval(() => {
+        if (!speechSynthesis.speaking) { clearInterval(window._ttsKeepAlive); return; }
+        try { speechSynthesis.pause(); speechSynthesis.resume(); } catch(e){}
+      }, 10000);
+    } catch(e) {
+      console.warn('[speak] enqueue failed:', e);
+      state.ttsPlaying = false;
+      updateAudioIndicator();
+    }
+  }, 0);
+}
+
+function stopSpeaking() {
+  if (currentAudio) { try { currentAudio.pause(); currentAudio = null; } catch(e){} }
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  state.ttsPlaying = false;
+  updateAudioIndicator();
+}
+
+function updateAudioIndicator() {
+  const el = document.getElementById('audio-indicator');
+  if (!el) return;
+  el.innerHTML = state.ttsPlaying
+    ? `<span class="speaking-bars"><span></span><span></span><span></span><span></span><span></span></span>`
+    : '';
+}
+
+// ============================================================
+// AI — Anthropic
+// ============================================================
+async function callClaude(systemPrompt, messages, model = 'claude-haiku-4-5') {
+  const payload = { model, max_tokens: 350, system: systemPrompt, messages };
+
+  // 프록시 모드: DotArcade 백엔드가 키를 보유. 클라이언트는 키 없이 프록시로 위임.
+  if (state.proxyMode) {
+    const res = await fetch(`${state.apiBase}/detective-voice/claude`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Claude proxy error: ' + (await res.text()));
+    const data = await res.json();
+    // 프록시는 { text } 또는 Anthropic 원본 { content:[{text}] } 둘 다 허용
+    return data.text != null ? data.text : data.content[0].text;
+  }
+
+  // BYO-key 모드 (standalone): 브라우저에서 Anthropic 직접 호출
+  if (!state.anthKey) throw new Error('No Anthropic key');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': state.anthKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Claude error: ' + (await res.text()));
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+function buildNpcSystemPrompt(npc) {
+  const evidenceList = Array.from(state.discovered)
+    .map(id => `- ${L().evidenceMap[id]}`).join('\n') ||
+    (state.lang === 'ko' ? '(아직 발견된 단서 없음)' : '(No clues discovered yet)');
+  if (state.lang === 'ko') {
+    return `당신은 음성 추리 게임 'Detective Voice'의 등장 인물 ${npc.name}이다.
+사용자(플레이어)는 사립탐정 'Detective K'다. 당신은 이 사람의 심문에 응하고 있다.
+
+${npc.systemPromptExtra}
+
+## 플레이어가 이미 발견한 단서들
+${evidenceList}
+
+## 응답 형식
+- 한국어로, 1~3문장 이내, 100자 이내.
+- 감정 디렉션 토큰을 자연스럽게 섞어라: [침묵] [떨림] [작게] [한숨] [웃음].
+- 응답 마지막에 반드시: <<META:anxiety=숫자(0~100)>>
+- 위에 명시된 진실/거짓말 외 새로운 사실 만들기 절대 금지.`;
+  }
+  return `You are ${npc.name}, a character in the voice-based mystery game 'Detective Voice'.
+The user (player) is private detective 'Detective K'. You are being interrogated by them.
+
+${npc.systemPromptExtra}
+
+## Clues the player has already found
+${evidenceList}
+
+## Response format
+- English. 1~3 sentences, max 30 words.
+- Naturally weave in emotional direction tokens: [silence] [trembling] [whispers] [sighs] [chuckles].
+- Always end response with: <<META:anxiety=NUMBER(0~100)>>
+- Absolutely no inventing facts outside the truth/lies listed above.`;
+}
+
+// ============================================================
+// 렌더링 헬퍼
+// ============================================================
+const shell = () => document.getElementById('shell');
+
+function getProgress() {
+  const stages = ['briefing', 'investigation', 'interrogation', 'deduction'];
+  return stages.indexOf(state.stage);
+}
+function renderProgress() {
+  const idx = getProgress();
+  return `<div class="progress">${[0,1,2,3].map(i => `<div class="seg ${i < idx ? 'done' : i === idx ? 'active' : ''}"></div>`).join('')}</div>`;
+}
+function renderHeader(stage, title, sub) {
+  return `${renderProgress()}<div class="pix-tag">${stage}</div><div class="pix-title">${title}</div>${sub ? `<div class="pix-sub">${sub}</div>` : ''}`;
+}
+
+function ariaSay(text, options = {}) {
+  // 50ms — user gesture 컨텍스트 보존하면서 DOM 그려진 직후 발화
+  setTimeout(() => {
+    if (state.ttsOn && options.autoSpeak !== false) speak(text);
+  }, 50);
+  // aria-live="polite" — 새 내레이션이 화면에 표시될 때 SR이 자동 발화
+  // role="status" + aria-atomic — 전체 텍스트를 한 단위로 안내
+  return `<div class="aria-bubble" role="status" aria-live="polite" aria-atomic="true">
+    <div class="label" aria-hidden="true"><span class="pulse"></span>ARIA</div>
+    <div class="text">${text.replace(/\n/g, '<br/>')}</div>
+    <button class="speak-btn" type="button" aria-label="Replay narration" onclick="speak(${JSON.stringify(text).replace(/"/g, '&quot;')})">${T().btnReplay}</button>
+  </div>`;
+}
+
+// ============================================================
+// 단계별 화면
+// ============================================================
+function render() {
+  setTimeout(refreshAltText, 10);
+  if (state.ended) { renderEnding(); dotpadOnRender(); return; }
+  if (state.stage === 'briefing') { renderBriefing(); dotpadOnRender(); return; }
+  if (state.stage === 'investigation') { renderInvestigation(); dotpadOnRender(); return; }
+  if (state.stage === 'interrogation') {
+    if (state.currentNpc) renderInterrogationDetail(state.currentNpc);
+    else renderInterrogationList();
+    dotpadOnRender();
+    return;
+  }
+  if (state.stage === 'deduction') { renderDeduction(); dotpadOnRender(); return; }
+}
+
+// 화면 그려진 후 alt 갱신 + cursor 리셋 + 첫 항목 highlight + Aria 텍스트 점자 출력
+function dotpadOnRender() {
+  if (!state.dotpadConnected) return;
+  setTimeout(syncDotpadToScreen, 50);
+}
+
+// 현재 보이는 화면 상태에 맞춰 dtms·점자·cursor 한 번에 갱신
+function syncDotpadToScreen() {
+  refreshAltText();
+  if (!state.dotpadConnected) return;
+  const splashEl = document.getElementById('splash');
+  const splashVisible = splashEl && !splashEl.classList.contains('hidden');
+
+  // 1) splash 떠 있으면: splash dtms + 타이틀 점자
+  if (splashVisible) {
+    showOnDotpad('splash');
+    const t = T();
+    const titleLine = 'Detective Voice. ' + (t.splashTitle || 'The Last Customer') + '. ' + (t.splashSub || 'Signature Case 1') + '.';
+    brailleSetText(titleLine);
+    state.dotpadCursor = 0;
+    dotpadHighlight();
+    return;
+  }
+
+  // 2) 게임 화면: cursor 첫 항목 + Aria 텍스트 점자
+  state.dotpadCursor = 0;
+  dotpadHighlight();
+  const bubble = document.querySelector('.aria-bubble .text');
+  if (bubble) {
+    const text = (bubble.innerText || bubble.textContent || '').trim();
+    if (text) { brailleSetText(text); return; }
+  }
+  // Aria 없으면 cursor 첫 항목 라벨로
+  const items = dotpadCurrentItems();
+  if (items[0]) brailleSetText(dotpadItemText(items[0]));
+}
+
+
+function renderBriefing() {
+  showOnDotpad('splash');
+  shell().innerHTML = `
+    ${renderHeader(T().stageBriefing, T().briefingTitle, T().briefingSub)}
+    <div class="pix-art">${ART.wine_bar}</div>
+    ${ariaSay(L().premise)}
+    <button class="primary-btn" onclick="state.stage='investigation';render()">${T().btnStartCase}</button>
+  `;
+}
+
+function renderInvestigation() {
+  showOnDotpad('scene_crime_scene');
+  let html = renderHeader(T().stageInvestigation, T().invTitle, T().invSub(state.discovered.size));
+  html += ariaSay(state.discovered.size === 0 ?
+    T().ariaInvStart :
+    T().ariaInvContinue);
+
+  L().scenes.forEach(s => {
+    if (s.objects.length === 0) return;
+    html += `<div class="scene-block">
+      <div class="scene-block-label">▸ ${s.name}</div>
+      <div class="pix-art">${ART[s.art]}</div>`;
+    s.objects.forEach((o, idx) => {
+      const found = state.discovered.has(o.revealsId);
+      html += `<div class="card ${found ? 'found' : ''}" role="button" tabindex="0" aria-label="${o.name}" onclick="examine('${s.id}', ${idx})">
+        <div class="card-title">${o.name}</div>
+        <div class="card-sub">${found ? T().cardCollected : T().cardExamine}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  html += `<div style="margin-top:18px">
+    <button class="primary-btn" onclick="state.stage='interrogation';state.currentNpc=null;render()">${T().btnInterrogate}</button>
+    <button class="ghost-btn" onclick="showNotes()">${T().btnNotes(state.discovered.size)}</button>
+    <button class="ghost-btn" onclick="state.stage='briefing';render()">${T().btnBackToBriefing}</button>
+  </div>`;
+  shell().innerHTML = html;
+}
+
+function examine(sceneId, idx) {
+  const scene = L().scenes.find(s => s.id === sceneId);
+  const obj = scene.objects[idx];
+  const newlyFound = !state.discovered.has(obj.revealsId);
+  state.discovered.add(obj.revealsId);
+  showOnDotpad(obj.revealsId);
+  const evArt = EVIDENCE_ART[obj.revealsId];
+  shell().innerHTML = `
+    ${renderHeader(T().stageInvestigationShort, scene.name)}
+    ${newlyFound ? `<div class="clue-banner">${T().clueAdded(L().evidenceMap[obj.revealsId].split(' — ')[0])}</div>` : ''}
+    ${evArt ? `<div class="pix-art pix-art-evidence">${evArt}</div>` : `<div class="pix-art">${ART[scene.art]}</div>`}
+    ${ariaSay(obj.desc)}
+    <button class="primary-btn" onclick="state.stage='investigation';render()">${T().btnContinue}</button>
+    <button class="ghost-btn" onclick="showNotes()">${T().btnNotesShort}</button>
+  `;
+}
+
+function renderInterrogationList() {
+  let html = renderHeader(T().stageInterrogation, T().interTitle, T().interSub);
+  html += ariaSay(T().ariaInter);
+  L().npcs.forEach(n => {
+    const anxiety = state.npcAnxiety[n.id];
+    html += `<div class="card npc-card" role="button" tabindex="0" aria-label="Interview ${n.name}, ${n.role}" onclick="state.currentNpc='${n.id}';render()">
+      <div class="portrait">${PORTRAITS[n.portrait]}</div>
+      <div class="info">
+        <div class="name">${n.name}<span class="age">${state.lang === 'ko' ? n.age + '세' : 'age ' + n.age}</span></div>
+        <div class="role">${n.role}</div>
+        <div class="anxiety"><div class="fill" style="width:${anxiety}%"></div></div>
+      </div>
+    </div>`;
+  });
+  html += `<div style="margin-top:18px">
+    <button class="primary-btn" onclick="state.stage='deduction';render()">${T().btnGoToDeduction}</button>
+    <button class="ghost-btn" onclick="state.stage='investigation';render()">${T().btnBackToScene}</button>
+    <button class="ghost-btn" onclick="showNotes()">${T().btnNotes(state.discovered.size)}</button>
+    <button class="ghost-btn" onclick="state.stage='briefing';render()">${T().btnBackToBriefing}</button>
+  </div>`;
+  shell().innerHTML = html;
+}
+
+function renderInterrogationDetail(npcId) {
+  showOnDotpad(npcId);
+  const npc = L().npcs.find(n => n.id === npcId);
+  const anxiety = state.npcAnxiety[npcId];
+  let html = renderHeader(T().stageInterrogationShort, npc.name, npc.role);
+  html += `<div class="card npc-card" style="cursor:default">
+    <div class="portrait">${PORTRAITS[npc.portrait]}</div>
+    <div class="info">
+      <div class="name">${npc.name}<span class="age">${state.lang === 'ko' ? npc.age + '세' : 'age ' + npc.age}</span></div>
+      <div class="role">${T().cardAnxiety(anxiety)}</div>
+      <div class="anxiety"><div class="fill" style="width:${anxiety}%"></div></div>
+    </div>
+  </div>`;
+
+  const messages = state.npcMessages[npcId];
+  if (messages.length > 0) {
+    html += `<div style="margin-top:8px">`;
+    messages.forEach(m => {
+      if (m.role === 'user') {
+        html += `<div style="font-size:13px;color:var(--fg-dim);margin:6px 0;padding:8px 11px;background:var(--line-soft);border-left:2px solid var(--fg-faint)"><strong style="color:var(--fg-soft)">${T().detective}:</strong> ${m.content}</div>`;
+      } else {
+        const cleanText = m.content.replace(/<<META:.*?>>/, '').trim();
+        html += `<div class="npc-line"><div class="who">${npc.name}</div>${cleanText}</div>`;
+      }
+    });
+    html += `</div>`;
+  }
+
+  if (state.aiMode) {
+    html += `<div class="free-input">
+      <div class="label">${T().freeLabel}</div>
+      <textarea id="free-q" placeholder="${T().freePlaceholder}" ${state.aiBusy ? 'disabled' : ''}></textarea>
+      <button onclick="askFree('${npcId}')" ${state.aiBusy ? 'disabled' : ''}>${state.aiBusy ? T().btnAskQBusy : T().btnAskQ}</button>
+      ${state.aiBusy ? '<div class="typing"><span></span><span></span><span></span></div>' : ''}
+    </div>
+    <div style="margin-top:12px;font-size:11px;color:var(--fg-faint);text-align:center;letter-spacing:0.05em">${T().orPreset}</div>`;
+  }
+
+  const scripted = L().scriptedQuestions[npcId] || [];
+  html += `<div class="question-list">`;
+  scripted.forEach((q, idx) => {
+    const askedList = state.asked[npcId] || [];
+    const asked = askedList.includes(idx);
+    const locked = q.requires && !state.discovered.has(q.requires);
+    html += `<button class="q-btn ${asked ? 'asked' : ''} ${locked ? 'locked' : ''}" ${locked ? 'disabled' : ''} onclick="askScripted('${npcId}', ${idx})">
+      ${asked ? '✓ ' : ''}${q.q}
+      ${locked ? `<span class="lock-note">${T().cardLockNeeds(q.requires)}</span>` : ''}
+    </button>`;
+  });
+  html += `</div>
+    <div style="margin-top:18px">
+      <button class="ghost-btn" onclick="state.currentNpc=null;render()">${T().btnOtherPerson}</button>
+      <button class="ghost-btn" onclick="showNotes()">${T().btnNotes(state.discovered.size)}</button>
+      <button class="ghost-btn" onclick="state.stage='briefing';state.currentNpc=null;render()">${T().btnBackToBriefing}</button>
+    </div>`;
+  shell().innerHTML = html;
+
+  if (messages.length > 0 && messages[messages.length-1].role === 'assistant' && state.ttsOn) {
+    const last = messages[messages.length-1].content.replace(/<<META:.*?>>/, '').trim();
+    setTimeout(() => speak(last, { npc: true }), 200);
+  }
+}
+
+function askScripted(npcId, idx) {
+  const q = L().scriptedQuestions[npcId][idx];
+  state.asked[npcId] = state.asked[npcId] || [];
+  if (!state.asked[npcId].includes(idx)) state.asked[npcId].push(idx);
+  state.npcAnxiety[npcId] = Math.min(100, state.npcAnxiety[npcId] + (q.delta || 0));
+  if (q.revealsId) state.discovered.add(q.revealsId);
+  state.npcMessages[npcId].push({ role: 'user', content: q.q });
+  state.npcMessages[npcId].push({ role: 'assistant', content: q.a });
+  render();
+}
+
+async function askFree(npcId) {
+  const ta = document.getElementById('free-q');
+  const userMessage = ta.value.trim();
+  if (!userMessage) return;
+  state.aiBusy = true;
+  state.npcMessages[npcId].push({ role: 'user', content: userMessage });
+  ta.value = '';
+  render();
+  try {
+    const npc = L().npcs.find(n => n.id === npcId);
+    const sys = buildNpcSystemPrompt(npc);
+    const text = await callClaude(sys, state.npcMessages[npcId]);
+    state.npcMessages[npcId].push({ role: 'assistant', content: text });
+    const m = text.match(/<<META:anxiety=(\d+)/);
+    if (m) state.npcAnxiety[npcId] = parseInt(m[1]);
+  } catch (e) {
+    state.npcMessages[npcId].push({ role: 'assistant', content: '[시스템: API 호출 실패. 키 확인.] <<META:anxiety=' + state.npcAnxiety[npcId] + '>>' });
+    console.error(e);
+  }
+  state.aiBusy = false;
+  render();
+}
+
+function showNotes() {
+  state.dotpadNotesOpen = true;
+  let html = renderHeader(T().stageCaseNotes, T().notesTitle, T().notesSub(state.discovered.size));
+
+  // ARIA 안내 — 시각장애 사용자에게 화면이 열렸음을 음성으로 알림
+  const intro = state.discovered.size === 0
+    ? T().notesEmpty
+    : (state.lang === 'ko'
+        ? `발견한 단서 ${state.discovered.size}개. F1, F2로 단서를 넘기고 가운데 팬 키로 다시 들으세요.`
+        : `${state.discovered.size} clue${state.discovered.size===1?'':'s'} found. Use F1, F2 to step through, press center pan to replay.`);
+  html += ariaSay(intro);
+
+  html += `<div class="notebook"><div class="nb-title">${T().notesHeader}</div>`;
+  const clueLines = [];
+  if (state.discovered.size === 0) {
+    html += `<div class="empty">${T().notesEmpty}</div>`;
+    clueLines.push(T().notesEmpty);
+  } else {
+    // 각 단서를 button으로 — F1/F2 cursor가 잡고 F3로 음성·점자 재출력
+    state.discovered.forEach(id => {
+      if (L().evidenceMap[id]) {
+        const plain = L().evidenceMap[id].replace(/[\[\]]/g, '').trim();
+        const esc = plain.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        html += `<button class="clue-btn" onclick="speakClue(${JSON.stringify(plain).replace(/"/g, '&quot;')})">${L().evidenceMap[id]}</button>`;
+        clueLines.push(plain);
+      }
+    });
+  }
+  html += `</div>
+    <button class="primary-btn" onclick="state.dotpadNotesOpen=false;render()">${T().btnClose}</button>`;
+  shell().innerHTML = html;
+  if (state.dotpadConnected) {
+    setTimeout(dotpadOnRender, 50);
+    setTimeout(() => {
+      const joined = clueLines.join('. ');
+      if (joined) brailleSetText(joined);
+    }, 150);
+  }
+}
+
+// 단서 button 클릭 — 음성 + 점자 동시 출력
+function speakClue(text) {
+  if (!text) return;
+  if (state.ttsOn) {
+    try { stopSpeaking(); } catch(e){}
+    speak(text);
+  }
+  if (state.dotpadConnected) brailleSetText(text);
+}
+
+function renderDeduction() {
+  // 단일 선택 상태 (button group) — state에 저장하여 render 사이 유지
+  if (!state.dedChoice) state.dedChoice = { culprit: '', motive: '', evs: [] };
+  const ch = state.dedChoice;
+  const npcOpts = L().npcs.filter(n => n.role.toLowerCase().includes('victim') === false);
+  const motiveOpts = [
+    { v: 'affair_debt', label: T().motivePerfect },
+    { v: 'debt_only', label: T().motiveDebtOnly },
+    { v: 'affair_revenge', label: T().motiveAffair },
+    { v: 'other', label: T().motiveOther },
+  ];
+  const evLabels = state.lang === 'ko' ? {
+    ev_receipt_2342: '23:42 결제 영수증',
+    ev_wine_inventory: '와인 재고 장부',
+    ev_text_message: '정민호-김유진 메시지',
+    ev_wife_testimony: '김유진 증언',
+    ev_cctv_outside: '편의점 CCTV',
+    ev_broken_bottle: '깨진 와인병',
+    ev_autopsy: '부검 보고서'
+  } : {
+    ev_receipt_2342: '23:42 receipt',
+    ev_wine_inventory: 'Wine inventory ledger',
+    ev_text_message: 'Min-ho/Yu-jin messages',
+    ev_wife_testimony: "Kim Yu-jin's testimony",
+    ev_cctv_outside: 'Convenience store CCTV',
+    ev_broken_bottle: 'Broken wine bottle',
+    ev_autopsy: 'Autopsy report'
+  };
+  const renderBtnGroup = (groupKey, opts, isMulti) =>
+    opts.map(o => {
+      const isActive = isMulti ? ch.evs.includes(o.v) : (ch[groupKey] === o.v);
+      return `<button class="ded-opt-btn ${isActive ? 'active' : ''}"
+        data-group="${groupKey}" data-value="${o.v}"
+        onclick="dedPick('${groupKey}', '${o.v}')">${isActive ? '✓ ' : ''}${o.label}</button>`;
+    }).join('');
+
+  const culpritOpts = npcOpts.map(n => ({ v: n.id, label: n.name }));
+  const evOpts = Object.entries(evLabels).map(([k,v]) => ({ v: k, label: v }));
+
+  shell().innerHTML = `
+    ${renderHeader(T().stageDeduction, T().dedTitle, T().dedSub)}
+    ${ariaSay(T().ariaDed)}
+    <div class="deduction-form">
+      <label>${T().formCulprit}</label>
+      <div class="ded-group">${renderBtnGroup('culprit', culpritOpts, false)}</div>
+      <label>${T().formMotive}</label>
+      <div class="ded-group">${renderBtnGroup('motive', motiveOpts, false)}</div>
+      <label>${state.lang === 'ko' ? '핵심 증거 (3개 선택)' : 'Key evidence (pick 3)'}</label>
+      <div class="ded-group">${renderBtnGroup('evs', evOpts, true)}</div>
+    </div>
+    <button class="primary-btn" onclick="submitDeduction()" style="margin-top:18px">${T().btnAccuse}</button>
+    <button class="ghost-btn" onclick="state.stage='interrogation';state.currentNpc=null;render()">${T().btnContinueInter}</button>
+    <button class="ghost-btn" onclick="state.stage='briefing';render()">${T().btnBackToBriefing}</button>
+  `;
+}
+
+function dedPick(group, value) {
+  if (!state.dedChoice) state.dedChoice = { culprit: '', motive: '', evs: [] };
+  if (group === 'evs') {
+    const i = state.dedChoice.evs.indexOf(value);
+    if (i >= 0) state.dedChoice.evs.splice(i, 1);
+    else if (state.dedChoice.evs.length < 3) state.dedChoice.evs.push(value);
+    else {
+      // 이미 3개 — 가장 오래된 하나 빼고 새로 추가
+      state.dedChoice.evs.shift();
+      state.dedChoice.evs.push(value);
+    }
+  } else {
+    state.dedChoice[group] = value;
+  }
+  renderDeduction();
+  // dotpad 재동기화 — 새로 그려진 버튼에 cursor outline 복원
+  if (state.dotpadConnected) setTimeout(syncDotpadToScreen, 50);
+}
+
+function dEvOpts() {
+  const labels = state.lang === 'ko' ? {
+    ev_receipt_2342: '23:42 결제 영수증',
+    ev_wine_inventory: '와인 재고 장부',
+    ev_text_message: '정민호-김유진 메시지',
+    ev_wife_testimony: '김유진 증언',
+    ev_cctv_outside: '편의점 CCTV',
+    ev_broken_bottle: '깨진 와인병',
+    ev_autopsy: '부검 보고서'
+  } : {
+    ev_receipt_2342: '23:42 receipt',
+    ev_wine_inventory: 'Wine inventory ledger',
+    ev_text_message: 'Min-ho/Yu-jin messages',
+    ev_wife_testimony: "Kim Yu-jin's testimony",
+    ev_cctv_outside: 'Convenience store CCTV',
+    ev_broken_bottle: 'Broken wine bottle',
+    ev_autopsy: 'Autopsy report'
+  };
+  return `<option value="">${T().optSelect}</option>` +
+    Object.entries(labels).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
+}
+
+function submitDeduction() {
+  const ch = state.dedChoice || { culprit: '', motive: '', evs: [] };
+  const culprit = ch.culprit;
+  const motive = ch.motive;
+  const evs = ch.evs || [];
+  let result;
+  if (!culprit) result = { type: 'inconclusive' };
+  else if (culprit !== 'park_junyoung') result = { type: 'wrong_suspect' };
+  else {
+    const keyEvs = new Set(['ev_receipt_2342','ev_wine_inventory','ev_text_message','ev_wife_testimony']);
+    const matched = evs.filter(e => keyEvs.has(e)).length;
+    if (motive === 'affair_debt' && matched >= 3) result = { type: 'perfect' };
+    else if (motive === 'other') result = { type: 'wrong_suspect' };
+    else result = { type: 'conviction' };
+  }
+  state.ended = result;
+  render();
+}
+
+function renderEnding() {
+  const map = {
+    perfect: { cls: '', badge: 'Perfect', title: '완벽한 추리',
+      text: "법정에서 박준영은 결국 모든 것을 인정했어요. \"그날 밤, 정민호가 마지막으로 권한 와인을 들고 나가는 척하고 싶었어요.\" 사건은 종결됐고, 의뢰인은 짧은 편지를 남겼어요. \"동생이 마지막에 만난 사람이 누군지 알게 해줘서 고마워요.\"",
+      rep: 50 },
+    conviction: { cls: 'conviction', badge: 'Conviction', title: '부분 유죄',
+      text: "박준영은 기소됐지만 변호사의 반박으로 동기 입증이 약했어요. 살인보다 가벼운 과실치사로 감형됐어요.",
+      rep: 25 },
+    wrong_suspect: { cls: 'bad', badge: 'Wrong Suspect', title: '잘못된 추리',
+      text: "당신의 추리는 법정에서 무너졌어요. 진범은 자유로워졌어요.",
+      rep: 0 },
+    inconclusive: { cls: 'bad', badge: 'Inconclusive', title: '미해결',
+      text: "사건은 미해결로 분류됐어요. 콜드케이스 폴더에 들어갔어요.",
+      rep: state.discovered.size }
+  };
+  const r = map[state.ended.type];
+  shell().innerHTML = `
+    ${renderHeader(T().stageCaseClosed, T().caseClosedTitle)}
+    ${ariaSay(r.text)}
+    <div class="ending ${r.cls}">
+      <div class="badge">${r.badge}</div>
+      <h3>${r.title}</h3>
+      <div class="reputation">${T().repPrefix}${r.rep}</div>
+    </div>
+    <button class="primary-btn" onclick="restart()" style="margin-top:18px">${T().btnRestart}</button>
+    <div style="font-size:11px;color:var(--fg-faint);text-align:center;margin-top:14px;line-height:1.7">
+      Demo v4 · 실제 게임은 화면 없이 음성으로 진행<br/>AI가 매번 새 사건 생성
+    </div>
+  `;
+}
+
+function restart() {
+  state.stage = 'briefing';
+  state.discovered = new Set();
+  state.asked = {};
+  state.npcAnxiety = {};
+  state.ended = null;
+  state.dedChoice = { culprit: '', motive: '', evs: [] };
+  state.currentNpc = null;
+  state.npcMessages = {};
+  L().npcs.forEach(n => { state.npcAnxiety[n.id] = n.anxietyStart; state.npcMessages[n.id] = []; });
+  render();
+  document.getElementById('splash').classList.remove('hidden');
+}
+
+// ============================================================
+// 시계 / Splash / 설정
+// ============================================================
+function tickClock() {
+  // v10에서 iPhone status-bar 제거로 #clock 사라짐 — null guard
+  const el = document.getElementById('clock');
+  if (!el) return;
+  const d = new Date();
+  el.textContent =
+    `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+setInterval(tickClock, 30000);
+tickClock();
+
+// audio autoplay 정책 우회 — splash Start 클릭(사용자 제스처) 안에서 dummy audio 한 번 재생
+// 이후 Azure TTS fetch+play가 user gesture 컨텍스트 밖에서도 작동
+let _audioUnlocked = false;
+function _unlockAudio() {
+  if (_audioUnlocked) return;
+  _audioUnlocked = true;
+  try {
+    // 1프레임짜리 무음 wav (base64) — autoplay 정책 unlock용
+    const silent = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+    silent.volume = 0.01;
+    silent.play().catch(()=>{});
+  } catch(e) {}
+  // Web Audio context도 같이 unlock
+  try {
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  } catch(e) {}
+  // Web Speech도 미리 cancel (일부 브라우저가 첫 호출 lock)
+  try {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  } catch(e) {}
+}
+
+function hideSplash() {
+  // 사용자 제스처 컨텍스트 안에서 즉시 audio unlock
+  _unlockAudio();
+  document.getElementById('splash').classList.add('hidden');
+  // splash 사라진 후 cursor highlight 정리
+  _clearDotpadFocus();
+  // Dot Pad 연결되어 있으면 브리핑 화면 sync
+  if (state.dotpadConnected) setTimeout(syncDotpadToScreen, 100);
+  // BGM 자동 시작 (Voice와 동시) — 사용자가 끄려면 헤더 BGM 버튼
+  if (!state.bgmOn) {
+    state.bgmOn = true;
+    startBGM();
+    const bgmBtn = document.getElementById('btn-bgm');
+    if (bgmBtn) {
+      bgmBtn.classList.add('active');
+      bgmBtn.setAttribute('aria-pressed', 'true');
+    }
+  }
+  // 첫 Aria 발화 — user gesture 컨텍스트 안에서 즉시 호출 (autoplay 정책 우회)
+  // v11.3: requestAnimationFrame 안에서 user activation을 잃을 수 있어서 동기 호출로 변경
+  if (state.ttsOn) {
+    const bubble = document.querySelector('.aria-bubble .text');
+    console.log('[hideSplash] bubble?', !!bubble, 'ttsOn?', state.ttsOn);
+    if (bubble) {
+      const text = (bubble.innerText || bubble.textContent || '').trim();
+      console.log('[hideSplash] briefing text len:', text.length);
+      if (text) {
+        // 동기 호출 → user gesture 안에서 audio.play() / speechSynthesis.speak() 보장
+        speak(text);
+      } else {
+        console.warn('[hideSplash] briefing bubble text empty');
+      }
+    } else {
+      console.warn('[hideSplash] .aria-bubble .text not found in DOM');
+    }
+    // 키 안내는 연결 시점에 announceDotpadKeyGuide()가 처리
+  }
+  // 설정 모달은 사용자가 헤더 Settings 버튼 누를 때만 표시 (자동 표시 제거)
+}
+
+function saveSettings() {
+  const aKey = document.getElementById('anth-key').value.trim();
+  const azKey = document.getElementById('az-key').value.trim();
+  const azReg = document.getElementById('az-region').value;
+  const azVoice = document.getElementById('az-voice').value;
+  const langSel = document.getElementById('setup-lang');
+  if (langSel && langSel.value !== state.lang) setLang(langSel.value);
+
+  if (aKey) {
+    state.anthKey = aKey;
+    state.aiMode = true;
+    try { localStorage.setItem('dv_anth_key', aKey); } catch(e){}
+  }
+  if (azKey) {
+    state.azureKey = azKey;
+    state.azureRegion = azReg;
+    state.azureVoice = azVoice;
+    try {
+      localStorage.setItem('dv_az_key', azKey);
+      localStorage.setItem('dv_az_region', azReg);
+      localStorage.setItem('dv_az_voice', azVoice);
+    } catch(e){}
+  }
+
+  document.getElementById('overlay').style.display = 'none';
+  if (!state.bgmOn) {
+    state.bgmOn = true;
+    startBGM();
+    document.getElementById('btn-bgm').classList.add('active');
+  }
+}
+
+function skipSettings() {
+  localStorage.setItem('dv_skipped_setup', '1');
+  document.getElementById('overlay').style.display = 'none';
+  if (!state.bgmOn) {
+    state.bgmOn = true;
+    startBGM();
+    document.getElementById('btn-bgm').classList.add('active');
+  }
+}
+
+document.getElementById('btn-bgm').addEventListener('click', () => {
+  state.bgmOn = !state.bgmOn;
+  if (state.bgmOn) { ensureAudio(); startBGM(); } else stopBGM();
+  document.getElementById('btn-bgm').classList.toggle('active', state.bgmOn);
+  document.getElementById('btn-bgm').setAttribute('aria-pressed', String(state.bgmOn));
+});
+document.getElementById('btn-tts').addEventListener('click', () => {
+  state.ttsOn = !state.ttsOn;
+  if (!state.ttsOn) stopSpeaking();
+  document.getElementById('btn-tts').classList.toggle('active', state.ttsOn);
+  document.getElementById('btn-tts').setAttribute('aria-pressed', String(state.ttsOn));
+});
+
+// Dot Pad 헤더 버튼 & popup 이벤트
+document.getElementById('btn-dotpad').addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleDotpadPopup();
+});
+document.getElementById('dotpad-ble-btn').addEventListener('click', connectDotpadBle);
+document.getElementById('dotpad-usb-btn').addEventListener('click', connectDotpadUsb);
+document.getElementById('dotpad-disconnect-btn').addEventListener('click', () => {
+  disconnectDotpad();
+  toggleDotpadPopup(false);
+});
+// popup 외부 클릭 시 닫기
+document.addEventListener('click', (e) => {
+  const wrap = e.target.closest('.dotpad-wrap');
+  if (!wrap) toggleDotpadPopup(false);
+});
+
+document.getElementById('btn-lang').addEventListener('click', toggleLang);
+document.getElementById('btn-settings').addEventListener('click', () => {
+  document.getElementById('overlay').style.display = 'flex';
+});
+
+document.getElementById('btn-tts').classList.add('active');
+
+// 세션 캐시 복원
+try {
+  const savedLang = localStorage.getItem('dv_lang');
+  if (savedLang === 'ko' || savedLang === 'en') {
+    state.lang = savedLang;
+    state.azureVoice = RECOMMENDED_VOICE[savedLang];
+  }
+  const a = localStorage.getItem('dv_anth_key');
+  const az = localStorage.getItem('dv_az_key');
+  const azr = localStorage.getItem('dv_az_region');
+  const azv = localStorage.getItem('dv_az_voice');
+  if (a) { state.anthKey = a; state.aiMode = true; document.getElementById('anth-key').value = a; }
+  if (az) { state.azureKey = az; }
+  if (azr) { state.azureRegion = azr; }
+  if (azv) { state.azureVoice = azv; }
+  // SETUP 모달에 현재 값 표시 (기본 키도 보임)
+  document.getElementById('az-key').value = state.azureKey || '';
+  document.getElementById('az-region').value = state.azureRegion;
+  document.getElementById('az-voice').value = state.azureVoice;
+} catch(e) {}
+
+// 프록시(임베드) 모드: 키 입력 UI 숨김 — 키는 DotArcade 백엔드가 보유
+function applyEmbedMode() {
+  if (!state.proxyMode) return;
+  const hide = id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+  hide('setup-azure-key-block');   // Azure 키/region (서버가 보유)
+  hide('setup-ai-section');        // Anthropic 키 섹션 (AI 항상 ON)
+  hide('setup-footnote');          // 키 발급 안내
+  hide('setup-skip-btn');          // "키 없이 시작" 버튼 불필요
+  const title = document.getElementById('setup-title');
+  if (title) title.textContent = state.lang === 'ko' ? '설정 — 언어 & 음성' : 'Settings — Language & Voice';
+  const desc = document.getElementById('setup-desc');
+  if (desc) desc.textContent = state.lang === 'ko'
+    ? '언어와 음성을 선택하세요. AI 응답과 자연 음성은 자동으로 켜져 있어요.'
+    : 'Choose language and voice. AI responses and natural voice are enabled automatically.';
+}
+
+document.getElementById('splash-art').innerHTML = ART.splash;
+updateStaticUI();
+applyEmbedMode();
+updateDotpadStatus();
+document.getElementById('btn-lang').textContent = state.lang === 'ko' ? 'KO' : 'EN';
+render();
+
+// 부모(TW)에 로드 완료 알림 + 콘텐츠 높이 변경 자동 보고 (임베드 자동 높이 조정)
+dvPostToParent({ type: 'ready' });
+dvPostResize();
+try {
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => dvPostResize()).observe(document.body);
+  } else {
+    window.addEventListener('resize', dvPostResize);
+  }
+} catch (e) {}
+// =================================================
+// A11Y: role=button div들에 Enter/Space 키보드 활성화
+// =================================================
+document.addEventListener('keydown', (e) => {
+  const t = e.target;
+  if (!t || !t.matches) return;
+  // 이미 <button>인 경우 브라우저가 처리. div[role=button]만 처리.
+  if (t.matches('[role="button"]:not(button):not(a):not(input):not(select):not(textarea)')) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      t.click();
+    }
+  }
+});
+
+// A11Y: 설정 모달 — Escape 닫기 + autofocus 첫 입력 + 트리거 return focus
+let _lastFocusBeforeModal = null;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('overlay');
+    if (overlay && overlay.style.display !== 'none') {
+      overlay.style.display = 'none';
+      if (_lastFocusBeforeModal) try { _lastFocusBeforeModal.focus(); } catch(e){}
+    }
+    const dpPopup = document.getElementById('dotpad-popup');
+    if (dpPopup && !dpPopup.hidden) {
+      if (typeof toggleDotpadPopup === 'function') toggleDotpadPopup(false);
+    }
+  }
+});
+
+// 설정 모달 열릴 때 autofocus + 마지막 트리거 저장
+(function() {
+  const setB = document.getElementById('btn-settings');
+  if (setB) {
+    const orig = setB.onclick;
+    setB.addEventListener('click', () => {
+      _lastFocusBeforeModal = setB;
+      setTimeout(() => {
+        const firstInput = document.querySelector('.overlay-card input, .overlay-card select, .overlay-card button');
+        if (firstInput) try { firstInput.focus(); } catch(e){}
+      }, 80);
+    });
+  }
+})();
+
+</script>
+</body>
+</html>
