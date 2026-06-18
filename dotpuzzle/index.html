@@ -114,6 +114,23 @@
     body[data-theme="nonogram"], .app[data-theme="nonogram"] { --accent: var(--c-nono); --accent-soft: var(--c-nono-soft); }
     body[data-theme="maze"], .app[data-theme="maze"] { --accent: var(--c-maze); --accent-soft: var(--c-maze-soft); }
 
+    /* ── 임베드 모드 (TW Embed Spec) — 부모 영역 풀필 + 크롬 최소화 ── */
+    body.embed { min-height: 100vh; }
+    body.embed .app {
+      max-width: none;            /* 고정 max-width 해제 → 가변 영역 풀필 */
+      padding: 14px 18px 18px;
+      min-height: 100vh;
+    }
+    @media (max-width: 640px) {
+      body.embed .app { padding: 10px 12px 14px; }
+    }
+    /* 브랜딩/푸터 크롬 제거 (게임 보드·핵심 컨트롤 위주) */
+    body.embed .beta-badge,
+    body.embed .brand,
+    body.embed .footer-mark { display: none !important; }
+    /* 임베드에서 Back 버튼은 TW 모달 닫기(exit) 트리거로 의미가 바뀜 */
+    body.embed .back-btn { font-size: 18px; }
+
 
     /* 헤더 — 모바일에서 줄바꿈 가능 */
     @media (max-width: 480px) {
@@ -857,7 +874,34 @@
     minesweeper: null,
     nonogram: null,
     maze: null,
+    embed: false,
   };
+
+  // ── DotArcade 임베드 규격 (TW Embed Spec) ──────────────────────────────
+  // ?embed=1  → 임베드 미니멀 모드 (런처 메뉴 숨김 · 크롬 최소화 · Back=exit)
+  // ?preview=0 (또는 embed 기본) → 화면상 DOT PAD PREVIEW 스트립 미렌더
+  //            (실제 닷패드 연결/출력 기능은 그대로 유지)
+  const _QS = new URLSearchParams(location.search);
+  const EMBED = _QS.get('embed') === '1';
+  const PREVIEW_OFF = _QS.get('preview') === '0' || EMBED;
+  state.embed = EMBED;
+  if (EMBED) { try { document.body.classList.add('embed'); } catch (e) {} }
+
+  // 부모(TW)와의 표준 postMessage 통신
+  function postToParent(msg) {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(Object.assign({ source: 'dotarcade' }, msg), '*');
+      }
+    } catch (e) {}
+  }
+  let _lastPostedH = 0;
+  function postResize() {
+    const h = Math.ceil(document.documentElement.scrollHeight);
+    if (h && h !== _lastPostedH) { _lastPostedH = h; postToParent({ type: 'resize', height: h }); }
+  }
+  function requestExit() { postToParent({ type: 'exit' }); }
+  window.requestExit = requestExit;
 
   // ============================================================
   // DIFFICULTY CONFIGS
@@ -1209,6 +1253,9 @@
   }
 
   function goLauncher() {
+    // 임베드 모드: 선택 메뉴로 복귀하지 않고 부모(TW)에 exit 신호 → 모달 닫기
+    // (헤더 Back · F1+F4 home · 난이도 화면 Back 등 모든 복귀 경로의 단일 차단점)
+    if (state.embed) { SFX.back(); requestExit(); return; }
     state.screen = 'launcher';
     state.dotpadCursor = 0;
     stopSudokuBlink();
@@ -2245,6 +2292,8 @@
   // We'll preview a 30×3 strip (just one row of the puzzle status).
 
   function renderDotpadPreview() {
+    // 임베드/preview=0 모드: 화면상 시뮬레이션 프리뷰 스트립 미렌더 (실제 출력은 유지)
+    if (PREVIEW_OFF) return '';
     // Full 30 × 10 cell preview (2400 dots) — reflects actual graphic output
     const hex = (state.screen !== 'launcher') ? renderPuzzleAsGraphicHex() : '0'.repeat(600);
     let cellsHtml = '';
@@ -3039,15 +3088,30 @@
   window.initNonogram = initNonogram;
   window.state = state;
 
-  // DotArcade 딥링크: ?game=sudoku|minesweeper|nonogram|maze 로 해당 퍼즐에 바로 진입
-  // (iframe SDK가 특정 퍼즐을 지정해 임베드할 때 사용)
-  (function dotArcadeDeepLink() {
+  // DotArcade 딥링크 + 임베드 부트
+  //  ?game=sudoku|minesweeper|nonogram|maze 로 해당 퍼즐 바로 진입
+  //  부모(TW)에 ready/resize postMessage 전송 (임베드 자동 높이 조정용)
+  (function dotArcadeBoot() {
+    const valid = ['sudoku', 'minesweeper', 'nonogram', 'maze'];
+    let g = null;
+    try { g = _QS.get('game'); } catch (e) {}
+    if (g && valid.includes(g)) {
+      startGame(g);
+    } else {
+      if (EMBED) console.warn('[DotArcade] embed mode without valid ?game= — launcher 표시');
+      render();
+    }
+
+    // 부모(TW)에 로드 완료 알림 + 콘텐츠 높이 변경 자동 보고
+    postToParent({ type: 'ready' });
+    postResize();
     try {
-      const g = new URLSearchParams(location.search).get('game');
-      const valid = ['sudoku', 'minesweeper', 'nonogram', 'maze'];
-      if (g && valid.includes(g)) { startGame(g); return; }
+      if (window.ResizeObserver) {
+        new ResizeObserver(() => postResize()).observe(document.body);
+      } else {
+        window.addEventListener('resize', postResize);
+      }
     } catch (e) {}
-    render();
   })();
   </script>
 </body>
