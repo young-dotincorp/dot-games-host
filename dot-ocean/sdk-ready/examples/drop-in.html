@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dot Ocean SDK · drop-in</title>
+  <style>
+    /* Deliberately aggressive host CSS — the widget is unaffected (Shadow DOM). */
+    * { font-family: 'Comic Sans MS', cursive; }
+    body { margin: 0; background: #0b1b2b; color: #cfe6f5; padding: 24px; }
+    h1 { font-size: 20px; }
+    code { background: #10283f; padding: 2px 6px; border-radius: 6px; }
+    dot-ocean { display:block; height: 620px; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.4); }
+    .log { margin-top: 12px; font: 12px ui-monospace, monospace; color: #8fb0c8; }
+  </style>
+</head>
+<body>
+  <h1>🌊 Dot Ocean — <code>&lt;dot-ocean&gt;</code> 한 줄, 빌드 없음, 완전 격리</h1>
+  <p>호스트 페이지의 CSS(여긴 Comic Sans)는 위젯에 침투하지 못합니다. Shadow DOM으로 캡슐화돼 있어요.</p>
+
+  <!-- 1) 스크립트 한 번 로드 (CSS·이미지 모두 내장, React 번들 포함) -->
+  <script src="../dist-sdk/dot-ocean.js"></script>
+
+  <!-- 2) 태그만 두면 끝. JS 호출 불필요 -->
+  <dot-ocean lang="ko"></dot-ocean>
+
+  <div class="log" id="log">events:</div>
+  <script>
+    // 이벤트는 엘리먼트에서 받습니다 (전역 오염 없음)
+    document.querySelector('dot-ocean').addEventListener('dotocean:event', function (e) {
+      document.getElementById('log').textContent += ' ' + JSON.stringify(e.detail);
+    });
+    // 실제 Dot Pad 기기 연결 시:
+    //   const el = document.querySelector('dot-ocean');
+    //   el.dotpad = myWebBluetoothAdapter;   // 연결 전에 지정
+    // 또는 프로그램matic:  DotOcean.mount('#someDiv', { lang:'ko', dotpad, onEvent });
+  </script>
+</body>
+</html>

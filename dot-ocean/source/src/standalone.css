@@ -1,0 +1,4 @@
+/* Full-page globals — only for the standalone app build, NOT the embeddable SDK. */
+html, body, #root { height: 100%; margin: 0; }
+#root { position: relative; }
+body { overflow: hidden; background: #02080f; }
