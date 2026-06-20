@@ -10,7 +10,8 @@
     --ink:#E8EAED; --muted:#9AA0A8;
     --pin-off:#2C323B; --pin-on:#F2C14E; --pin-danger:#E5484D;
     --accent:#F2C14E; --danger:#E5484D; --good:#3DD68C;
-    --p1:#F2C14E; --p2:#5AB4F0; --turn:#F2C14E;
+    --p1:#F2C14E; --p2:#6E8EFB; --turn:#F2C14E;
+    --turn-glow:rgba(242,193,78,.45); --turn-tint:rgba(242,193,78,.10);
     --tile:#F7F3EA; --tile-ink:#1A1A1A; --tile-line:#E2DBCB;
     --r:14px; --r-sm:10px;
   }
@@ -34,8 +35,9 @@
 
   /* ---- 닷패드 디스플레이 (주인공) ---- */
   .pad{
-    flex:1 1 auto; min-height:0; position:relative; background:var(--panel);
+    flex:1 1 auto; min-height:0; position:relative; background:linear-gradient(180deg,#1F252E 0%,#191D24 100%);
     border:1px solid var(--line); border-radius:var(--r); padding:14px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
     display:flex; flex-direction:column; gap:10px;
   }
   .pad-top{display:flex; justify-content:space-between; align-items:center; gap:12px; flex:none;}
@@ -66,18 +68,21 @@
   .hand{display:flex; gap:8px; justify-content:center; align-items:stretch;}
   .card{
     position:relative; flex:1 1 0; max-width:96px; aspect-ratio:3/4; min-width:0;
-    background:var(--tile); color:var(--tile-ink); border:1px solid var(--tile-line);
-    border-radius:var(--r-sm); cursor:pointer; transition:transform .12s, box-shadow .12s, outline-color .12s;
-    display:flex; align-items:center; justify-content:center; outline:3px solid transparent; padding:6px;
+    background:linear-gradient(158deg,#FCFAF4 0%,#F1EADB 100%); color:var(--tile-ink);
+    border:1px solid rgba(120,100,60,.16); border-radius:13px; cursor:pointer;
+    transition:transform .16s cubic-bezier(.2,.8,.25,1), box-shadow .18s, background .2s;
+    display:flex; align-items:center; justify-content:center; outline:0; padding:6px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.75), 0 1px 2px rgba(0,0,0,.18), 0 5px 12px rgba(0,0,0,.22);
   }
-  .card .v{font-size:clamp(20px,6vw,34px); font-weight:800; letter-spacing:-.02em; line-height:1;}
-  .card .corner{position:absolute; font-size:11px; font-weight:700; opacity:.7;}
+  .card .v{font-size:clamp(20px,6vw,34px); font-weight:800; letter-spacing:-.02em; line-height:1; text-shadow:0 1px 0 rgba(255,255,255,.55);}
+  .card .corner{position:absolute; font-size:11px; font-weight:700; opacity:.6;}
   .card .corner.tl{top:6px; left:7px;} .card .corner.br{bottom:6px; right:7px;}
-  .card.sel{transform:translateY(-8px); outline-color:var(--turn); box-shadow:0 8px 20px rgba(0,0,0,.35);}
-  /* 2인 모드: 현재 플레이어 색으로 손패 영역을 구분 */
-  body.twop .hand-wrap{ border-left:4px solid var(--turn); padding-left:10px; border-radius:6px; transition:border-color .2s; }
-  .card .kind{font-size:11px; font-weight:700; opacity:.6; position:absolute; bottom:7px; left:0; right:0; text-align:center;}
-  .card.set{background:#EAF0FB;} .card.mul2{background:#F3EAFB;} .card.sub10{background:#FBEFEA;} .card.rev{background:#EAF7F0;}
+  .card.sel{transform:translateY(-10px) scale(1.03); box-shadow:0 0 0 2px var(--turn), 0 0 16px var(--turn-glow), inset 0 1px 0 rgba(255,255,255,.75), 0 12px 26px rgba(0,0,0,.42);}
+  /* 2인 모드: 현재 플레이어 색의 고급 손패 패널 */
+  body.twop .hand-wrap{ background:var(--turn-tint); border:1px solid rgba(255,255,255,.05); border-top:2px solid var(--turn); border-radius:12px; padding:10px 10px 6px; box-shadow:0 0 22px -10px var(--turn-glow); transition:background .28s, border-color .28s, box-shadow .28s; }
+  body.twop #hand-owner{ display:inline-block; padding:2px 11px; border-radius:999px; background:var(--turn-tint); border:1px solid var(--turn); font-weight:700; font-size:11px; letter-spacing:.01em; }
+  .card .kind{font-size:11px; font-weight:700; opacity:.55; position:absolute; bottom:7px; left:0; right:0; text-align:center;}
+  .card.set{background:linear-gradient(158deg,#EEF3FC,#DCE6F7);} .card.mul2{background:linear-gradient(158deg,#F4EEFB,#E6DAF4);} .card.sub10{background:linear-gradient(158deg,#FCF1EA,#F6E2D3);} .card.rev{background:linear-gradient(158deg,#EBF7F0,#D8F0E2);}
 
   /* ---- 컨트롤 ---- */
   .controls{flex:none; display:flex; gap:8px; align-items:stretch;}
@@ -445,7 +450,7 @@ function renderSeats(){
   renderChips("chips-ai", p1.chips);
   document.getElementById("total-num").textContent=String(G.total);
 }
-function render(){ document.documentElement.style.setProperty("--turn", turnColor()); renderSeats(); drawPad(); renderHand(); pushDevice(); sendResize(); }
+function render(){ const rs=document.documentElement.style; rs.setProperty("--turn", turnColor()); rs.setProperty("--turn-glow", turnGlow()); rs.setProperty("--turn-tint", turnTint()); renderSeats(); drawPad(); renderHand(); pushDevice(); sendResize(); }
 
 /* ---------- 상태/음성 ---------- */
 let lastMsg="";
@@ -515,9 +520,13 @@ document.getElementById("m-2p").addEventListener("click",()=>startGame("2p"));
    입력 — 키보드 / 닷패드 키 매핑 / 버튼
    매핑: ←→(Pan L/R) 카드 이동 · Enter·F1·F3 내기 · Space·F4 읽기
    ===================================================================== */
-// 플레이어 구분 색 (2인 모드): P1=골드, P2=블루
-const P1_COLOR="#F2C14E", P2_COLOR="#5AB4F0";
+// 플레이어 구분 색 (2인 모드): P1=골드, P2=사파이어 블루
+const P1_COLOR="#F2C14E", P2_COLOR="#6E8EFB";
+const P1_GLOW="rgba(242,193,78,.45)", P2_GLOW="rgba(110,142,251,.5)";
+const P1_TINT="rgba(242,193,78,.10)", P2_TINT="rgba(110,142,251,.13)";
 function turnColor(){ return (G.mode==="2p") ? (G.turn===0?P1_COLOR:P2_COLOR) : "#F2C14E"; }
+function turnGlow(){ return (G.mode==="2p") ? (G.turn===0?P1_GLOW:P2_GLOW) : P1_GLOW; }
+function turnTint(){ return (G.mode==="2p") ? (G.turn===0?P1_TINT:P2_TINT) : P1_TINT; }
 // 현재 조작 대상(로컬 플레이어): 2인 모드는 현재 차례, 그 외(AI전)는 항상 0번(사람)
 function localIdx(){ return (G.mode==="2p") ? G.turn : 0; }
 function localPlayer(){ return G.players[localIdx()] || G.players[0]; }
