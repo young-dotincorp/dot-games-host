@@ -89,8 +89,13 @@
   .btn:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
   .btn.primary{background:var(--accent); color:#1a1500; border-color:var(--accent);}
   .btn.primary:disabled{opacity:.4; cursor:not-allowed;}
-  .btn .nav-arrow{font-size:18px; line-height:1;}
+  .btn .nav-arrow{font-size:30px; font-weight:700; line-height:1;}
   .btn.icon{flex:0 0 auto; min-width:54px;}
+  /* Tabler 아이콘 (stroke 방식) */
+  .btn svg{width:23px; height:23px; display:block;}
+  .btn#pad-btn.on{color:var(--good); border-color:var(--good);}
+  /* 임베드 모드: 상단 닫기를 부모(Tactile World)가 제공 → 게임 내 닫기 버튼 숨김 */
+  body.embed #exit{display:none;}
 
   /* ---- 오버레이 (라운드/게임 결과) ---- */
   .ovl{position:fixed; inset:0; background:rgba(10,12,15,.82); display:flex; align-items:center; justify-content:center; padding:24px; z-index:20;}
@@ -145,8 +150,8 @@
       <button class="btn icon" id="prev" aria-label="이전 카드"><span class="nav-arrow">‹</span></button>
       <button class="btn primary" id="play" aria-label="고른 카드 내기">카드 내기</button>
       <button class="btn icon" id="next" aria-label="다음 카드"><span class="nav-arrow">›</span></button>
-      <button class="btn icon" id="speak" aria-label="현재 상황 읽어주기">🔊</button>
-      <button class="btn icon" id="pad-btn" aria-label="닷패드 연결">📡</button>
+      <button class="btn icon" id="speak" aria-label="현재 상황 읽어주기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8" /><path d="M17.7 5a9 9 0 0 1 0 14" /><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" /></svg></button>
+      <button class="btn icon" id="pad-btn" aria-label="닷패드 연결"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8l10 8l-5 4l0 -16l5 4l-10 8" /></svg></button>
       <button class="btn icon" id="exit" aria-label="나가기">✕</button>
     </div>
   </main>
@@ -225,7 +230,7 @@ function refill(p){ while(p.hand.length<RULES.handSize) p.hand.push(draw()); }
 function newGame(){
   G.deck=shuffle(buildDeck()); G.total=0; G.turn=0; G.sel=0; G.over=false; G.busy=false;
   for(const p of G.players){ p.chips=RULES.chips; p.hand=[]; refill(p); }
-  hideOvl(); render(); say("게임 시작. 누적 77 미만을 지키세요. 내 차례입니다."); maybeAI();
+  hideOvl(); render(); say("게임 시작. 누적 77 미만을 지키세요. 내 차례입니다.", {assertive:true, interrupt:true});
 }
 
 /* ---------- ⑤ 규칙 엔진: 카드 적용 ---------- */
@@ -259,28 +264,28 @@ function playCard(pIdx, handIdx){
     render();
     const msg = `${p.name} 카드 ${faceWord}. 누적 ${after} — 77 넘김! ${p.name} 생명 하나 잃음.`;
     if(p.chips<=0){ refill(p); finishGame(pIdx); return; }
-    flash(msg, "bad");
     refill(p);
-    endTurn(pIdx, false);
+    narrate(msg, "bad", ()=>endTurn(pIdx, false));
     return;
   }
 
   refill(p);
   render();
   const msg = `${p.name} 카드 ${faceWord}. 누적 ${after}.` + (extraTurn? " 방향 전환, 한 번 더." : "");
-  flash(msg, "");
-  endTurn(pIdx, extraTurn);
+  narrate(msg, "", ()=>endTurn(pIdx, extraTurn));
 }
 
 function endTurn(pIdx, extraTurn){
   if(G.over) return;
-  G.busy=true;
   const next = extraTurn ? pIdx : (pIdx+1)%G.players.length;
-  setTimeout(()=>{
-    G.turn=next; G.sel=0; G.busy=false; render();
-    if(G.players[next].ai){ say(`AI 차례입니다. 현재 누적 ${G.total}.`); maybeAI(); }
-    else { say(`내 차례입니다. 현재 누적 ${G.total}.`); }
-  }, 650);
+  G.turn=next; G.sel=0; render();
+  if(G.players[next].ai){
+    G.busy=true; // AI 차례 안내가 끝나면 카드를 냄
+    narrate(`AI 차례입니다. 현재 누적 ${G.total}.`, "", ()=>aiMove(next));
+  } else {
+    G.busy=false;
+    narrate(`내 차례입니다. 현재 누적 ${G.total}.`, "");
+  }
 }
 
 /* ---------- ⑦ AI (안전 우선 휴리스틱) ---------- */
@@ -296,11 +301,10 @@ function aiPick(p){
   any.sort((a,b)=>a.after-b.after); // 다 버스트면 가장 작게 넘기는 카드
   return any[0].i;
 }
-function maybeAI(){
+function aiMove(idx){
   if(G.over) return;
-  const p=G.players[G.turn]; if(!p.ai) return;
-  G.busy=true;
-  setTimeout(()=>{ G.busy=false; playCard(G.turn, aiPick(p)); }, 900);
+  const p=G.players[idx]; if(!p || !p.ai){ G.busy=false; return; }
+  setTimeout(()=>{ if(G.over) return; G.busy=false; playCard(idx, aiPick(p)); }, AI_PAUSE);
 }
 
 /* ---------- ⑧ 게임 종료 ---------- */
@@ -309,7 +313,7 @@ function finishGame(loserIdx){
   const youLost = (loserIdx===0);
   const title = youLost ? "아쉬워요" : "승리!";
   const msg = youLost ? "생명을 모두 잃었어요. 다시 도전해 볼까요?" : "AI의 생명을 모두 소진시켰어요. 멋져요!";
-  say((youLost?"게임 종료. 패배했습니다.":"게임 종료. 승리했습니다!"), true);
+  say((youLost?"게임 종료. 패배했습니다.":"게임 종료. 승리했습니다!"), {assertive:true, interrupt:true});
   showOvl(title, msg, "다시 하기", newGame);
 }
 
@@ -405,18 +409,38 @@ function pickVoice(){
   bestVoice = ko[0] || null;
 }
 if(window.speechSynthesis){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
-function say(text, assertive){
-  // 화면 라이브 + Web Speech(있으면, 자연 음성 우선)
-  if(assertive){ document.getElementById("sr-live").textContent=text; }
+/* 음성 페이싱 설정 (조절 가능)
+   TTS_RATE: 음성 속도(1.0=기본, 낮추면 더 천천히) · AI_PAUSE: AI가 말 끝낸 뒤 카드 낼 때까지 텀(ms) */
+const TTS_RATE=1.0, AI_PAUSE=550;
+let speakSafetyTimer=null;
+function say(text, opts){
+  if(opts===true || opts===false) opts={assertive:opts};
+  opts=opts||{};
+  if(opts.assertive){ const sr=document.getElementById("sr-live"); if(sr) sr.textContent=text; }
+  const done = (typeof opts.onDone==="function") ? opts.onDone : null;
   try{
     if(window.speechSynthesis){
       if(!bestVoice) pickVoice();
       const u=new SpeechSynthesisUtterance(text);
       if(bestVoice) u.voice=bestVoice;
-      u.lang="ko-KR"; u.rate=1.0; u.pitch=1.06; u.volume=1.0;
-      window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+      u.lang="ko-KR"; u.rate=TTS_RATE; u.pitch=1.06; u.volume=1.0;
+      let fired=false;
+      const fin=()=>{ if(fired)return; fired=true; clearTimeout(speakSafetyTimer); if(done) done(); };
+      u.onend=fin; u.onerror=fin;
+      if(opts.interrupt) window.speechSynthesis.cancel(); // 수동 읽기·카드 이동만 즉시 끊기
+      window.speechSynthesis.speak(u);
+      // 안전망: onend를 누락하는 일부 브라우저 대비 (음성은 보통 이보다 먼저 끝남)
+      if(done){ clearTimeout(speakSafetyTimer); speakSafetyTimer=setTimeout(fin, 8000); }
+      return;
     }
   }catch(e){}
+  // 음성 불가 → 화면 글자를 읽을 시간을 확보한 뒤 진행
+  if(done) setTimeout(done, Math.min(4500, 1500 + (text?text.length:0)*120));
+}
+/* 게임 진행용: 상태 표시 + 음성, 음성이 끝나면 then() 실행 */
+function narrate(msg, cls, then){
+  const s=document.getElementById("status"); s.className="status"+(cls?(" "+cls):""); s.textContent=msg; lastMsg=msg;
+  say(msg, {onDone: then});
 }
 
 /* ---------- 오버레이 ---------- */
@@ -435,9 +459,9 @@ document.getElementById("ovl-btn").addEventListener("click",()=>{ const a=ovlAct
    입력 — 키보드 / 닷패드 키 매핑 / 버튼
    매핑: ←→(Pan L/R) 카드 이동 · Enter·F1·F3 내기 · Space·F4 읽기
    ===================================================================== */
-function move(d){ const me=G.players[0]; if(!me.hand.length) return; G.sel=(G.sel+d+me.hand.length)%me.hand.length; render(); const c=me.hand[G.sel]; say(cardSpeak(c)); }
+function move(d){ if(G.busy||G.over) return; const me=G.players[0]; if(!me.hand.length) return; G.sel=(G.sel+d+me.hand.length)%me.hand.length; render(); const c=me.hand[G.sel]; say(cardSpeak(c), {interrupt:true}); }
 function playSel(){ if(G.turn!==0||G.over||G.busy) return; const me=G.players[0]; if(me.hand[G.sel]) playCard(0,G.sel); }
-function announce(){ const me=G.players[0]; const c=me.hand[G.sel]; say(`누적 ${G.total}, 77까지 ${Math.max(0,RULES.limit-1-G.total)} 남음. 내 생명 ${me.chips}개. 고른 카드 ${c?cardSpeak(c):"없음"}.`, true); }
+function announce(){ const me=G.players[0]; const c=me.hand[G.sel]; say(`누적 ${G.total}, 77까지 ${Math.max(0,RULES.limit-1-G.total)} 남음. 내 생명 ${me.chips}개. 고른 카드 ${c?cardSpeak(c):"없음"}.`, {assertive:true, interrupt:true}); }
 
 document.getElementById("prev").addEventListener("click",()=>move(-1));
 document.getElementById("next").addEventListener("click",()=>move(1));
@@ -528,7 +552,7 @@ function startKeepAlive(){ stopKeepAlive(); PAD.ka=setInterval(()=>{
 },1000); }
 function stopKeepAlive(){ if(PAD.ka){ clearInterval(PAD.ka); PAD.ka=null; } }
 function updatePadBtn(){ const b=document.getElementById("pad-btn"); if(!b) return;
-  b.textContent=PAD.ready?"✅":"📡"; b.setAttribute("aria-label", PAD.ready?"닷패드 연결됨 (눌러서 해제)":"닷패드 연결");
+  b.classList.toggle("on", !!PAD.ready); b.setAttribute("aria-label", PAD.ready?"닷패드 연결됨 (눌러서 해제)":"닷패드 연결");
 }
 async function connectPad(){
   if(PAD.ready){ try{ PAD.sdk.disconnect(PAD.dev); }catch(e){} PAD.ready=false; stopKeepAlive(); updatePadBtn(); setStatus("닷패드 연결을 해제했어요."); return; }
