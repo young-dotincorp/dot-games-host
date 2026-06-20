@@ -10,6 +10,7 @@
     --ink:#E8EAED; --muted:#9AA0A8;
     --pin-off:#2C323B; --pin-on:#F2C14E; --pin-danger:#E5484D;
     --accent:#F2C14E; --danger:#E5484D; --good:#3DD68C;
+    --p1:#F2C14E; --p2:#5AB4F0; --turn:#F2C14E;
     --tile:#F7F3EA; --tile-ink:#1A1A1A; --tile-line:#E2DBCB;
     --r:14px; --r-sm:10px;
   }
@@ -40,11 +41,11 @@
   .pad-top{display:flex; justify-content:space-between; align-items:center; gap:12px; flex:none;}
   .seat{display:flex; align-items:center; gap:8px;}
   .seat .who{font-size:13px; color:var(--muted);}
-  .seat.turn .who{color:var(--accent); font-weight:700;}
+  .seat.turn .who{color:var(--turn); font-weight:700;}
   .chips{display:inline-flex; gap:5px;}
   .chip{width:13px; height:13px; border-radius:50%; background:var(--pin-on); box-shadow:0 0 0 1px rgba(0,0,0,.25) inset;}
   .chip.out{background:var(--pin-off); box-shadow:none;}
-  .turn-dot{width:8px;height:8px;border-radius:50%;background:var(--accent); opacity:0; transition:opacity .2s;}
+  .turn-dot{width:8px;height:8px;border-radius:50%;background:var(--turn); opacity:0; transition:opacity .2s;}
   .seat.turn .turn-dot{opacity:1; animation:blink 1s steps(2,start) infinite;}
   @keyframes blink{50%{opacity:.25;}}
   canvas#pad{flex:1 1 auto; width:100%; min-height:0; display:block; image-rendering:pixelated;}
@@ -72,7 +73,9 @@
   .card .v{font-size:clamp(20px,6vw,34px); font-weight:800; letter-spacing:-.02em; line-height:1;}
   .card .corner{position:absolute; font-size:11px; font-weight:700; opacity:.7;}
   .card .corner.tl{top:6px; left:7px;} .card .corner.br{bottom:6px; right:7px;}
-  .card.sel{transform:translateY(-8px); outline-color:var(--accent); box-shadow:0 8px 20px rgba(0,0,0,.35);}
+  .card.sel{transform:translateY(-8px); outline-color:var(--turn); box-shadow:0 8px 20px rgba(0,0,0,.35);}
+  /* 2인 모드: 현재 플레이어 색으로 손패 영역을 구분 */
+  body.twop .hand-wrap{ border-left:4px solid var(--turn); padding-left:10px; border-radius:6px; transition:border-color .2s; }
   .card .kind{font-size:11px; font-weight:700; opacity:.6; position:absolute; bottom:7px; left:0; right:0; text-align:center;}
   .card.set{background:#EAF0FB;} .card.mul2{background:#F3EAFB;} .card.sub10{background:#FBEFEA;} .card.rev{background:#EAF7F0;}
 
@@ -142,7 +145,7 @@
 
     <!-- 손패 -->
     <div class="hand-wrap">
-      <div class="hand-label"><span>내 손패</span><span id="hand-hint">← → 카드 고르기 · Enter 내기</span></div>
+      <div class="hand-label"><span id="hand-owner">내 손패</span><span id="hand-hint">← → 카드 고르기 · Enter 내기</span></div>
       <div class="hand" id="hand" role="listbox" aria-label="내 손패"></div>
     </div>
 
@@ -252,6 +255,7 @@ function configurePlayers(mode){
 }
 function startGame(mode){
   G.mode=mode; configurePlayers(mode);
+  document.body.classList.toggle("twop", mode==="2p");
   G.deck=shuffle(buildDeck()); G.total=0; G.turn=0; G.sel=0; G.over=false; G.busy=false;
   for(const p of G.players){ p.chips=RULES.chips; p.hand=[]; refill(p); }
   hideMenu(); hideOvl(); render();
@@ -416,6 +420,8 @@ function renderChips(elId, chips){
 function renderHand(){
   const wrap=document.getElementById("hand"); wrap.innerHTML="";
   const i=localIdx(); const me=G.players[i]; const myTurn = canAct();
+  const owner=document.getElementById("hand-owner");
+  if(owner){ owner.textContent=(G.mode==="2p")?`${me.name} 손패`:"내 손패"; owner.style.color=(G.mode==="2p")?turnColor():""; }
   me.hand.forEach((c,idx)=>{
     const f=cardFace(c);
     const el=document.createElement("div");
@@ -431,14 +437,15 @@ function renderHand(){
 function renderSeats(){
   const p0=G.players[0], p1=G.players[1];
   const w0=document.querySelector("#seat-you .who"), w1=document.querySelector("#seat-ai .who");
-  if(w0) w0.textContent=p0.name; if(w1) w1.textContent=p1.name;
+  if(w0){ w0.textContent=p0.name; w0.style.color=(G.mode==="2p")?P1_COLOR:""; }
+  if(w1){ w1.textContent=p1.name; w1.style.color=(G.mode==="2p")?P2_COLOR:""; }
   document.getElementById("seat-you").classList.toggle("turn", G.turn===0 && !G.over);
   document.getElementById("seat-ai").classList.toggle("turn", G.turn===1 && !G.over);
   renderChips("chips-you", p0.chips);
   renderChips("chips-ai", p1.chips);
   document.getElementById("total-num").textContent=String(G.total);
 }
-function render(){ renderSeats(); drawPad(); renderHand(); pushDevice(); sendResize(); }
+function render(){ document.documentElement.style.setProperty("--turn", turnColor()); renderSeats(); drawPad(); renderHand(); pushDevice(); sendResize(); }
 
 /* ---------- 상태/음성 ---------- */
 let lastMsg="";
@@ -508,6 +515,9 @@ document.getElementById("m-2p").addEventListener("click",()=>startGame("2p"));
    입력 — 키보드 / 닷패드 키 매핑 / 버튼
    매핑: ←→(Pan L/R) 카드 이동 · Enter·F1·F3 내기 · Space·F4 읽기
    ===================================================================== */
+// 플레이어 구분 색 (2인 모드): P1=골드, P2=블루
+const P1_COLOR="#F2C14E", P2_COLOR="#5AB4F0";
+function turnColor(){ return (G.mode==="2p") ? (G.turn===0?P1_COLOR:P2_COLOR) : "#F2C14E"; }
 // 현재 조작 대상(로컬 플레이어): 2인 모드는 현재 차례, 그 외(AI전)는 항상 0번(사람)
 function localIdx(){ return (G.mode==="2p") ? G.turn : 0; }
 function localPlayer(){ return G.players[localIdx()] || G.players[0]; }
