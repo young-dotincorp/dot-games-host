@@ -47,6 +47,7 @@
   .chips{display:inline-flex; gap:5px;}
   .chip{width:13px; height:13px; border-radius:50%; background:var(--pin-on); box-shadow:0 0 0 1px rgba(0,0,0,.25) inset;}
   .chip.out{background:var(--pin-off); box-shadow:none;}
+  body.twop #chips-ai .chip:not(.out){background:var(--p2);}
   .turn-dot{width:8px;height:8px;border-radius:50%;background:var(--turn); opacity:0; transition:opacity .2s;}
   .seat.turn .turn-dot{opacity:1; animation:blink 1s steps(2,start) infinite;}
   @keyframes blink{50%{opacity:.25;}}
