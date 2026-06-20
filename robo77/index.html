@@ -104,6 +104,7 @@
   .ovl h2{margin:0 0 8px; font-size:24px;}
   .ovl p{margin:0 0 20px; color:var(--muted); font-size:14px; line-height:1.55;}
   .ovl .box .btn{width:100%;}
+  .ovl .box .btn + .btn{margin-top:10px;}
   .sr{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0;}
 
   @media (max-width:560px){
@@ -168,6 +169,17 @@
   </div>
 </div>
 
+<!-- 시작 메뉴: 대결 방식 선택 -->
+<div class="ovl" id="menu" hidden>
+  <div class="box">
+    <h2>로보 77</h2>
+    <p>대결 방식을 골라주세요.</p>
+    <button class="btn primary" id="m-easy">AI와 대결 · 쉬움</button>
+    <button class="btn" id="m-hard">AI와 대결 · 어려움</button>
+    <button class="btn" id="m-2p">둘이서 (2인)</button>
+  </div>
+</div>
+
 <div class="sr" aria-live="assertive" id="sr-live"></div>
 
 <script>
@@ -227,11 +239,36 @@ const G = {
 function draw(){ if(!G.deck.length) G.deck=shuffle(buildDeck()); return G.deck.pop(); }
 function refill(p){ while(p.hand.length<RULES.handSize) p.hand.push(draw()); }
 
-function newGame(){
+function configurePlayers(mode){
+  if(mode==="2p"){
+    G.players=[{name:"플레이어 1",chips:RULES.chips,hand:[],ai:false},
+               {name:"플레이어 2",chips:RULES.chips,hand:[],ai:false}];
+    G.aiHard=false;
+  } else {
+    G.players=[{name:"나",chips:RULES.chips,hand:[],ai:false},
+               {name:"AI",chips:RULES.chips,hand:[],ai:true}];
+    G.aiHard=(mode==="hard");
+  }
+}
+function startGame(mode){
+  G.mode=mode; configurePlayers(mode);
   G.deck=shuffle(buildDeck()); G.total=0; G.turn=0; G.sel=0; G.over=false; G.busy=false;
   for(const p of G.players){ p.chips=RULES.chips; p.hand=[]; refill(p); }
-  hideOvl(); render(); say("게임 시작. 누적 77 미만을 지키세요. 내 차례입니다.", {assertive:true, interrupt:true});
+  hideMenu(); hideOvl(); render();
+  const intro = (mode==="2p")
+    ? `둘이서 대결을 시작합니다. 누적 77 미만을 지키세요. ${G.players[0].name} 차례입니다.`
+    : `게임 시작. 누적 77 미만을 지키세요. 내 차례입니다.`;
+  say(intro, {assertive:true, interrupt:true});
 }
+// 시작/재시작 진입점 → 대결 방식 선택 메뉴
+function newGame(){ showMenu(); }
+function showMenu(){
+  G.over=true; G.busy=true; silence();
+  hideOvl(); const m=document.getElementById("menu"); if(m) m.hidden=false;
+  const b=document.getElementById("m-easy"); if(b) b.focus();
+  say("로보 77. 대결 방식을 골라주세요. AI와 대결 쉬움, AI와 대결 어려움, 또는 둘이서.", {assertive:true, interrupt:true});
+}
+function hideMenu(){ const m=document.getElementById("menu"); if(m) m.hidden=true; }
 
 /* ---------- ⑤ 규칙 엔진: 카드 적용 ---------- */
 function applyCard(c, total){
@@ -284,22 +321,28 @@ function endTurn(pIdx, extraTurn){
     narrate(`AI 차례입니다. 현재 누적 ${G.total}.`, "", ()=>aiMove(next));
   } else {
     G.busy=false;
-    narrate(`내 차례입니다. 현재 누적 ${G.total}.`, "");
+    const nm=G.players[next].name;
+    const label=(nm==="나")?"내 차례입니다":`${nm} 차례입니다`;
+    narrate(`${label}. 현재 누적 ${G.total}.`, "");
   }
 }
 
 /* ---------- ⑦ AI (안전 우선 휴리스틱) ---------- */
 function aiPick(p){
-  // 버스트 안 나는 수 중 누적을 가장 높게(압박) → 없으면 set/sub10로 탈출 → 다 버스트면 피해 최소
   let safe=[], any=[];
   p.hand.forEach((c,i)=>{
     const after=applyCard(c, G.total);
     any.push({i,after});
     if(after<RULES.limit) safe.push({i,after});
   });
-  if(safe.length){ safe.sort((a,b)=>b.after-a.after); return safe[0].i; }
-  any.sort((a,b)=>a.after-b.after); // 다 버스트면 가장 작게 넘기는 카드
-  return any[0].i;
+  if(!safe.length){ any.sort((a,b)=>a.after-b.after); return any[0].i; } // 다 버스트면 피해 최소
+  if(G.aiHard){
+    // 어려움: 버스트 안 나는 선에서 누적을 최대로(압박) — 강한 AI
+    safe.sort((a,b)=>b.after-a.after); return safe[0].i;
+  }
+  // 쉬움: 종종 약하게 둠 — 가장 안전(낮은)한 카드를 자주 내거나 무작위로 골라 빈틈을 줌
+  if(Math.random()<0.45){ safe.sort((a,b)=>a.after-b.after); return safe[0].i; }
+  return safe[Math.floor(Math.random()*safe.length)].i;
 }
 function aiMove(idx){
   if(G.over) return;
@@ -314,7 +357,7 @@ function finishGame(loserIdx){
   const title = youLost ? "아쉬워요" : "승리!";
   const msg = youLost ? "생명을 모두 잃었어요. 다시 도전해 볼까요?" : "AI의 생명을 모두 소진시켰어요. 멋져요!";
   say((youLost?"게임 종료. 패배했습니다.":"게임 종료. 승리했습니다!"), {assertive:true, interrupt:true});
-  showOvl(title, msg, "다시 하기", newGame);
+  showOvl(title, msg, "다시 하기", ()=>startGame(G.mode||"easy"));
 }
 
 /* =====================================================================
@@ -454,6 +497,9 @@ function showOvl(title,msg,btn,action){
 }
 function hideOvl(){ document.getElementById("ovl").hidden=true; }
 document.getElementById("ovl-btn").addEventListener("click",()=>{ const a=ovlAction; ovlAction=null; hideOvl(); if(a)a(); });
+document.getElementById("m-easy").addEventListener("click",()=>startGame("easy"));
+document.getElementById("m-hard").addEventListener("click",()=>startGame("hard"));
+document.getElementById("m-2p").addEventListener("click",()=>startGame("2p"));
 
 /* =====================================================================
    입력 — 키보드 / 닷패드 키 매핑 / 버튼
@@ -471,6 +517,9 @@ document.getElementById("pad-btn").addEventListener("click", connectPad);
 document.getElementById("exit").addEventListener("click", doExit);
 
 window.addEventListener("keydown",(e)=>{
+  // 메뉴/결과 오버레이가 열려 있으면 게임 키를 가로채지 않음(버튼 포커스·Enter 정상 동작)
+  const mO=document.getElementById("menu"), oO=document.getElementById("ovl");
+  if((mO && !mO.hidden) || (oO && !oO.hidden)) return;
   const k=e.key;
   if(k==="ArrowLeft"){ move(-1); e.preventDefault(); }
   else if(k==="ArrowRight"){ move(1); e.preventDefault(); }
@@ -499,12 +548,17 @@ function sendResize(){
   const h=Math.ceil(document.documentElement.scrollHeight);
   if(Math.abs(h-lastH)>4){ lastH=h; postToParent({type:"resize", height:h}); }
 }
+function silence(){ try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){} clearTimeout(speakSafetyTimer); }
 function doExit(){
-  if(EMBED){ postToParent({type:"exit"}); }      // 임베드: 부모(TW)가 모달 닫음
-  else { showOvl("다시 시작할까요?","현재 게임을 끝내고 새 게임을 시작합니다.","새 게임", newGame); }
+  G.over=true; G.busy=true; silence();        // 게임 정지 + 음성 즉시 중단
+  if(EMBED){ postToParent({type:"exit"}); }    // 임베드: 부모(Tactile World)가 모달 닫음
+  else { showMenu(); }                          // 단독 실행: 시작 메뉴로
 }
 // 부모 → 자식 메시지(선택)
 window.addEventListener("message",(e)=>{ const d=e.data; if(d&&d.type==="exit") doExit(); });
+// 안전장치: 게임 화면이 사라지면(부모가 닫거나 탭 전환) 음성·진행 즉시 중단 — 닫은 뒤 음성이 계속되는 문제 방지
+document.addEventListener("visibilitychange",()=>{ if(document.hidden && G && !G.over){ G.over=true; G.busy=true; silence(); } });
+window.addEventListener("pagehide",()=>{ try{ G.over=true; }catch(e){} silence(); });
 
 /* 리사이즈 → 캔버스 재그리기 + 부모 통지 */
 let rAF=0;
