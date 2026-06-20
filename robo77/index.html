@@ -71,7 +71,7 @@
   }
   .card .v{font-size:clamp(20px,6vw,34px); font-weight:800; letter-spacing:-.02em; line-height:1;}
   .card .corner{position:absolute; font-size:11px; font-weight:700; opacity:.7;}
-  .card .corner.tl{top:6px; left:7px;} .card .corner.br{bottom:6px; right:7px; transform:rotate(180deg);}
+  .card .corner.tl{top:6px; left:7px;} .card .corner.br{bottom:6px; right:7px;}
   .card.sel{transform:translateY(-8px); outline-color:var(--accent); box-shadow:0 8px 20px rgba(0,0,0,.35);}
   .card .kind{font-size:11px; font-weight:700; opacity:.6; position:absolute; bottom:7px; left:0; right:0; text-align:center;}
   .card.set{background:#EAF0FB;} .card.mul2{background:#F3EAFB;} .card.sub10{background:#FBEFEA;} .card.rev{background:#EAF7F0;}
@@ -157,7 +157,7 @@
     </div>
   </main>
 
-  <footer>F1·Enter 내기 · ←→ 카드 이동 · Space 다시 듣기 · 닷패드 키 동일 매핑</footer>
+  <footer>←→ 카드 이동 · F1·Enter 내기 · F2 고른 카드 · F3 누적 점수 · F4 전체 듣기 · 닷패드 키 동일</footer>
 </div>
 
 <!-- 라운드/게임 결과 오버레이 -->
@@ -176,7 +176,7 @@
     <p>대결 방식을 골라주세요.</p>
     <button class="btn primary" id="m-easy">AI와 대결 · 쉬움</button>
     <button class="btn" id="m-hard">AI와 대결 · 어려움</button>
-    <button class="btn" id="m-2p">둘이서 (2인)</button>
+    <button class="btn" id="m-2p">둘이서 · 사람 vs 사람</button>
   </div>
 </div>
 
@@ -266,7 +266,7 @@ function showMenu(){
   G.over=true; G.busy=true; silence();
   hideOvl(); const m=document.getElementById("menu"); if(m) m.hidden=false;
   const b=document.getElementById("m-easy"); if(b) b.focus();
-  say("로보 77. 대결 방식을 골라주세요. AI와 대결 쉬움, AI와 대결 어려움, 또는 둘이서.", {assertive:true, interrupt:true});
+  say("로보 77. 대결 방식을 골라주세요. AI와 대결 쉬움, AI와 대결 어려움, 또는 사람끼리 둘이서.", {assertive:true, interrupt:true});
 }
 function hideMenu(){ const m=document.getElementById("menu"); if(m) m.hidden=true; }
 
@@ -415,24 +415,27 @@ function renderChips(elId, chips){
 }
 function renderHand(){
   const wrap=document.getElementById("hand"); wrap.innerHTML="";
-  const me=G.players[0]; const myTurn = (G.turn===0 && !G.over && !G.busy);
-  me.hand.forEach((c,i)=>{
+  const i=localIdx(); const me=G.players[i]; const myTurn = canAct();
+  me.hand.forEach((c,idx)=>{
     const f=cardFace(c);
     const el=document.createElement("div");
-    el.className="card "+f.cls+(i===G.sel?" sel":"");
-    el.setAttribute("role","option"); el.setAttribute("aria-selected", i===G.sel?"true":"false");
-    el.setAttribute("aria-label", `${cardSpeak(c)}${i===G.sel?", 선택됨":""}`);
+    el.className="card "+f.cls+(idx===G.sel?" sel":"");
+    el.setAttribute("role","option"); el.setAttribute("aria-selected", idx===G.sel?"true":"false");
+    el.setAttribute("aria-label", `${cardSpeak(c)}${idx===G.sel?", 선택됨":""}`);
     el.innerHTML = `<span class="corner tl">${f.v}</span><span class="v">${f.v}</span><span class="corner br">${f.v}</span><span class="kind">${f.kind}</span>`;
-    el.addEventListener("click",()=>{ if(!myTurn) return; G.sel=i; render(); if(c) playCard(0,i); });
+    el.addEventListener("click",()=>{ if(!canAct()) return; G.sel=idx; render(); if(c) playCard(i,idx); });
     wrap.appendChild(el);
   });
   document.getElementById("play").disabled = !myTurn;
 }
 function renderSeats(){
+  const p0=G.players[0], p1=G.players[1];
+  const w0=document.querySelector("#seat-you .who"), w1=document.querySelector("#seat-ai .who");
+  if(w0) w0.textContent=p0.name; if(w1) w1.textContent=p1.name;
   document.getElementById("seat-you").classList.toggle("turn", G.turn===0 && !G.over);
   document.getElementById("seat-ai").classList.toggle("turn", G.turn===1 && !G.over);
-  renderChips("chips-you", G.players[0].chips);
-  renderChips("chips-ai", G.players[1].chips);
+  renderChips("chips-you", p0.chips);
+  renderChips("chips-ai", p1.chips);
   document.getElementById("total-num").textContent=String(G.total);
 }
 function render(){ renderSeats(); drawPad(); renderHand(); pushDevice(); sendResize(); }
@@ -505,9 +508,16 @@ document.getElementById("m-2p").addEventListener("click",()=>startGame("2p"));
    입력 — 키보드 / 닷패드 키 매핑 / 버튼
    매핑: ←→(Pan L/R) 카드 이동 · Enter·F1·F3 내기 · Space·F4 읽기
    ===================================================================== */
-function move(d){ if(G.busy||G.over) return; const me=G.players[0]; if(!me.hand.length) return; G.sel=(G.sel+d+me.hand.length)%me.hand.length; render(); const c=me.hand[G.sel]; say(cardSpeak(c), {interrupt:true}); }
-function playSel(){ if(G.turn!==0||G.over||G.busy) return; const me=G.players[0]; if(me.hand[G.sel]) playCard(0,G.sel); }
-function announce(){ const me=G.players[0]; const c=me.hand[G.sel]; say(`누적 ${G.total}, 77까지 ${Math.max(0,RULES.limit-1-G.total)} 남음. 내 생명 ${me.chips}개. 고른 카드 ${c?cardSpeak(c):"없음"}.`, {assertive:true, interrupt:true}); }
+// 현재 조작 대상(로컬 플레이어): 2인 모드는 현재 차례, 그 외(AI전)는 항상 0번(사람)
+function localIdx(){ return (G.mode==="2p") ? G.turn : 0; }
+function localPlayer(){ return G.players[localIdx()] || G.players[0]; }
+function canAct(){ const i=localIdx(); return !G.over && !G.busy && G.turn===i && !G.players[i].ai; }
+
+function move(d){ if(G.busy||G.over) return; const me=localPlayer(); if(!me.hand.length) return; G.sel=(G.sel+d+me.hand.length)%me.hand.length; render(); const c=me.hand[G.sel]; say(cardSpeak(c), {interrupt:true}); }
+function playSel(){ if(!canAct()) return; const i=localIdx(); const me=G.players[i]; if(me.hand[G.sel]) playCard(i,G.sel); }
+function readSel(){ const me=localPlayer(); const c=me.hand[G.sel]; say(`고른 카드 ${c?cardSpeak(c):"없음"}.`, {assertive:true, interrupt:true}); }     // F2
+function readTotal(){ say(`누적 ${G.total}, 77까지 ${Math.max(0,RULES.limit-1-G.total)} 남음.`, {assertive:true, interrupt:true}); }       // F3
+function announce(){ const me=localPlayer(); const c=me.hand[G.sel]; const lifeLabel=(me.name==="나")?"내 생명":me.name+" 생명"; say(`누적 ${G.total}, 77까지 ${Math.max(0,RULES.limit-1-G.total)} 남음. ${lifeLabel} ${me.chips}개. 고른 카드 ${c?cardSpeak(c):"없음"}.`, {assertive:true, interrupt:true}); } // F4
 
 document.getElementById("prev").addEventListener("click",()=>move(-1));
 document.getElementById("next").addEventListener("click",()=>move(1));
@@ -523,14 +533,18 @@ window.addEventListener("keydown",(e)=>{
   const k=e.key;
   if(k==="ArrowLeft"){ move(-1); e.preventDefault(); }
   else if(k==="ArrowRight"){ move(1); e.preventDefault(); }
-  else if(k==="Enter"||k==="F1"||k==="F3"){ playSel(); e.preventDefault(); }
-  else if(k===" "||k==="F4"){ announce(); e.preventDefault(); }
+  else if(k==="Enter"||k==="F1"){ playSel(); e.preventDefault(); }      // 카드 내기
+  else if(k==="F2"){ readSel(); e.preventDefault(); }                    // 고른 카드 듣기
+  else if(k==="F3"){ readTotal(); e.preventDefault(); }                  // 누적 점수 듣기
+  else if(k===" "||k==="F4"){ announce(); e.preventDefault(); }          // 전체 상황 듣기
 });
 // 닷패드 하드웨어 키 → 위 동작에 연결할 수 있는 훅(부모/SDK가 호출)
 window.ROBO77_fireKey=function(key){
   if(key==="PAN_LEFT") move(-1);
   else if(key==="PAN_RIGHT") move(1);
-  else if(key==="F1"||key==="F3") playSel();
+  else if(key==="F1") playSel();
+  else if(key==="F2") readSel();
+  else if(key==="F3") readTotal();
   else if(key==="F4"||key==="PAN_ALL") announce();
 };
 
@@ -631,11 +645,13 @@ async function connectPad(){
       (d, key)=>{                        // 본체 버튼 → 게임 조작
         if(key===mod.KeyCodes.PanningLeft) move(-1);
         else if(key===mod.KeyCodes.PanningRight) move(1);
-        else if(key===mod.KeyCodes.KeyFunction1 || key===mod.KeyCodes.KeyFunction3) playSel();
+        else if(key===mod.KeyCodes.KeyFunction1) playSel();
+        else if(key===mod.KeyCodes.KeyFunction2) readSel();
+        else if(key===mod.KeyCodes.KeyFunction3) readTotal();
         else if(key===mod.KeyCodes.KeyFunction4 || key===mod.KeyCodes.PanningAll) announce();
       }
     );
-    setStatus("닷패드 연결됨! 본체 F1로 카드 내기, 패닝키로 카드 이동, F4로 듣기.");
+    setStatus("닷패드 연결됨! 패닝키로 카드 이동, F1 내기, F2 고른 카드, F3 누적 점수, F4 전체 듣기.");
     updatePadBtn();
   }catch(e){ setStatus("닷패드 오류: " + (e && e.message ? e.message : String(e))); }
 }
