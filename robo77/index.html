@@ -590,7 +590,7 @@ function doExit(){
 // 부모 → 자식 메시지(선택)
 window.addEventListener("message",(e)=>{ const d=e.data; if(d&&d.type==="exit") doExit(); });
 // 안전장치: 게임 화면이 사라지면(부모가 닫거나 탭 전환) 음성·진행 즉시 중단 — 닫은 뒤 음성이 계속되는 문제 방지
-document.addEventListener("visibilitychange",()=>{ if(document.hidden && G && !G.over){ G.over=true; G.busy=true; silence(); } });
+document.addEventListener("visibilitychange",()=>{ if(document.hidden){ silence(); } });
 window.addEventListener("pagehide",()=>{ try{ G.over=true; }catch(e){} silence(); });
 
 /* 리사이즈 → 캔버스 재그리기 + 부모 통지 */
