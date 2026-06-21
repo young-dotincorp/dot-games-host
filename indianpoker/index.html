@@ -43,8 +43,7 @@
   .seat.opp  .who{color:var(--pin-on);}    /* 상대 = 상대 칩 색(노랑) */
   .seat.mine .turn-dot{background:var(--good);}
   .seat.opp  .turn-dot{background:var(--pin-on);}
-  body.twop #seat-you.turn .who{color:var(--p1);}
-  body.twop #seat-ai.turn .who{color:var(--p2);}
+  /* 좌석 이름 색은 mine/opp(초록/노랑)로만 통일 — 차례는 점멸 점으로만 표시 */
   .turn-dot{width:8px;height:8px;border-radius:50%;background:var(--accent); opacity:0; transition:opacity .2s;}
   .seat.turn .turn-dot{opacity:1; animation:blink 1s steps(2,start) infinite;}
   @keyframes blink{50%{opacity:.25;}}
