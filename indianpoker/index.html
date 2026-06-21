@@ -674,7 +674,7 @@ function sendResize(){ const h=Math.ceil(document.documentElement.scrollHeight);
 function silence(){ try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){} clearTimeout(speakSafetyTimer); }
 function doExit(){ G.over=true; G.busy=true; silence(); if(EMBED){ postToParent({type:"exit"}); } else { showMenu(); } }
 window.addEventListener("message",(e)=>{ const d=e.data; if(d&&d.type==="exit") doExit(); });
-document.addEventListener("visibilitychange",()=>{ if(document.hidden && G && !G.over){ G.over=true; G.busy=true; silence(); } });
+document.addEventListener("visibilitychange",()=>{ if(document.hidden){ silence(); } else { try{ ac(); }catch(e){} } });
 window.addEventListener("pagehide",()=>{ try{ G.over=true; }catch(e){} silence(); });
 let rAF=0;
 new ResizeObserver(()=>{ cancelAnimationFrame(rAF); rAF=requestAnimationFrame(()=>{ drawPad(); sendResize(); }); }).observe(document.body);
