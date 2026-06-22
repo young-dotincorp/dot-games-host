@@ -822,6 +822,8 @@ body.embed-mode #game-footer { padding: 8px 12px; }
   0%, 100% { outline-color: var(--accent); }
   50% { outline-color: transparent; }
 }
+.embed-mode #btn-quit-game{display:none!important;}
+.embed-mode #game-direction-wrap{display:none!important;}
 </style>
 </head>
 <body>
@@ -939,8 +941,9 @@ body.embed-mode #game-footer { padding: 8px 12px; }
       <div id="dotpad-status-game" style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)">
         <div class="dotpad-dot" id="dotpad-dot-game"></div>
       </div>
+      <button class="btn btn-ghost btn-sm" onclick="speakCurrentState()" title="현재 상태 듣기">🔊</button>
       <button class="btn btn-ghost btn-sm" id="btn-connect-game" onclick="showDotPadMenu()" title="DotPad 연결">📱</button>
-      <button class="btn btn-ghost btn-sm" onclick="confirmQuit()" title="게임 종료">✕</button>
+      <button class="btn btn-ghost btn-sm" id="btn-quit-game" onclick="confirmQuit()" title="게임 종료">✕</button>
     </div>
   </div>
 
@@ -970,7 +973,7 @@ body.embed-mode #game-footer { padding: 8px 12px; }
     <div id="hand-area"></div>
     <div id="footer-actions">
       <button class="btn btn-primary" id="btn-play" onclick="playSelectedCard()" disabled>카드 내기</button>
-      <button class="btn btn-secondary btn-sm" onclick="speakCurrentState()">🔊</button>
+      
     </div>
   </div>
 </div>
