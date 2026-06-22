@@ -1077,7 +1077,7 @@ body.embed-mode #game-footer { padding: 8px 12px; }
   <div class="voice-modal" onclick="event.stopPropagation()">
     <h3>🔊 TTS 음성 선택</h3>
     <!-- Google TTS 토글 -->
-    <div style="display:flex;align-items:center;gap:10px;background:#121220;border-radius:10px;padding:10px 12px;border:1.5px solid #2a2a4a" id="google-tts-row">
+    <div style="display:flex;align-items:center;gap:10px;background:#121220;border-radius:10px;padding:10px 12px;border:1.5px solid #2a2a4a;display:none" id="google-tts-row">
       <div style="flex:1">
         <div style="font-size:13px;font-weight:600">Google 번역 TTS</div>
         <div style="font-size:10px;color:var(--text2)">자연스러운 구글 음성 · 인터넷 필요 · 비공식 API</div>
@@ -2753,8 +2753,8 @@ function loadVoices() {
   // 기본 음성: "Google 한국어" 우선, 없으면 Google/Microsoft ko, 그 다음 아무 ko
   if (!selectedVoice) {
     const preferred =
-      allVoices.find(v => v.name === 'Google 한국어') ||
-      allVoices.find(v => v.lang.startsWith('ko') && v.name.includes('Google')) ||
+      allVoices.find(v => v.lang.startsWith('ko') && v.localService && v.name.includes('Microsoft')) ||
+      allVoices.find(v => v.lang.startsWith('ko') && v.localService) ||
       allVoices.find(v => v.lang.startsWith('ko') && v.name.includes('Microsoft')) ||
       allVoices.find(v => v.lang.startsWith('ko'));
     if (preferred) selectedVoice = preferred;
