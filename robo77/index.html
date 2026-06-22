@@ -1304,7 +1304,7 @@ async function tryAutoReconnect() {
   }
 
   // USB
-  if (navigator.serial?.getPorts) {
+  if (!EMBED_MODE && navigator.serial?.getPorts) {
     try {
       const ports = await navigator.serial.getPorts();
       if (ports.length > 0) {
