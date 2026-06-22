@@ -823,6 +823,7 @@ body.embed-mode #game-footer { padding: 8px 12px; }
   50% { outline-color: transparent; }
 }
 .embed-mode #btn-quit-game{display:none!important;}
+.embed-mode #btn-tut-exit{display:none!important;}
 .embed-mode #game-direction-wrap{display:none!important;}
 .embed-mode .voice-modal-overlay{align-items:center;}
 .embed-mode .voice-modal{max-height:78vh;border-radius:16px;}
@@ -1014,7 +1015,7 @@ body.embed-mode #game-footer { padding: 8px 12px; }
     <button class="btn btn-ghost btn-sm" onclick="tutorialSpeak()"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8" />
   <path d="M17.7 5a9 9 0 0 1 0 14" />
   <path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" /></svg></button>
-    <button class="btn btn-ghost btn-sm" onclick="tutorialExit()"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" />
+    <button class="btn btn-ghost btn-sm" onclick="tutorialExit() id="btn-tut-exit""><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" />
   <path d="M6 6l12 12" /></svg></button>
   </div>
   <div class="tut-ol-nav">
