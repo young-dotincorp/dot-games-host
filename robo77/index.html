@@ -2448,9 +2448,16 @@ function _gPlay(queue, onEnd) {
   const onFail = () => {
     if (errorFired) return;
     errorFired = true;
-    console.warn('[Google TTS] 재생 실패 — 브라우저 콘솔에서 네트워크 오류를 확인하세요.');
-    showGoogleTTSError();
-    _gPlay(queue, onEnd);
+    console.warn('[Google TTS] 재생 실패 — 브라우저 음성으로 자동 전환합니다.');
+    var _remain = [seg].concat(queue).join(' ');
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      var _u = new SpeechSynthesisUtterance(_remain);
+      _u.lang = 'ko-KR'; _u.rate = 1.05;
+      if (selectedVoice) _u.voice = selectedVoice;
+      if (onEnd) _u.onend = onEnd;
+      window.speechSynthesis.speak(_u);
+    } else { if (onEnd) onEnd(); }
   };
   audio.onended = () => _gPlay(queue, onEnd);
   audio.onerror = onFail;
