@@ -824,6 +824,8 @@ body.embed-mode #game-footer { padding: 8px 12px; }
 }
 .embed-mode #btn-quit-game{display:none!important;}
 .embed-mode #game-direction-wrap{display:none!important;}
+.embed-mode .voice-modal-overlay{align-items:center;}
+.embed-mode .voice-modal{max-height:78vh;border-radius:16px;}
 </style>
 </head>
 <body>
@@ -2755,9 +2757,10 @@ function loadVoices() {
   allVoices = window.speechSynthesis.getVoices();
   // 기본 음성: "Google 한국어" 우선, 없으면 Google/Microsoft ko, 그 다음 아무 ko
   if (!selectedVoice) {
+    const goodKo = v => v.lang.startsWith('ko') && ['Yuna','유나','Heami','SunHi','Google 한국어'].some(n => v.name.includes(n));
     const preferred =
-      allVoices.find(v => v.lang.startsWith('ko') && v.localService && v.name.includes('Microsoft')) ||
-      allVoices.find(v => v.lang.startsWith('ko') && v.localService) ||
+      allVoices.find(goodKo) ||
+      allVoices.find(v => v.lang.startsWith('ko') && v.default) ||
       allVoices.find(v => v.lang.startsWith('ko') && v.name.includes('Microsoft')) ||
       allVoices.find(v => v.lang.startsWith('ko'));
     if (preferred) selectedVoice = preferred;
@@ -2800,7 +2803,7 @@ window.showVoiceModal = function() {
   const list = document.getElementById('voice-list');
 
   // 한국어 우선, 그 다음 전체 목록
-  const koVoices = allVoices.filter(v => v.lang.startsWith('ko'));
+  const koVoices = allVoices.filter(v => v.lang.startsWith('ko')).sort((a,b) => voiceRank(a) - voiceRank(b));
   const otherVoices = allVoices.filter(v => !v.lang.startsWith('ko'));
   const display = koVoices.length > 0 ? koVoices : allVoices;
 
@@ -2816,6 +2819,11 @@ window.showVoiceModal = function() {
   document.getElementById('voice-modal-overlay').style.display = 'flex';
 };
 
+function voiceRank(v){
+  const good = ['Yuna','유나','Heami','SunHi','Google 한국어'];
+  for (let i=0;i<good.length;i++){ if (v.name.includes(good[i])) return i; }
+  return 100;
+}
 function voiceItemHTML(v) {
   const isActive = selectedVoice && selectedVoice.name === v.name;
   return `<div class="voice-item${isActive ? ' active' : ''}" onclick="selectVoice('${v.name.replace(/'/g, "\\'")}')">
