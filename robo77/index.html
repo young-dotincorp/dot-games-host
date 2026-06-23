@@ -3262,7 +3262,10 @@ window.tutorialNext = function() {
     const fa = document.getElementById('footer-actions');
     if (fa) fa.style.display = '';
     document.body.classList.remove('tut-on');
-    if (EMBED_MODE) { showLocalSetup(); } else { showScreen('home'); }
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    var _homeScr = document.getElementById('screen-home');
+    if (_homeScr) _homeScr.classList.add('active');
+    if (typeof sendResizeMsg === 'function') sendResizeMsg();
     notify('튜토리얼 완료! 이제 게임을 시작해봐요 🎉');
   }
 };
