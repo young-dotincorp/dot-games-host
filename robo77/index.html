@@ -1328,6 +1328,7 @@ function tf(key) {
   for (var i = 1; i < arguments.length; i++) { s = s.split('{' + (i - 1) + '}').join(String(arguments[i])); }
   return s;
 }
+function tl(v) { return (v && typeof v === 'object' && !Array.isArray(v)) ? (v[LANG] || v.ko || '') : v; }
 
 // data-i18n 속성을 가진 정적 요소들을 현재 언어로 갱신
 function applyI18n() {
@@ -3342,86 +3343,87 @@ function buildCardsDemoHTML() {
 }
 
 const TUTORIAL_STEPS = [
-  { section:'소개', title:'닷 77 튜토리얼',
-    text:'닷패드로 즐기는 숫자 카드 게임, 닷 77에 오신 것을 환영합니다!\n\n화면 구성과 게임 방법을 단계별로 설명드립니다.\n\n닷패드 연결 시 F1 또는 ▶ 패닝으로 진행할 수 있습니다.',
-    tts:'닷 77 튜토리얼에 오신 것을 환영합니다. 화면 구성과 게임 방법을 단계별로 알아봅시다.',
+  { section:{ko:'소개',en:'Intro'}, title:{ko:'닷 77 튜토리얼',en:'Dot 77 Tutorial'},
+    text:{ko:'닷패드로 즐기는 숫자 카드 게임, 닷 77에 오신 것을 환영합니다!\n\n화면 구성과 게임 방법을 단계별로 설명드립니다.\n\n닷패드 연결 시 F1 또는 ▶ 패닝으로 진행할 수 있습니다.',en:'Welcome to Dot 77, a number card game you play with the DotPad!\n\nWe\'ll walk you through the screen layout and how to play, step by step.\n\nWhen a DotPad is connected, you can advance with F1 or the ▶ pan key.'},
+    tts:{ko:'닷 77 튜토리얼에 오신 것을 환영합니다. 화면 구성과 게임 방법을 단계별로 알아봅시다.',en:'Welcome to the Dot 77 tutorial. Let\'s go through the screen layout and how to play, step by step.'},
     graphic:null, highlight:null, type:'dotpad', gameScreen:null },
 
-  { section:'화면 구성', title:'① 목숨 칩 (3개 가득)',
-    text:'화면 왼쪽 상단에 목숨 칩 3개가 있습니다.\n\n꽉 찬 칩(■)은 남은 목숨입니다.\n처음에는 3개의 목숨으로 시작합니다.',
-    tts:'화면 왼쪽 상단에 목숨 칩 세 개가 표시됩니다. 꽉 찬 칩이 남은 목숨입니다.',
+  { section:{ko:'화면 구성',en:'Screen Layout'}, title:{ko:'① 목숨 칩 (3개 가득)',en:'1. Life chips (all 3 full)'},
+    text:{ko:'화면 왼쪽 상단에 목숨 칩 3개가 있습니다.\n\n꽉 찬 칩(■)은 남은 목숨입니다.\n처음에는 3개의 목숨으로 시작합니다.',en:'There are 3 life chips at the top left of the screen.\n\nA filled chip (■) is a life you still have.\nYou start with 3 lives.'},
+    tts:{ko:'화면 왼쪽 상단에 목숨 칩 세 개가 표시됩니다. 꽉 찬 칩이 남은 목숨입니다.',en:'Three life chips are shown at the top left of the screen. A filled chip is a life you still have.'},
     graphic:{lives:3,playerIdx:0}, highlight:'life', type:'dotpad',
     gameScreen:{lives:[3,3],currentPlayer:0,total:0} },
 
-  { section:'화면 구성', title:'① 목숨 칩 (1개 잃은 상태)',
-    text:'목숨을 하나 잃으면 오른쪽 칩이 빈 테두리로 바뀝니다.\n\n빈 테두리 칩(□)이 잃은 목숨입니다.\n모두 잃으면 탈락합니다.',
-    tts:'목숨을 잃으면 칩이 빈 테두리로 바뀝니다. 세 칩을 모두 잃으면 탈락합니다.',
+  { section:{ko:'화면 구성',en:'Screen Layout'}, title:{ko:'① 목숨 칩 (1개 잃은 상태)',en:'1. Life chips (one lost)'},
+    text:{ko:'목숨을 하나 잃으면 오른쪽 칩이 빈 테두리로 바뀝니다.\n\n빈 테두리 칩(□)이 잃은 목숨입니다.\n모두 잃으면 탈락합니다.',en:'When you lose a life, the right chip turns into an empty outline.\n\nAn empty chip (□) is a life you\'ve lost.\nLose them all and you\'re eliminated.'},
+    tts:{ko:'목숨을 잃으면 칩이 빈 테두리로 바뀝니다. 세 칩을 모두 잃으면 탈락합니다.',en:'When you lose a life, the chip turns into an empty outline. Lose all three chips and you\'re eliminated.'},
     graphic:{lives:2,playerIdx:0}, highlight:'life', type:'dotpad',
     gameScreen:{lives:[2,3],currentPlayer:0,total:11} },
 
-  { section:'화면 구성', title:'② 플레이어 표시 (오른쪽)',
-    text:'화면 오른쪽에 현재 차례인 플레이어가 점자로 표시됩니다.\n\n1P: ⠁  2P: ⠃  3P: ⠉  4P: ⠙\n\n새 차례마다 점자가 깜빡입니다.',
-    tts:'화면 오른쪽에 현재 차례인 플레이어가 점자로 표시됩니다. 새 차례마다 깜빡여 알려줍니다.',
+  { section:{ko:'화면 구성',en:'Screen Layout'}, title:{ko:'② 플레이어 표시 (오른쪽)',en:'2. Player indicator (right)'},
+    text:{ko:'화면 오른쪽에 현재 차례인 플레이어가 점자로 표시됩니다.\n\n1P: ⠁  2P: ⠃  3P: ⠉  4P: ⠙\n\n새 차례마다 점자가 깜빡입니다.',en:'The player whose turn it is appears in braille on the right of the screen.\n\nP1: ⠁  P2: ⠃  P3: ⠉  P4: ⠙\n\nThe braille blinks at the start of each new turn.'},
+    tts:{ko:'화면 오른쪽에 현재 차례인 플레이어가 점자로 표시됩니다. 새 차례마다 깜빡여 알려줍니다.',en:'The current player is shown in braille on the right of the screen. It blinks to signal each new turn.'},
     graphic:{lives:3,playerIdx:1}, highlight:'player', type:'dotpad',
     gameScreen:{lives:[3,3],currentPlayer:1,total:24} },
 
-  { section:'화면 구성', title:'③ 합계 숫자 (중앙)',
-    text:'화면 중앙에 현재까지 쌓인 합계가 크게 표시됩니다.\n\n이 숫자를 보고 카드를 결정하세요.\n77에 가까울수록 위험합니다!',
-    tts:'화면 중앙에 현재 합계가 크게 표시됩니다. 77에 가까울수록 위험합니다.',
+  { section:{ko:'화면 구성',en:'Screen Layout'}, title:{ko:'③ 합계 숫자 (중앙)',en:'3. Total number (center)'},
+    text:{ko:'화면 중앙에 현재까지 쌓인 합계가 크게 표시됩니다.\n\n이 숫자를 보고 카드를 결정하세요.\n77에 가까울수록 위험합니다!',en:'The running total is shown large in the center of the screen.\n\nUse this number to decide which card to play.\nThe closer to 77, the more dangerous!'},
+    tts:{ko:'화면 중앙에 현재 합계가 크게 표시됩니다. 77에 가까울수록 위험합니다.',en:'The current total is shown large in the center. The closer to 77, the more dangerous.'},
     graphic:{lives:3,playerIdx:0,total:42}, highlight:'number', type:'dotpad',
     gameScreen:{lives:[3,2],currentPlayer:0,total:42} },
 
-  { section:'화면 구성', title:'④ 하단 점자 텍스트 줄',
-    text:'닷패드 하단 점자 줄에 현재 선택된 카드가 표시됩니다.\n\n패닝 좌/우로 카드를 넘기면 각 카드의 값을 점자로 확인할 수 있습니다.',
-    tts:'하단 점자 줄에 현재 선택한 카드 값이 점자로 표시됩니다. 패닝으로 카드를 넘기며 확인하세요.',
+  { section:{ko:'화면 구성',en:'Screen Layout'}, title:{ko:'④ 하단 점자 텍스트 줄',en:'4. Bottom braille text line'},
+    text:{ko:'닷패드 하단 점자 줄에 현재 선택된 카드가 표시됩니다.\n\n패닝 좌/우로 카드를 넘기면 각 카드의 값을 점자로 확인할 수 있습니다.',en:'The currently selected card is shown on the DotPad\'s bottom braille line.\n\nPan left/right to flip through cards and read each card\'s value in braille.'},
+    tts:{ko:'하단 점자 줄에 현재 선택한 카드 값이 점자로 표시됩니다. 패닝으로 카드를 넘기며 확인하세요.',en:'The selected card\'s value is shown in braille on the bottom line. Pan through the cards to check each one.'},
     graphic:{lives:3,playerIdx:0,total:35}, highlight:'braille', type:'dotpad', braille:'7',
     gameScreen:{lives:[3,3],currentPlayer:0,total:35,hand:[{type:'number',value:7},{type:'number',value:3},{type:'minus10'},{type:'direction',value:0}],selectedCard:0} },
 
-  { section:'화면 구성', title:'⑤ 버튼 사용법',
-    text:'',
-    tts:'버튼 사용법입니다. 왼쪽 패닝과 F2는 이전 카드, 오른쪽 패닝은 다음 카드, F1과 F3는 카드 내기, F4는 현재 상태 읽기입니다.',
+  { section:{ko:'화면 구성',en:'Screen Layout'}, title:{ko:'⑤ 버튼 사용법',en:'5. Button guide'},
+    text:{ko:'',en:''},
+    tts:{ko:'버튼 사용법입니다. 왼쪽 패닝과 F2는 이전 카드, 오른쪽 패닝은 다음 카드, F1과 F3는 카드 내기, F4는 현재 상태 읽기입니다.',en:'Here\'s the button guide. Pan left and F2 go to the previous card, pan right goes to the next card, F1 and F3 play a card, and F4 reads the current state.'},
     type:'buttons', gameScreen:null },
 
-  { section:'게임 규칙', title:'카드 종류',
-    text:'',
-    tts:'카드 종류입니다. 숫자 카드는 합계에 더합니다. 0 카드는 변화 없음. 마이너스 10은 합계를 10 줄입니다. 곱하기 2는 다음 플레이어가 2장. 방향 카드는 순서를 반대로 바꿉니다.',
+  { section:{ko:'게임 규칙',en:'Game Rules'}, title:{ko:'카드 종류',en:'Card types'},
+    text:{ko:'',en:''},
+    tts:{ko:'카드 종류입니다. 숫자 카드는 합계에 더합니다. 0 카드는 변화 없음. 마이너스 10은 합계를 10 줄입니다. 곱하기 2는 다음 플레이어가 2장. 방향 카드는 순서를 반대로 바꿉니다.',en:'Here are the card types. Number cards add to the total. The 0 card changes nothing. Minus ten reduces the total by ten. Times two makes the next player play two cards. The direction card reverses the turn order.'},
     type:'cards', gameScreen:null },
 
-  { section:'게임 규칙', title:'카드 내기',
-    text:'합계는 0에서 시작합니다.\n\n패닝으로 카드를 선택한 뒤 F1을 눌러 냅니다.\n\n예시: 합계 35에서 카드 7을 내면\n  35 + 7 = 42',
-    tts:'합계는 0에서 시작합니다. 패닝으로 카드를 선택하고 F1을 눌러 내세요.',
+  { section:{ko:'게임 규칙',en:'Game Rules'}, title:{ko:'카드 내기',en:'Playing a card'},
+    text:{ko:'합계는 0에서 시작합니다.\n\n패닝으로 카드를 선택한 뒤 F1을 눌러 냅니다.\n\n예시: 합계 35에서 카드 7을 내면\n  35 + 7 = 42',en:'The total starts at 0.\n\nSelect a card by panning, then press F1 to play it.\n\nExample: at a total of 35, playing a 7 gives\n  35 + 7 = 42'},
+    tts:{ko:'합계는 0에서 시작합니다. 패닝으로 카드를 선택하고 F1을 눌러 내세요.',en:'The total starts at 0. Select a card by panning and press F1 to play it.'},
     graphic:{lives:3,playerIdx:0,total:35}, highlight:'number', type:'dotpad',
     gameScreen:{lives:[3,3],currentPlayer:0,total:35,hand:[{type:'number',value:7},{type:'number',value:2},{type:'minus10'}],selectedCard:0} },
 
-  { section:'게임 규칙', title:'⚠️ 11의 배수 → 목숨 잃기!',
-    text:'합계가 11의 배수가 되면 목숨을 1개 잃습니다.\n\n위험한 숫자: 11, 22, 33, 44, 55, 66\n\n예시: 합계 4 + 카드 7 = 11 → 목숨 -1',
-    tts:'합계가 11의 배수가 되면 목숨을 잃습니다. 11, 22, 33, 44, 55, 66이 위험한 숫자입니다.',
+  { section:{ko:'게임 규칙',en:'Game Rules'}, title:{ko:'⚠️ 11의 배수 → 목숨 잃기!',en:'⚠️ Multiples of 11 → lose a life!'},
+    text:{ko:'합계가 11의 배수가 되면 목숨을 1개 잃습니다.\n\n위험한 숫자: 11, 22, 33, 44, 55, 66\n\n예시: 합계 4 + 카드 7 = 11 → 목숨 -1',en:'If the total becomes a multiple of 11, you lose 1 life.\n\nDangerous numbers: 11, 22, 33, 44, 55, 66\n\nExample: total 4 + card 7 = 11 → −1 life'},
+    tts:{ko:'합계가 11의 배수가 되면 목숨을 잃습니다. 11, 22, 33, 44, 55, 66이 위험한 숫자입니다.',en:'If the total becomes a multiple of 11, you lose a life. 11, 22, 33, 44, 55, and 66 are the dangerous numbers.'},
     graphic:{lives:2,playerIdx:0,total:11}, highlight:'life', type:'dotpad',
     gameScreen:{lives:[2,3],currentPlayer:0,total:11} },
 
-  { section:'게임 규칙', title:'76에서 안전하게 버티기',
-    text:'합계 76에서 숫자 카드를 내면 77 이상이 됩니다!\n\n⚠️ -10은 위험! 76−10=66 = 11×6 → 목숨 잃음\n\n안전하게 넘기는 방법:\n• 0 카드 → 합계 유지\n• ×2 카드 → 합계 유지, 다음 플레이어가 2장\n• ↺ 카드 → 합계 유지, 방향 반전',
-    tts:'합계 76일 때 주의하세요. 마이너스 10은 66이 되어 목숨을 잃습니다. 0 카드, 곱하기 2 카드, 방향 카드만 안전합니다.',
+  { section:{ko:'게임 규칙',en:'Game Rules'}, title:{ko:'76에서 안전하게 버티기',en:'Surviving safely at 76'},
+    text:{ko:'합계 76에서 숫자 카드를 내면 77 이상이 됩니다!\n\n⚠️ -10은 위험! 76−10=66 = 11×6 → 목숨 잃음\n\n안전하게 넘기는 방법:\n• 0 카드 → 합계 유지\n• ×2 카드 → 합계 유지, 다음 플레이어가 2장\n• ↺ 카드 → 합계 유지, 방향 반전',en:'At a total of 76, playing a number card pushes it to 77 or more!\n\n⚠️ −10 is dangerous! 76−10=66 = 11×6 → lose a life\n\nSafe ways to pass:\n• 0 card → total stays the same\n• ×2 card → total stays, next player plays 2\n• ↺ card → total stays, direction reverses'},
+    tts:{ko:'합계 76일 때 주의하세요. 마이너스 10은 66이 되어 목숨을 잃습니다. 0 카드, 곱하기 2 카드, 방향 카드만 안전합니다.',en:'Be careful at a total of 76. Minus ten makes 66 and costs you a life. Only the 0 card, times two card, and direction card are safe.'},
     graphic:{lives:3,playerIdx:0,total:76}, highlight:'number', type:'dotpad',
     gameScreen:{lives:[3,3],currentPlayer:0,total:76,hand:[{type:'number',value:0},{type:'times2'},{type:'direction',value:0},{type:'number',value:5}],selectedCard:0} },
 
-  { section:'게임 규칙', title:'×2 카드를 받았을 때',
-    text:'상대방이 ×2 카드를 내면, 다음 차례에 카드를 2장 연속으로 내야 합니다.\n\n두 카드 모두 합계에 반영됩니다.',
-    tts:'상대방이 곱하기 2 카드를 내면 내 차례에 카드를 2장 연속으로 내야 합니다.',
+  { section:{ko:'게임 규칙',en:'Game Rules'}, title:{ko:'×2 카드를 받았을 때',en:'When you receive a ×2 card'},
+    text:{ko:'상대방이 ×2 카드를 내면, 다음 차례에 카드를 2장 연속으로 내야 합니다.\n\n두 카드 모두 합계에 반영됩니다.',en:'When an opponent plays a ×2 card, you must play 2 cards in a row on your next turn.\n\nBoth cards count toward the total.'},
+    tts:{ko:'상대방이 곱하기 2 카드를 내면 내 차례에 카드를 2장 연속으로 내야 합니다.',en:'When an opponent plays a times two card, you must play two cards in a row on your turn.'},
     graphic:{lives:3,playerIdx:1,total:0}, highlight:null, type:'dotpad',
     gameScreen:{lives:[3,3],currentPlayer:1,total:20,required:2,hand:[{type:'number',value:5},{type:'number',value:3},{type:'number',value:8}],selectedCard:0} },
 
-  { section:'게임 규칙', title:'77 이상 → 라운드 종료',
-    text:'합계가 77 이상이 되는 카드를 낸 플레이어가 목숨을 잃고 라운드가 끝납니다.\n\n카드가 새로 배분되고, 목숨을 잃은 플레이어부터 새 라운드를 시작합니다.',
-    tts:'합계가 77 이상이 되면 그 카드를 낸 플레이어가 목숨을 잃고 라운드가 종료됩니다.',
+  { section:{ko:'게임 규칙',en:'Game Rules'}, title:{ko:'77 이상 → 라운드 종료',en:'77 or more → round ends'},
+    text:{ko:'합계가 77 이상이 되는 카드를 낸 플레이어가 목숨을 잃고 라운드가 끝납니다.\n\n카드가 새로 배분되고, 목숨을 잃은 플레이어부터 새 라운드를 시작합니다.',en:'The player who plays a card that makes the total 77 or more loses a life, and the round ends.\n\nCards are dealt again, and the player who lost the life starts the new round.'},
+    tts:{ko:'합계가 77 이상이 되면 그 카드를 낸 플레이어가 목숨을 잃고 라운드가 종료됩니다.',en:'When the total reaches 77 or more, the player who played that card loses a life and the round ends.'},
     graphic:{lives:2,playerIdx:0,total:77}, highlight:'number', type:'dotpad',
     gameScreen:{lives:[2,3],currentPlayer:0,total:77} },
 
-  { section:'마무리', title:'🏆 승리와 탈락',
-    text:'목숨을 모두 잃은 플레이어는 탈락합니다.\n\n마지막까지 목숨이 남아 있는 플레이어가 승리합니다!\n\n게임 중 F4를 누르면 언제든 현재 상태를 음성으로 들을 수 있습니다.',
-    tts:'목숨을 모두 잃으면 탈락합니다. 마지막까지 살아남은 플레이어가 승리합니다. 이제 닷 77을 즐겨보세요!',
+  { section:{ko:'마무리',en:'Wrap-up'}, title:{ko:'🏆 승리와 탈락',en:'🏆 Winning and elimination'},
+    text:{ko:'목숨을 모두 잃은 플레이어는 탈락합니다.\n\n마지막까지 목숨이 남아 있는 플레이어가 승리합니다!\n\n게임 중 F4를 누르면 언제든 현재 상태를 음성으로 들을 수 있습니다.',en:'A player who loses all their lives is eliminated.\n\nThe last player with lives remaining wins!\n\nDuring the game, press F4 anytime to hear the current state read aloud.'},
+    tts:{ko:'목숨을 모두 잃으면 탈락합니다. 마지막까지 살아남은 플레이어가 승리합니다. 이제 닷 77을 즐겨보세요!',en:'Lose all your lives and you\'re eliminated. The last player standing wins. Now enjoy Dot 77!'},
     graphic:{lives:3,playerIdx:0,total:0}, highlight:null, type:'dotpad', isLast:true,
     gameScreen:{lives:[3,0],currentPlayer:0,total:0} },
+
 ];
 
 window.startTutorial = function() {
@@ -3506,7 +3508,7 @@ window.tutorialNext = function() {
 
 window.tutorialSpeak = function() {
   const s = TUTORIAL_STEPS[tutStep];
-  if (s) { cancelSpeak(); speak(s.tts); }
+  if (s) { cancelSpeak(); speak(tl(s.tts)); }
 };
 
 function cancelTutBlink() {
@@ -3529,7 +3531,7 @@ function renderTutStep() {
   cancelTutBlink();
 
   // ── 오버레이 네비게이션 업데이트 ──────────────────────────
-  document.getElementById('tut-section-badge').textContent = s.section;
+  document.getElementById('tut-section-badge').textContent = tl(s.section);
   document.getElementById('tut-step-num').textContent = (tutStep + 1) + ' / ' + total;
   document.getElementById('tut-progress-bar').style.width = (((tutStep + 1) / total) * 100) + '%';
   document.getElementById('tut-prev').disabled = tutStep === 0;
@@ -3539,10 +3541,10 @@ function renderTutStep() {
   // 하단 제목+설명+TTS 표시
   const descEl = document.getElementById('tut-turn-desc');
   if (descEl) {
-    document.getElementById('tut-title').textContent = s.title;
-    document.getElementById('tut-text').textContent = s.text || '';
+    document.getElementById('tut-title').textContent = tl(s.title);
+    document.getElementById('tut-text').textContent = tl(s.text) || '';
     const ttsDesc = document.getElementById('tut-tts-desc');
-    if (ttsDesc) ttsDesc.textContent = s.tts || '';
+    if (ttsDesc) ttsDesc.textContent = tl(s.tts) || '';
     descEl.style.display = 'block';
   }
   // turn-text 튜토리얼 중 숨김
@@ -3628,7 +3630,7 @@ function renderTutStep() {
 
   // ── TTS 재생 + 자동 다음 ──────────────────────────────────
   cancelSpeak();
-  if (!tutPaused) speak(s.tts, function() {
+  if (!tutPaused) speak(tl(s.tts), function() {
     if (tutStep !== stepAtRender || !document.body.classList.contains('tut-on')) return;
     if (s.isLast) return;
     tutAutoTimer = setTimeout(function() {
