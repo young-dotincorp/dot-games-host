@@ -1102,12 +1102,12 @@ body.embed-mode #home-gear{top:10px;right:12px;}
     <span class="tut-section-badge" id="tut-section-badge">소개</span>
     <span style="font-size:11px;color:var(--text2)" id="tut-step-num">1 / 14</span>
     <div class="tut-progress" style="flex:1"><div class="tut-progress-bar" id="tut-progress-bar"></div></div>
-    <button class="btn btn-ghost btn-sm" onclick="tutorialRestart()" title="처음부터 다시"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg></button>
+    <button class="btn btn-ghost btn-sm" onclick="tutorialRestart()" data-i18n-title="tut.restart" title="처음부터 다시"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg></button>
   <button class="btn btn-ghost btn-sm" onclick="tutorialExit()" id="btn-tut-exit"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" />
   <path d="M6 6l12 12" /></svg></button>
   </div>
   <div class="tut-ol-nav">
-    <button class="btn btn-ghost btn-sm" id="tut-prev" onclick="tutorialPrev()">◀ 이전</button>
+    <button class="btn btn-ghost btn-sm" id="tut-prev" onclick="tutorialPrev()" data-i18n="tut.prev">◀ 이전</button>
     <button class="btn btn-ghost btn-sm" id="tut-pause" onclick="tutorialPause()"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> 일시정지</button>
   <button class="btn btn-primary btn-sm" id="tut-next" onclick="tutorialNext()">다음 ▶</button>
   </div>
@@ -1222,6 +1222,36 @@ const I18N = {
   'round.lostLifeSuffix': { ko: '이(가) 라이프를 잃었습니다!', en: ' lost a life!' },
   'round.info':     { ko: '합계가 {0}이 되어 라운드가 끝납니다. {1}부터 새 라운드를 시작합니다.', en: 'The total reached {0}, ending the round. {1} starts the new round.' },
   'online.me':      { ko: '(나)', en: '(me)' },
+  'tut.restart':    { ko: '처음부터 다시', en: 'Restart' },
+  'tut.prev':       { ko: '◀ 이전', en: '◀ Prev' },
+  'tut.next':       { ko: '다음 ▶', en: 'Next ▶' },
+  'tut.pause':      { ko: '일시정지', en: 'Pause' },
+  'tut.startGame':  { ko: '게임 시작', en: 'Start Game' },
+  'tut.lifeChips':  { ko: '목숨 칩', en: 'Life chips' },
+  'tut.player':     { ko: '플레이어', en: 'Player' },
+  'tut.totalNum':   { ko: '합계 숫자', en: 'Total' },
+  'tut.brailleLine':{ ko: '점자 텍스트 줄', en: 'Braille line' },
+  'tut.brailleSel': { ko: '점자 텍스트 줄 (선택 카드)', en: 'Braille line (selected card)' },
+  'tut.mustPlay':   { ko: '{0}장 내야 함', en: 'play {0} cards' },
+  'tut.gamePreview':{ ko: '게임 화면 미리보기', en: 'Game screen preview' },
+  'tut.dotpadLayout':{ ko: '닷패드 320 버튼 배치', en: 'DotPad 320 button layout' },
+  'tut.keyPlay':    { ko: '카드 내기', en: 'Play card' },
+  'tut.keyPrev':    { ko: '이전 카드', en: 'Prev card' },
+  'tut.keyState':   { ko: '상태 읽기', en: 'Read state' },
+  'tut.panLeft':    { ko: '패닝 좌<br>이전 카드', en: 'Pan left<br>Prev card' },
+  'tut.panAll':     { ko: '패닝 전체<br>합계 읽기', en: 'Pan all<br>Read total' },
+  'tut.panRight':   { ko: '패닝 우<br>다음 카드', en: 'Pan right<br>Next card' },
+  'tut.dpHint':     { ko: '닷패드 연결 시 F1/▶ 패닝으로 튜토리얼 진행 가능', en: 'With a DotPad connected, advance using F1 or the ▶ pan key' },
+  'tut.cardTypes':  { ko: '카드 종류', en: 'Card types' },
+  'tut.cdNum':      { ko: '숫자 카드<br>합계 +7', en: 'Number card<br>+7 to total' },
+  'tut.cdZero':     { ko: '0 카드<br>변화 없음', en: '0 card<br>No change' },
+  'tut.cdMinus':    { ko: '마이너스10<br>합계 -10', en: 'Minus 10<br>−10 to total' },
+  'tut.cdTimes':    { ko: '2배 턴<br>다음이 2장', en: '×2 turn<br>Next plays 2' },
+  'tut.cdDir':      { ko: '방향 카드<br>순서 반전', en: 'Direction card<br>Reverse order' },
+  'tut.firstCardWarn':{ ko: '⚠️ ×2 와 ↺ 카드는 첫 번째 카드로는 낼 수 없습니다', en: "⚠️ ×2 and ↺ cards can't be played as the first card" },
+  'tut.myLives':    { ko: '내 목숨', en: 'My lives' },
+  'tut.turnSuffix': { ko: ' 차례', en: "'s turn" },
+  'tut.replay':     { ko: '다시듣기', en: 'Replay' },
   // 로컬 설정 화면
   'setup.title':    { ko: '로컬 게임 설정', en: 'Local Game Setup' },
   'common.back':    { ko: '뒤로', en: 'Back' },
@@ -3230,17 +3260,17 @@ function buildDotPadSVG(hexStr, highlight, brailleHex) {
   let hl = '';
   if (highlight === 'life') {
     hl = `<rect x="1" y="1" width="${8*2*S-1}" height="${4*S-1}" fill="rgba(34,211,238,0.08)" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="5,2" rx="3">${anim}</rect>
-    <text x="${4*2*S}" y="${4*S+13}" font-size="9" fill="#22d3ee" text-anchor="middle" font-family="sans-serif">목숨 칩</text>`;
+    <text x="${4*2*S}" y="${4*S+13}" font-size="9" fill="#22d3ee" text-anchor="middle" font-family="sans-serif">${t('tut.lifeChips')}</text>`;
   } else if (highlight === 'player') {
     const px = 26*2*S;
     hl = `<rect x="${px}" y="1" width="${2*2*S-1}" height="${4*4*S-1}" fill="rgba(245,166,35,0.06)" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="5,2" rx="3">${anim}</rect>
-    <text x="${px+2*S}" y="${4*4*S+13}" font-size="9" fill="#f5a623" text-anchor="middle" font-family="sans-serif">플레이어</text>`;
+    <text x="${px+2*S}" y="${4*4*S+13}" font-size="9" fill="#f5a623" text-anchor="middle" font-family="sans-serif">${t('tut.player')}</text>`;
   } else if (highlight === 'number') {
     hl = `<rect x="${3*2*S}" y="${2*4*S}" width="${24*2*S}" height="${5*4*S}" fill="rgba(126,200,227,0.06)" stroke="#7ec8e3" stroke-width="1.5" stroke-dasharray="5,2" rx="3">${anim}</rect>
-    <text x="${15*2*S}" y="${7*4*S+13}" font-size="9" fill="#7ec8e3" text-anchor="middle" font-family="sans-serif">합계 숫자</text>`;
+    <text x="${15*2*S}" y="${7*4*S+13}" font-size="9" fill="#7ec8e3" text-anchor="middle" font-family="sans-serif">${t('tut.totalNum')}</text>`;
   } else if (highlight === 'braille') {
     hl = `<rect x="1" y="${9*4*S}" width="${W-1}" height="${4*S-1}" fill="rgba(167,139,250,0.06)" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="5,2" rx="3">${anim}</rect>
-    <text x="${W/2}" y="${10*4*S+13}" font-size="9" fill="#a78bfa" text-anchor="middle" font-family="sans-serif">점자 텍스트 줄</text>`;
+    <text x="${W/2}" y="${10*4*S+13}" font-size="9" fill="#a78bfa" text-anchor="middle" font-family="sans-serif">${t('tut.brailleLine')}</text>`;
   }
 
   let out = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H+16}" width="${W}" height="${H+16}" style="max-width:100%;height:auto">
@@ -3260,7 +3290,7 @@ function buildDotPadSVG(hexStr, highlight, brailleHex) {
         br += `<rect x="${x}" y="${y}" width="${PS}" height="${PS}" rx="1" fill="${braillePin(b,pr,pc)?'#d0d0ec':'#16163a'}"/>`;
       }
     }
-    out += `<div style="font-size:9px;color:var(--text2);text-align:center;margin:4px 0 2px">점자 텍스트 줄 (선택 카드)</div>
+    out += `<div style="font-size:9px;color:var(--text2);text-align:center;margin:4px 0 2px">${t('tut.brailleSel')}</div>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${BW} ${BH}" width="${BW}" height="${BH}" style="max-width:100%;height:auto">
       <rect width="${BW}" height="${BH}" fill="#07070f" rx="3" stroke="#1e1e3a" stroke-width="1"/>
       ${br}
@@ -3284,7 +3314,7 @@ function buildGameScreenHTML({ lives = [3,3], currentPlayer = 0, total = 0, hand
 
   const totalCls = total >= 66 ? 'danger' : total >= 44 ? 'warn' : '';
   const reqHtml = required > 1
-    ? `<div class="tut-game-req" ${hl('braille')}>×2 — ${required}장 내야 함</div>`
+    ? `<div class="tut-game-req" ${hl('braille')}>×2 — ${tf('tut.mustPlay', required)}</div>`
     : '';
 
   const handHtml = hand.map((c, i) => {
@@ -3298,46 +3328,46 @@ function buildGameScreenHTML({ lives = [3,3], currentPlayer = 0, total = 0, hand
     ? `<div style="margin:6px auto 2px;max-width:160px;opacity:0.85">${dotpadSvg}</div>`
     : '';
 
-  return `<div class="tut-game-lbl">게임 화면 미리보기</div>
+  return `<div class="tut-game-lbl">${t('tut.gamePreview')}</div>
   <div ${hl('life')} style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;padding:4px;width:100%">${playersHtml}</div>
   <div class="tut-game-total ${totalCls}" ${hl('number')}>${total}</div>
   ${dotpadMini}
   ${reqHtml}
   ${handHtml ? `<div class="tut-game-hand" ${hl('braille')}>${handHtml}</div>` : ''}
-  ${highlight === 'player' ? `<div style="font-size:10px;color:var(--accent2);text-align:center;padding:2px 0">▶ ${playerLabels[currentPlayer]} 차례</div>` : ''}
+  ${highlight === 'player' ? `<div style="font-size:10px;color:var(--accent2);text-align:center;padding:2px 0">▶ ${playerLabels[currentPlayer]}${t('tut.turnSuffix')}</div>` : ''}
   ${turnText ? `<div class="tut-game-turn"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1" /></svg> ${turnText}</div>` : ''}`;
 }
 
 function buildButtonDiagramHTML() {
   return `<div class="tut-btn-diagram">
-    <div style="text-align:center;font-size:10px;color:var(--text2);margin-bottom:10px">닷패드 320 버튼 배치</div>
+    <div style="text-align:center;font-size:10px;color:var(--text2);margin-bottom:10px">${t('tut.dotpadLayout')}</div>
     <div class="tut-btn-row">
-      <div class="tut-btn-key hl"><div class="kl">F1</div><div class="kd">카드 내기</div></div>
-      <div class="tut-btn-key"><div class="kl">F2</div><div class="kd">이전 카드</div></div>
-      <div class="tut-btn-key hl"><div class="kl">F3</div><div class="kd">카드 내기</div></div>
-      <div class="tut-btn-key"><div class="kl">F4</div><div class="kd">상태 읽기</div></div>
+      <div class="tut-btn-key hl"><div class="kl">F1</div><div class="kd">${t('tut.keyPlay')}</div></div>
+      <div class="tut-btn-key"><div class="kl">F2</div><div class="kd">${t('tut.keyPrev')}</div></div>
+      <div class="tut-btn-key hl"><div class="kl">F3</div><div class="kd">${t('tut.keyPlay')}</div></div>
+      <div class="tut-btn-key"><div class="kl">F4</div><div class="kd">${t('tut.keyState')}</div></div>
     </div>
     <div class="tut-btn-row" style="margin-top:8px">
-      <div class="tut-btn-key hl"><div class="kl">◀</div><div class="kd">패닝 좌<br>이전 카드</div></div>
-      <div class="tut-btn-key"><div class="kl">●</div><div class="kd">패닝 전체<br>합계 읽기</div></div>
-      <div class="tut-btn-key hl"><div class="kl">▶</div><div class="kd">패닝 우<br>다음 카드</div></div>
+      <div class="tut-btn-key hl"><div class="kl">◀</div><div class="kd">${t('tut.panLeft')}</div></div>
+      <div class="tut-btn-key"><div class="kl">●</div><div class="kd">${t('tut.panAll')}</div></div>
+      <div class="tut-btn-key hl"><div class="kl">▶</div><div class="kd">${t('tut.panRight')}</div></div>
     </div>
-    <div style="margin-top:10px;font-size:10px;color:var(--text2);text-align:center">닷패드 연결 시 F1/▶ 패닝으로 튜토리얼 진행 가능</div>
+    <div style="margin-top:10px;font-size:10px;color:var(--text2);text-align:center">${t('tut.dpHint')}</div>
   </div>`;
 }
 
 function buildCardsDemoHTML() {
   return `<div style="padding:12px;background:#07070f;border-radius:8px;border:1px solid #2a2a4a;width:100%">
-    <div style="text-align:center;font-size:10px;color:var(--text2);margin-bottom:10px">카드 종류</div>
+    <div style="text-align:center;font-size:10px;color:var(--text2);margin-bottom:10px">${t('tut.cardTypes')}</div>
     <div class="tut-cards-row">
-      <div class="tut-card-d"><div class="cv" style="color:#7ec8e3">7</div><div class="cd">숫자 카드<br>합계 +7</div></div>
-      <div class="tut-card-d"><div class="cv" style="color:#7ec8e3">0</div><div class="cd">0 카드<br>변화 없음</div></div>
-      <div class="tut-card-d"><div class="cv" style="color:#ff2d95">-10</div><div class="cd">마이너스10<br>합계 -10</div></div>
-      <div class="tut-card-d"><div class="cv" style="color:#f5a623">×2</div><div class="cd">2배 턴<br>다음이 2장</div></div>
-      <div class="tut-card-d"><div class="cv" style="color:#a78bfa">↺</div><div class="cd">방향 카드<br>순서 반전</div></div>
+      <div class="tut-card-d"><div class="cv" style="color:#7ec8e3">7</div><div class="cd">${t('tut.cdNum')}</div></div>
+      <div class="tut-card-d"><div class="cv" style="color:#7ec8e3">0</div><div class="cd">${t('tut.cdZero')}</div></div>
+      <div class="tut-card-d"><div class="cv" style="color:#ff2d95">-10</div><div class="cd">${t('tut.cdMinus')}</div></div>
+      <div class="tut-card-d"><div class="cv" style="color:#f5a623">×2</div><div class="cd">${t('tut.cdTimes')}</div></div>
+      <div class="tut-card-d"><div class="cv" style="color:#a78bfa">↺</div><div class="cd">${t('tut.cdDir')}</div></div>
     </div>
     <div style="margin-top:10px;font-size:10px;color:var(--text2);background:rgba(245,166,35,0.08);padding:8px 10px;border-radius:6px;border:1px solid rgba(245,166,35,0.2)">
-      ⚠️ ×2 와 ↺ 카드는 첫 번째 카드로는 낼 수 없습니다
+      ${t('tut.firstCardWarn')}
     </div>
   </div>`;
 }
@@ -3430,7 +3460,7 @@ window.startTutorial = function() {
   tutStep = 0;
   showScreen('game');
   document.body.classList.add('tut-on');
-    tutPaused = false; { var _tp=document.getElementById('tut-pause'); if(_tp) _tp.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> 일시정지'; }
+    tutPaused = false; { var _tp=document.getElementById('tut-pause'); if(_tp) _tp.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> ' + t('tut.pause'); }
   document.getElementById('tut-overlay').style.display = 'flex';
   renderTutStep();
 };
@@ -3459,7 +3489,7 @@ window.tutorialRestart = function() {
   tutStep = 0;
   tutPaused = false;
   var _tp = document.getElementById('tut-pause');
-  if (_tp) _tp.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> 일시정지';
+  if (_tp) _tp.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> ' + t('tut.pause');
   renderTutStep();
 };
 window.tutorialPause = function() {
@@ -3467,9 +3497,9 @@ window.tutorialPause = function() {
   var btn = document.getElementById('tut-pause');
   if (tutPaused) {
     cancelSpeak(); cancelTutAuto();
-    if (btn) btn.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13 -8z" /></svg> 다시듣기';
+    if (btn) btn.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13 -8z" /></svg> ' + t('tut.replay');
   } else {
-    if (btn) btn.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> 일시정지';
+    if (btn) btn.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> ' + t('tut.pause');
     renderTutStep();
   }
 };
@@ -3535,7 +3565,7 @@ function renderTutStep() {
   document.getElementById('tut-step-num').textContent = (tutStep + 1) + ' / ' + total;
   document.getElementById('tut-progress-bar').style.width = (((tutStep + 1) / total) * 100) + '%';
   document.getElementById('tut-prev').disabled = tutStep === 0;
-  { var _nx=document.getElementById('tut-next'); _nx.innerHTML = s.isLast ? '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5h3.5a5 5 0 0 1 0 10h-5.5l-4.015 4.227a2.3 2.3 0 0 1 -3.923 -2.035l1.634 -8.173a5 5 0 0 1 4.904 -4.019h3.4" /><path d="M14 15l4.07 4.284a2.3 2.3 0 0 0 3.925 -2.023l-1.6 -8.232" /><path d="M8 9v2" /><path d="M7 10h2" /><path d="M14 10h2" /></svg> 게임 시작' : '다음 ▶'; }
+  { var _nx=document.getElementById('tut-next'); _nx.innerHTML = s.isLast ? '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5h3.5a5 5 0 0 1 0 10h-5.5l-4.015 4.227a2.3 2.3 0 0 1 -3.923 -2.035l1.634 -8.173a5 5 0 0 1 4.904 -4.019h3.4" /><path d="M14 15l4.07 4.284a2.3 2.3 0 0 0 3.925 -2.023l-1.6 -8.232" /><path d="M8 9v2" /><path d="M7 10h2" /><path d="M14 10h2" /></svg> ' + t('tut.startGame') : t('tut.next'); }
 
   // ── 게임 화면 요소 업데이트 ───────────────────────────────
   // 하단 제목+설명+TTS 표시
@@ -3574,7 +3604,7 @@ function renderTutStep() {
     const lifeDots = [0,1,2].map(li =>
       `<div class="life-dot${li >= myLives ? ' lost' : ''}"></div>`).join('');
     panel.innerHTML = `<div class="player-chip active-turn">
-      <div class="player-chip-name active-name">내 목숨</div>
+      <div class="player-chip-name active-name">${t('tut.myLives')}</div>
       <div class="lives-row">${lifeDots}</div>
     </div>`;
   } else if (panel) {
