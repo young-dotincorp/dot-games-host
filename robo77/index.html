@@ -1007,7 +1007,7 @@ body.tut-on #game-footer{grid-area:cards;align-self:end;background:transparent;b
     <div id="tut-dotpad-in-game"></div>
   </div>
 
-  <div id="tut-turn-desc" style="display:none;width:100%;padding:4px 0 6px">
+  <div id="tut-turn-desc" style="display:none;width:100%">
         <div class="tut-step-title" id="tut-title" style="font-size:15px;margin:0 0 4px"></div>
         <div class="tut-step-text" id="tut-text" style="font-size:12px;margin:0 0 6px"></div>
         <div id="tut-tts-desc" style="font-size:12px;color:var(--text);line-height:1.6"></div>
@@ -3262,7 +3262,7 @@ window.tutorialNext = function() {
     const fa = document.getElementById('footer-actions');
     if (fa) fa.style.display = '';
     document.body.classList.remove('tut-on');
-    showScreen('home');
+    if (EMBED_MODE) { showLocalSetup(); } else { showScreen('home'); }
     notify('튜토리얼 완료! 이제 게임을 시작해봐요 🎉');
   }
 };
