@@ -2949,7 +2949,7 @@ function updateLobbyUI(isHost) {
       <div class="lobby-player">
         <div class="lobby-player-status"></div>
         <span>${p.name}</span>
-        ${p.id === onlineMyId ? '<span style="font-size:11px;color:var(--text2)">${t('online.me')}</span>' : ''}
+        ${p.id === onlineMyId ? '<span style="font-size:11px;color:var(--text2)">' + t('online.me') + '</span>' : ''}
       </div>`;
   });
   const hint = document.getElementById('lobby-hint');
