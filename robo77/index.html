@@ -125,7 +125,22 @@ html, body {
 .btn-sm { padding: 8px 16px; font-size: 14px; }
 .btn-icon { padding: 10px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
 .btn-danger { --btn-c: var(--neon-magenta); }
-.btn-success { --btn-c: var(--neon-green); }
+.btn-success {
+  --btn-c: var(--neon-green);
+  color: #052e22;
+  background: var(--neon-green);
+  border-color: var(--neon-green);
+  text-shadow: none;
+  font-weight: 700;
+  box-shadow: 0 6px 22px rgba(52,232,158,0.45), 0 0 0 1.5px rgba(3,12,10,0.35);
+}
+.btn-success:hover {
+  color: #052e22;
+  background: color-mix(in srgb, var(--neon-green) 86%, #ffffff);
+  border-color: var(--neon-green);
+  box-shadow: 0 8px 28px rgba(52,232,158,0.6);
+}
+.btn-success:active { transform: translateY(1px); box-shadow: 0 3px 14px rgba(52,232,158,0.5); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ===== SETUP SCREEN ===== */
@@ -1265,13 +1280,35 @@ const I18N = {
   'nt.noAbly2':     { ko: 'Ably 라이브러리가 로드되지 않았습니다.', en: 'The Ably library failed to load.' },
   'nt.connectingServer':{ ko: '서버에 연결 중...', en: 'Connecting to server...' },
   'nt.joinFail':    { ko: '참가 실패: ', en: 'Failed to join: ' },
-  'nt.noTts':       { ko: '이 기기는 TTS를 지원하지 않습니다', en: 'This device does not support text-to-speech' }
+  'nt.noTts':       { ko: '이 기기는 TTS를 지원하지 않습니다', en: 'This device does not support text-to-speech' },
+  'tts.curTotal':     { ko: '현재 합계 {0}', en: 'Current total {0}' },
+  'tts.notYourTurn':  { ko: '내 차례가 아닙니다', en: "It's not your turn" },
+  'tts.cantPlayFirst':{ ko: '이 카드는 첫 번째로 낼 수 없습니다', en: "This card can't be played first" },
+  'tts.gameStart':    { ko: '게임 시작! {0}부터 시작합니다', en: 'Game start! Starting with {0}' },
+  'tts.turnOf':       { ko: '{0}의 차례입니다', en: "It's {0}'s turn" },
+  'tts.lifeLossRound':{ ko: '합계 {0}. {1} 라이프 손실. 새 라운드 시작', en: 'Total {0}. {1} loses a life. New round.' },
+  'tts.newRound':     { ko: '새 라운드! {0}부터 시작합니다', en: 'New round! Starting with {0}' },
+  'tts.gameOver':     { ko: '게임 종료! {0}의 승리입니다', en: 'Game over! {0} wins' },
+  'tts.stateLine':    { ko: '현재 합계 {0}. {1}의 차례. 남은 카드 {2}장', en: "Current total {0}. {1}'s turn, {2} cards left" },
+  'tts.voiceTest':    { ko: '안녕하세요. 이 음성으로 게임을 진행합니다.', en: 'Hello. The game will be narrated with this voice.' },
+  'tts.zero':         { ko: '제로', en: 'zero' },
+  'tts.minus10':      { ko: '마이너스 10', en: 'minus ten' },
+  'tts.times2':       { ko: '곱하기 2', en: 'times two' },
+  'tts.direction':    { ko: '방향 카드', en: 'direction card' },
+  'chip.lifeLost':    { ko: '{0}이(가) 라이프를 잃었습니다! (남은 라이프: {1})', en: '{0} lost a life! (lives left: {1})' },
+  'chip.eliminated':  { ko: '{0} 탈락!', en: '{0} eliminated!' },
+  'nt.tutDone':       { ko: '튜토리얼 완료! 이제 게임을 시작해봐요 🎉', en: "Tutorial complete! Let's start the game 🎉" }
 };
 
 function t(key) {
   var e = I18N[key];
   if (!e) return key;
   return e[LANG] || e.ko || key;
+}
+function tf(key) {
+  var s = t(key);
+  for (var i = 1; i < arguments.length; i++) { s = s.split('{' + (i - 1) + '}').join(String(arguments[i])); }
+  return s;
 }
 
 // data-i18n 속성을 가진 정적 요소들을 현재 언어로 갱신
@@ -1775,7 +1812,7 @@ function handleDotPadKey(keyCode) {
     speakCurrentState(); return;
   }
   if (keyCode === KeyCodes.PanningAll) {
-    speak(`현재 합계 ${G.total}`); return;
+    speak(tf('tts.curTotal', G.total)); return;
   }
 
   const me = myPlayer();
@@ -1801,14 +1838,14 @@ function handleDotPadKey(keyCode) {
   } else if (keyCode === KeyCodes.KeyFunction1 || keyCode === KeyCodes.KeyFunction3) {
     // F1 / F3: 카드 제출
     if (!isMyTurn) {
-      speak('내 차례가 아닙니다');
+      speak(t('tts.notYourTurn'));
       return;
     }
     if (me.hand.length === 0) return;
     if (dotpadCardIndex < 0) { notify(t('nt.selectCard'), 'info'); return; }
     const card = me.hand[dotpadCardIndex];
     if (!isValidCard(card, G)) {
-      speak('이 카드는 첫 번째로 낼 수 없습니다');
+      speak(t('tts.cantPlayFirst'));
       notify(t('nt.notFirstCard'), 'info');
       return;
     }
@@ -1906,10 +1943,10 @@ function cardName(card) {
 
 // TTS 전용: 기호 대신 읽기 좋은 한국어 텍스트
 function cardTtsText(card) {
-  if (card.type === 'number') return card.value === 0 ? '제로' : String(card.value);
-  if (card.type === 'minus10') return '마이너스 10';
-  if (card.type === 'times2') return '곱하기 2';
-  if (card.type === 'direction') return '방향 카드';
+  if (card.type === 'number') return card.value === 0 ? t('tts.zero') : String(card.value);
+  if (card.type === 'minus10') return t('tts.minus10');
+  if (card.type === 'times2') return t('tts.times2');
+  if (card.type === 'direction') return t('tts.direction');
   return '';
 }
 
@@ -2073,7 +2110,7 @@ function initGame(players, isOnline) {
   showScreen('game');
   renderGame();
   if (dotpadConnected) { renderDotPad(); triggerBlink3(); }
-  speak(`게임 시작! ${G.players[G.currentPlayerIdx].name}부터 시작합니다`);
+  speak(tf('tts.gameStart', G.players[G.currentPlayerIdx].name));
   if (G.players[G.currentPlayerIdx].type === 'bot') {
     scheduleBotTurn();
   }
@@ -2137,11 +2174,11 @@ function executeCardPlay(playerIdx, cardIdx) {
   if (loseChip) {
     if (p.lives > 0) {
       p.lives--;
-      chipLostMsg = `${p.name}이(가) 라이프를 잃었습니다! (남은 라이프: ${p.lives})`;
+      chipLostMsg = tf('chip.lifeLost', p.name, p.lives);
     } else {
       // Already 0 lives → eliminated
       p.eliminated = true;
-      chipLostMsg = `${p.name} 탈락!`;
+      chipLostMsg = tf('chip.eliminated', p.name);
     }
     G.lastLoserIdx = playerIdx;
   }
@@ -2228,7 +2265,7 @@ function executeCardPlay(playerIdx, cardIdx) {
 
   const next = G.players[nextIdx];
   if (nextIdx !== playerIdx) {
-    speak(`${next.name}의 차례입니다`);
+    speak(tf('tts.turnOf', next.name));
   }
 
   if (next.type === 'bot') {
@@ -2243,7 +2280,7 @@ function showRoundEnd(loser, dueTo77, msg) {
   document.getElementById('round-end-info').textContent =
     `합계가 ${G.total}이 되어 라운드가 끝납니다. ${loser.name}부터 새 라운드를 시작합니다.`;
   document.getElementById('round-end-overlay').classList.add('active');
-  speak(`합계 ${G.total}. ${loser.name} 라이프 손실. 새 라운드 시작`);
+  speak(tf('tts.lifeLossRound', G.total, loser.name));
 }
 
 window.continueAfterRoundEnd = function() {
@@ -2288,7 +2325,7 @@ window.continueAfterRoundEnd = function() {
   if (dotpadConnected) { renderDotPad(); triggerBlink3(); }
   // 온라인 호스트: 새 라운드 상태 브로드캐스트
   if (G.isOnline && G.isHost) publishOnlineState();
-  speak(`새 라운드! ${G.players[startIdx].name}부터 시작합니다`);
+  speak(tf('tts.newRound', G.players[startIdx].name));
   if (G.players[startIdx].type === 'bot') scheduleBotTurn();
 };
 
@@ -2568,7 +2605,7 @@ function showGameOver() {
   });
 
   showScreen('gameover');
-  speak(`게임 종료! ${w?.name || ''}의 승리입니다`);
+  speak(tf('tts.gameOver', w?.name || ''));
   if (EMBED_MODE) postMsg('exit');
 }
 
@@ -2665,8 +2702,7 @@ function _gPlay(queue, onEnd) {
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
       var _u = new SpeechSynthesisUtterance(_remain);
-      _u.lang = 'ko-KR'; _u.rate = 1.05;
-      if (selectedVoice) _u.voice = selectedVoice;
+      applyTtsVoice(_u);
       if (onEnd) _u.onend = onEnd;
       window.speechSynthesis.speak(_u);
     } else { if (onEnd) onEnd(); }
@@ -2699,6 +2735,33 @@ function speakGoogle(text, onEnd) {
 }
 
 // ── 통합 speak() ─────────────────────────────────────────────
+let _enVoice = null;
+function pickEnVoice() {
+  var vs = (window.speechSynthesis ? window.speechSynthesis.getVoices() : []) || [];
+  if (!vs.length) vs = allVoices || [];
+  if (_enVoice && vs.indexOf(_enVoice) !== -1) return _enVoice;
+  var en = v => v.lang && v.lang.toLowerCase().indexOf('en') === 0;
+  var NOV = ['Novelty','Bad News','Good News','Bubbles','Jester','Trinoids','Whisper','Zarvox','Albert','Wobble','Bahh','Boing','Bells','Cellos','Deranged','Hysterical','Organ','Superstar'];
+  var isNov = v => NOV.some(x => v.name.indexOf(x) !== -1);
+  _enVoice =
+    vs.find(v => en(v) && ['Samantha','Google US English','Microsoft Aria','Microsoft Jenny','Aria','Jenny'].some(x => v.name.indexOf(x) !== -1)) ||
+    vs.find(v => en(v) && v.lang.toLowerCase() === 'en-us' && v.localService && !isNov(v)) ||
+    vs.find(v => en(v) && v.localService && !isNov(v)) ||
+    vs.find(v => en(v) && !isNov(v)) ||
+    vs.find(en) || null;
+  return _enVoice;
+}
+function applyTtsVoice(utt) {
+  if (LANG === 'en') {
+    utt.lang = 'en-US';
+    var ev = pickEnVoice();
+    if (ev) utt.voice = ev;
+  } else {
+    utt.lang = 'ko-KR';
+    if (selectedVoice) utt.voice = selectedVoice;
+  }
+  utt.rate = 1.05;
+}
 function speak(text, onEnd) {
   if (useGoogleTTS) {
     speakGoogle(text, onEnd);
@@ -2707,9 +2770,7 @@ function speak(text, onEnd) {
   if (!window.speechSynthesis) { if (onEnd) onEnd(); return; }
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = 'ko-KR';
-  utt.rate = 1.05;
-  if (selectedVoice) utt.voice = selectedVoice;
+  applyTtsVoice(utt);
   if (onEnd) utt.onend = onEnd;
   window.speechSynthesis.speak(utt);
 }
@@ -2729,7 +2790,7 @@ function speakCard(card) {
 window.speakCurrentState = function() {
   if (G.phase !== 'playing') return;
   const p = G.players[G.currentPlayerIdx];
-  speak(`현재 합계 ${G.total}. ${p.name}의 차례. 남은 카드 ${p.hand.length}장`);
+  speak(tf('tts.stateLine', G.total, p.name, p.hand.length));
 };
 
 // ============================================================
@@ -3052,7 +3113,7 @@ window.selectVoice = function(name) {
   selectedVoice = allVoices.find(v => v.name === name) || null;
   updateVoiceBtn();
   // 선택 즉시 테스트 재생
-  speak('안녕하세요. 이 음성으로 게임을 진행합니다.');
+  speak(t('tts.voiceTest'));
   // 목록 새로고침 (active 표시)
   const list = document.getElementById('voice-list');
   list.querySelectorAll('.voice-item').forEach(el => {
@@ -3421,7 +3482,7 @@ window.tutorialNext = function() {
     var _homeScr = document.getElementById('screen-home');
     if (_homeScr) _homeScr.classList.add('active');
     if (typeof sendResizeMsg === 'function') sendResizeMsg();
-    notify('튜토리얼 완료! 이제 게임을 시작해봐요 🎉');
+    notify(t('nt.tutDone'));
   }
 };
 
