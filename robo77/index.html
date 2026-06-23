@@ -1014,10 +1014,8 @@ body.tut-on #game-footer{grid-area:cards;align-self:end;background:transparent;b
     <span class="tut-section-badge" id="tut-section-badge">소개</span>
     <span style="font-size:11px;color:var(--text2)" id="tut-step-num">1 / 14</span>
     <div class="tut-progress" style="flex:1"><div class="tut-progress-bar" id="tut-progress-bar"></div></div>
-    <button class="btn btn-ghost btn-sm" onclick="tutorialSpeak()"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8" />
-  <path d="M17.7 5a9 9 0 0 1 0 14" />
-  <path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" /></svg></button>
-    <button class="btn btn-ghost btn-sm" onclick="tutorialExit()" id="btn-tut-exit"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" />
+    <button class="btn btn-ghost btn-sm" onclick="tutorialRestart()" title="처음부터 다시"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg></button>
+  <button class="btn btn-ghost btn-sm" onclick="tutorialExit()" id="btn-tut-exit"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" />
   <path d="M6 6l12 12" /></svg></button>
   </div>
   <div class="tut-ol-nav">
@@ -3156,12 +3154,20 @@ window.tutorialExit = function() {
   showScreen('home');
 };
 
+window.tutorialRestart = function() {
+  cancelSpeak(); cancelTutAuto(); cancelTutBlink();
+  tutStep = 0;
+  tutPaused = false;
+  var _tp = document.getElementById('tut-pause');
+  if (_tp) _tp.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> 일시정지';
+  renderTutStep();
+};
 window.tutorialPause = function() {
   tutPaused = !tutPaused;
   var btn = document.getElementById('tut-pause');
   if (tutPaused) {
     cancelSpeak(); cancelTutAuto();
-    if (btn) btn.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13 -8z" /></svg> 재생';
+    if (btn) btn.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13 -8z" /></svg> 다시듣기';
   } else {
     if (btn) btn.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> 일시정지';
     renderTutStep();
