@@ -359,6 +359,19 @@ html, body {
   position: relative;
   min-height: 0;
 }
+/* 배경 위 텍스트 가독성: 중앙 영역 뒤에만 부드러운 어두운 받침 */
+#game-center::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 72% 58% at 50% 44%,
+    rgba(3,4,14,0.66) 0%,
+    rgba(3,4,14,0.46) 46%,
+    rgba(3,4,14,0.00) 80%);
+  pointer-events: none;
+  z-index: 0;
+}
+#game-center > * { position: relative; z-index: 1; }
 .total-display {
   display: flex;
   flex-direction: column;
@@ -393,7 +406,9 @@ html, body {
   align-items: center;
   gap: 10px;
   font-size: 14px;
-  color: var(--text2);
+  color: #e9edff;
+  font-weight: 600;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.5);
 }
 .last-card-badge {
   padding: 3px 11px;
