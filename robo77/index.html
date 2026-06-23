@@ -777,13 +777,13 @@ body.embed-mode #game-footer { padding: 8px 12px; }
 #tut-overlay {
   display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 300;
   background: rgba(7,7,15,0.97); border-bottom: 2px solid var(--accent2);
-  flex-direction: column; padding: 8px 16px 6px; gap: 4px;
+  flex-direction: column; padding: 12px 18px 12px; gap: 9px;
 }
 .tut-ol-header {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 10px;
 }
 .tut-ol-nav {
-  display: flex; justify-content: space-between; align-items: center; padding-top: 2px;
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-top: 10px;
 }
 #tut-dotpad-in-game {
   display: none; margin: 12px auto 0; max-width: 320px; width: 100%;
@@ -795,7 +795,7 @@ body.embed-mode #game-footer { padding: 8px 12px; }
 .embed-mode #btn-quit-game{display:none!important;}
 .embed-mode #btn-tut-exit{display:none!important;}
 body.tut-on #game-header{display:none;}
-body.tut-on #screen-game{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);grid-template-rows:auto 1fr auto;grid-template-areas:"lives lives" "center desc" "cards cards";align-items:center;column-gap:30px;row-gap:10px;padding:100px 32px 18px;height:100vh;overflow:hidden;box-sizing:border-box;}
+body.tut-on #screen-game{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);grid-template-rows:auto 1fr auto;grid-template-areas:"lives lives" "center desc" "cards cards";align-items:center;column-gap:30px;row-gap:10px;padding:120px 32px 18px;height:100vh;overflow:hidden;box-sizing:border-box;}
 body.tut-on #players-panel{grid-area:lives;align-self:start;justify-self:start;background:transparent;border:none;padding:0;overflow:visible;}
 body.tut-on #game-center{grid-area:center;align-self:center;flex:initial;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding:0;min-height:0;}
 body.tut-on .total-display{gap:6px;}
@@ -1004,7 +1004,8 @@ body.tut-on #game-footer{grid-area:cards;align-self:end;background:transparent;b
   </div>
   <div class="tut-ol-nav">
     <button class="btn btn-ghost btn-sm" id="tut-prev" onclick="tutorialPrev()">◀ 이전</button>
-    <button class="btn btn-primary btn-sm" id="tut-next" onclick="tutorialNext()">다음 ▶</button>
+    <button class="btn btn-ghost btn-sm" id="tut-pause" onclick="tutorialPause()"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> 일시정지</button>
+  <button class="btn btn-primary btn-sm" id="tut-next" onclick="tutorialNext()">다음 ▶</button>
   </div>
 </div>
 
@@ -3112,6 +3113,7 @@ window.startTutorial = function() {
   tutStep = 0;
   showScreen('game');
   document.body.classList.add('tut-on');
+    tutPaused = false; { var _tp=document.getElementById('tut-pause'); if(_tp) _tp.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> 일시정지'; }
   document.getElementById('tut-overlay').style.display = 'flex';
   renderTutStep();
 };
@@ -3135,6 +3137,17 @@ window.tutorialExit = function() {
   showScreen('home');
 };
 
+window.tutorialPause = function() {
+  tutPaused = !tutPaused;
+  var btn = document.getElementById('tut-pause');
+  if (tutPaused) {
+    cancelSpeak(); cancelTutAuto();
+    if (btn) btn.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13 -8z" /></svg> 재생';
+  } else {
+    if (btn) btn.innerHTML = '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> 일시정지';
+    renderTutStep();
+  }
+};
 window.tutorialPrev = function() {
   cancelTutAuto();
   if (tutStep > 0) { tutStep--; renderTutStep(); }
@@ -3178,6 +3191,7 @@ function cancelTutBlink() {
 }
 
 let tutAutoTimer = null;
+  let tutPaused = false;
 
 function cancelTutAuto() {
   if (tutAutoTimer) { clearTimeout(tutAutoTimer); tutAutoTimer = null; }
@@ -3196,7 +3210,7 @@ function renderTutStep() {
   document.getElementById('tut-step-num').textContent = (tutStep + 1) + ' / ' + total;
   document.getElementById('tut-progress-bar').style.width = (((tutStep + 1) / total) * 100) + '%';
   document.getElementById('tut-prev').disabled = tutStep === 0;
-  document.getElementById('tut-next').textContent = s.isLast ? '🎮 게임 시작!' : '다음 ▶';
+  { var _nx=document.getElementById('tut-next'); _nx.innerHTML = s.isLast ? '<svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5h3.5a5 5 0 0 1 0 10h-5.5l-4.015 4.227a2.3 2.3 0 0 1 -3.923 -2.035l1.634 -8.173a5 5 0 0 1 4.904 -4.019h3.4" /><path d="M14 15l4.07 4.284a2.3 2.3 0 0 0 3.925 -2.023l-1.6 -8.232" /><path d="M8 9v2" /><path d="M7 10h2" /><path d="M14 10h2" /></svg> 게임 시작' : '다음 ▶'; }
 
   // ── 게임 화면 요소 업데이트 ───────────────────────────────
   // 하단 제목+설명+TTS 표시
@@ -3291,7 +3305,7 @@ function renderTutStep() {
 
   // ── TTS 재생 + 자동 다음 ──────────────────────────────────
   cancelSpeak();
-  speak(s.tts, function() {
+  if (!tutPaused) speak(s.tts, function() {
     if (tutStep !== stepAtRender) return;
     if (s.isLast) return;
     tutAutoTimer = setTimeout(function() {
