@@ -3335,10 +3335,10 @@ function renderTutStep() {
   // ── TTS 재생 + 자동 다음 ──────────────────────────────────
   cancelSpeak();
   if (!tutPaused) speak(s.tts, function() {
-    if (tutStep !== stepAtRender) return;
+    if (tutStep !== stepAtRender || !document.body.classList.contains('tut-on')) return;
     if (s.isLast) return;
     tutAutoTimer = setTimeout(function() {
-      if (tutStep === stepAtRender) tutorialNext();
+      if (tutStep === stepAtRender && document.body.classList.contains('tut-on')) tutorialNext();
     }, 1500);
   });
 }
@@ -3355,6 +3355,10 @@ function renderTutStep() {
     if (name === "home") trapped = false; else ensureTrap();
   };
   window.addEventListener("popstate", function(){
+    // 튜토리얼 진행 중 뒤로가기 → 완전 종료(TTS·타이머·오버레이 정리 후 home)
+    if (document.body.classList.contains("tut-on") && typeof window.tutorialExit === "function") {
+      trapped = false; window.tutorialExit(); return;
+    }
     var home = document.getElementById("screen-home");
     if (home && !home.classList.contains("active")) { trapped = false; _ss("home"); }
   });
