@@ -370,7 +370,8 @@ html, body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--text2);
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.55);
 }
 .total-number {
   font-family: ui-monospace, 'SF Mono', 'Segoe UI Mono', 'Consolas', monospace;
@@ -3342,6 +3343,22 @@ function renderTutStep() {
   });
 }
 
+
+/* ===== 뒤로가기 → 게임시작(home) 화면 (게임 자체 히스토리) ===== */
+(function(){
+  var _ss = window.showScreen;
+  if (typeof _ss !== "function") return;
+  var trapped = false;
+  function ensureTrap(){ if(!trapped){ try{ history.pushState({rb77:1}, "") }catch(e){} trapped=true; } }
+  window.showScreen = function(name){
+    _ss(name);
+    if (name === "home") trapped = false; else ensureTrap();
+  };
+  window.addEventListener("popstate", function(){
+    var home = document.getElementById("screen-home");
+    if (home && !home.classList.contains("active")) { trapped = false; _ss("home"); }
+  });
+})();
 </script>
 </body>
 </html>
