@@ -2556,9 +2556,12 @@ function speak(text, onEnd) {
 }
 
 function cancelSpeak() {
-  if (useGoogleTTS) { _stopGoogleTTS(); }
-  else { window.speechSynthesis && window.speechSynthesis.cancel(); }
+  try { _stopGoogleTTS(); } catch(e){}
+  try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){}
 }
+function _haltAllAudio(){ try{cancelSpeak();}catch(e){} try{cancelTutAuto();}catch(e){} try{cancelTutBlink();}catch(e){} }
+document.addEventListener('visibilitychange', function(){ if(document.hidden){ _haltAllAudio(); } });
+window.addEventListener('pagehide', _haltAllAudio);
 
 function speakCard(card) {
   speak(cardTtsText(card));
