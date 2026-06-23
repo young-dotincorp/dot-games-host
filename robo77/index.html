@@ -938,7 +938,7 @@ body.embed-mode #home-gear{top:10px;right:12px;}
   </div>
   <div class="setup-content">
     <div class="section-card">
-      <div class="section-label">플레이어 수</div>
+      <div class="section-label" data-i18n="setup.players">플레이어 수</div>
       <div class="player-count-btns">
         <button class="player-count-btn active" data-count="2" onclick="setPlayerCount(2)">2</button>
         <button class="player-count-btn" data-count="3" onclick="setPlayerCount(3)">3</button>
@@ -946,23 +946,23 @@ body.embed-mode #home-gear{top:10px;right:12px;}
       </div>
     </div>
     <div class="section-card">
-      <div class="section-label">플레이어 설정</div>
+      <div class="section-label" data-i18n="setup.playerCfg">플레이어 설정</div>
       <div class="player-slots" id="player-slots"></div>
     </div>
-    <button class="btn btn-success" onclick="startLocalGame()">게임 시작!</button>
+    <button class="btn btn-success" onclick="startLocalGame()"><span data-i18n="setup.start">게임 시작!</span></button>
   </div>
 </div>
 
 <!-- ===== ONLINE CREATE ===== -->
 <div id="screen-online-create" class="screen">
   <div class="online-card">
-    <h2>방 만들기</h2>
+    <h2 data-i18n="oc.title">방 만들기</h2>
     <div class="form-group">
-      <label class="form-label">내 이름</label>
-      <input class="form-input" id="online-create-name" placeholder="이름 입력" maxlength="10" value="P1">
+      <label class="form-label" data-i18n="oc.myName">내 이름</label>
+      <input class="form-input" id="online-create-name" data-i18n-ph="oc.namePh" placeholder="이름 입력" maxlength="10" value="P1">
     </div>
     <div class="form-group">
-      <label class="form-label">총 플레이어 수 (봇 포함)</label>
+      <label class="form-label" data-i18n="oc.totalPlayers">총 플레이어 수 (봇 포함)</label>
       <div class="player-count-btns">
         <button class="player-count-btn active" data-count="2" onclick="setOnlinePlayerCount(2)">2</button>
         <button class="player-count-btn" data-count="3" onclick="setOnlinePlayerCount(3)">3</button>
@@ -970,8 +970,8 @@ body.embed-mode #home-gear{top:10px;right:12px;}
       </div>
     </div>
     <div style="display:flex;gap:10px">
-      <button class="btn btn-ghost" onclick="showScreen('home')">취소</button>
-      <button class="btn btn-primary" onclick="createOnlineRoom()" style="flex:1">방 생성</button>
+      <button class="btn btn-ghost" onclick="showScreen('home')"><span data-i18n="common.cancel">취소</span></button>
+      <button class="btn btn-primary" onclick="createOnlineRoom()" style="flex:1"><span data-i18n="oc.create">방 생성</span></button>
     </div>
   </div>
 </div>
@@ -979,19 +979,19 @@ body.embed-mode #home-gear{top:10px;right:12px;}
 <!-- ===== ONLINE JOIN ===== -->
 <div id="screen-online-join" class="screen">
   <div class="online-card">
-    <h2>방 참가하기</h2>
+    <h2 data-i18n="oj.title">방 참가하기</h2>
     <div class="form-group">
-      <label class="form-label">내 이름</label>
-      <input class="form-input" id="online-join-name" placeholder="이름 입력" maxlength="10" value="P2">
+      <label class="form-label" data-i18n="oc.myName">내 이름</label>
+      <input class="form-input" id="online-join-name" data-i18n-ph="oc.namePh" placeholder="이름 입력" maxlength="10" value="P2">
     </div>
     <div class="form-group">
-      <label class="form-label">방 코드</label>
+      <label class="form-label" data-i18n="oj.roomCode">방 코드</label>
       <input class="form-input" id="room-code-input" placeholder="ABC123" maxlength="6"
         style="font-size:22px;font-weight:700;letter-spacing:6px;text-transform:uppercase;text-align:center">
     </div>
     <div style="display:flex;gap:10px">
-      <button class="btn btn-ghost" onclick="showScreen('home')">취소</button>
-      <button class="btn btn-primary" onclick="joinOnlineRoom()" style="flex:1">참가</button>
+      <button class="btn btn-ghost" onclick="showScreen('home')"><span data-i18n="common.cancel">취소</span></button>
+      <button class="btn btn-primary" onclick="joinOnlineRoom()" style="flex:1"><span data-i18n="oj.join">참가</span></button>
     </div>
   </div>
 </div>
@@ -999,16 +999,16 @@ body.embed-mode #home-gear{top:10px;right:12px;}
 <!-- ===== ONLINE LOBBY ===== -->
 <div id="screen-online-lobby" class="screen">
   <div class="online-card">
-    <h2>대기실</h2>
+    <h2 data-i18n="lobby.title">대기실</h2>
     <div style="text-align:center">
-      <div class="section-label" style="margin-bottom:6px">방 코드</div>
+      <div class="section-label" style="margin-bottom:6px" data-i18n="lobby.roomCode">방 코드</div>
       <div class="room-code-display" id="lobby-room-code">------</div>
     </div>
     <div class="lobby-players" id="lobby-players-list"></div>
-    <div class="hint-text" id="lobby-hint">다른 플레이어가 참가하길 기다리는 중...</div>
+    <div class="hint-text" id="lobby-hint" data-i18n="lobby.waiting">다른 플레이어가 참가하길 기다리는 중...</div>
     <div style="display:flex;gap:10px">
-      <button class="btn btn-ghost" onclick="leaveOnlineRoom()">나가기</button>
-      <button class="btn btn-success" id="btn-start-online" onclick="startOnlineGame()" style="flex:1;display:none">게임 시작!</button>
+      <button class="btn btn-ghost" onclick="leaveOnlineRoom()"><span data-i18n="lobby.leave">나가기</span></button>
+      <button class="btn btn-success" id="btn-start-online" onclick="startOnlineGame()" style="flex:1;display:none"><span data-i18n="setup.start">게임 시작!</span></button>
     </div>
   </div>
 </div>
@@ -1022,13 +1022,13 @@ body.embed-mode #home-gear{top:10px;right:12px;}
       <div id="dotpad-status-game" style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)">
         <div class="dotpad-dot" id="dotpad-dot-game"></div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="speakCurrentState()" title="현재 상태 듣기"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8" />
+      <button class="btn btn-ghost btn-sm" onclick="speakCurrentState()" data-i18n-title="game.listen" title="현재 상태 듣기"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8" />
   <path d="M17.7 5a9 9 0 0 1 0 14" />
   <path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" /></svg></button>
-      <button class="btn btn-ghost btn-sm" id="btn-connect-game" onclick="showDotPadMenu()" title="DotPad 연결"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-14" />
+      <button class="btn btn-ghost btn-sm" id="btn-connect-game" onclick="showDotPadMenu()" data-i18n-title="game.connect" title="DotPad 연결"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-14" />
   <path d="M11 4h2" />
   <path d="M12 17v.01" /></svg></button>
-      <button class="btn btn-ghost btn-sm" id="btn-quit-game" onclick="confirmQuit()" title="게임 종료"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" />
+      <button class="btn btn-ghost btn-sm" id="btn-quit-game" onclick="confirmQuit()" data-i18n-title="game.quit" title="게임 종료"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" />
   <path d="M6 6l12 12" /></svg></button>
     </div>
   </div>
@@ -1037,11 +1037,11 @@ body.embed-mode #home-gear{top:10px;right:12px;}
 
   <div id="game-center">
     <div class="total-display">
-      <div class="total-label">현재 합계</div>
+      <div class="total-label" data-i18n="game.total">현재 합계</div>
       <div class="total-number safe" id="total-number">0</div>
     </div>
     <div class="last-card-display" id="last-card-display" style="display:none">
-      마지막 카드: <span class="last-card-badge" id="last-card-badge"></span>
+      <span data-i18n="game.lastCard">마지막 카드: </span><span class="last-card-badge" id="last-card-badge"></span>
     </div>
     <div id="tut-dotpad-in-game"></div>
   </div>
@@ -1055,12 +1055,12 @@ body.embed-mode #home-gear{top:10px;right:12px;}
   <div id="game-footer">
     <div id="turn-info">
       
-      <span class="turn-text" id="turn-text">게임 준비 중...</span>
-      <span class="cards-required-badge" id="cards-required-badge" style="display:none">2장 내야 함</span>
+      <span class="turn-text" id="turn-text" data-i18n="game.preparing">게임 준비 중...</span>
+      <span class="cards-required-badge" id="cards-required-badge" style="display:none" data-i18n="game.cardsRequired2">2장 내야 함</span>
     </div>
     <div id="hand-area"></div>
     <div id="footer-actions">
-      <button class="btn btn-primary" id="btn-play" onclick="playSelectedCard()" disabled>카드 내기</button>
+      <button class="btn btn-primary" id="btn-play" onclick="playSelectedCard()" disabled><span data-i18n="game.playCard">카드 내기</span></button>
       
     </div>
   </div>
@@ -1095,18 +1095,18 @@ body.embed-mode #home-gear{top:10px;right:12px;}
   <div class="gameover-sub" id="gameover-sub">승리!</div>
   <div class="stats-table" id="stats-table"></div>
   <div class="btn-group">
-    <button class="btn btn-primary" onclick="startLocalGame()">다시 하기</button>
-    <button class="btn btn-ghost" onclick="showScreen('home')">홈으로</button>
+    <button class="btn btn-primary" onclick="startLocalGame()"><span data-i18n="over.retry">다시 하기</span></button>
+    <button class="btn btn-ghost" onclick="showScreen('home')"><span data-i18n="over.home">홈으로</span></button>
   </div>
 </div>
 
 <!-- ===== OVERLAYS ===== -->
 <div class="overlay" id="round-end-overlay">
   <div class="modal">
-    <h3 id="round-end-title">라운드 종료!</h3>
+    <h3 id="round-end-title" data-i18n="round.end">라운드 종료!</h3>
     <div class="round-penalty-display" id="round-end-penalty"></div>
     <div class="round-info" id="round-end-info"></div>
-    <button class="btn btn-primary" onclick="continueAfterRoundEnd()">계속하기</button>
+    <button class="btn btn-primary" onclick="continueAfterRoundEnd()"><span data-i18n="round.continue">계속하기</span></button>
   </div>
 </div>
 
@@ -1135,7 +1135,7 @@ body.embed-mode #home-gear{top:10px;right:12px;}
   <div class="modal">
     <h3>게임을 종료할까요?</h3>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="document.getElementById('quit-overlay').classList.remove('active')">취소</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('quit-overlay').classList.remove('active')"><span data-i18n="common.cancel">취소</span></button>
       <button class="btn btn-danger" onclick="quitGame()">종료</button>
     </div>
   </div>
@@ -1175,7 +1175,81 @@ const I18N = {
   'dp.disconnect':  { ko: '연결 해제', en: 'Disconnect' },
   // 로컬 설정 화면
   'setup.title':    { ko: '로컬 게임 설정', en: 'Local Game Setup' },
-  'common.back':    { ko: '뒤로', en: 'Back' }
+  'common.back':    { ko: '뒤로', en: 'Back' },
+  'common.cancel':  { ko: '취소', en: 'Cancel' },
+  // 로컬 설정 본문
+  'setup.players':  { ko: '플레이어 수', en: 'Number of Players' },
+  'setup.playerCfg':{ ko: '플레이어 설정', en: 'Player Settings' },
+  'setup.start':    { ko: '게임 시작!', en: 'Start Game!' },
+  // 온라인 방 만들기
+  'oc.title':       { ko: '방 만들기', en: 'Create Room' },
+  'oc.myName':      { ko: '내 이름', en: 'My Name' },
+  'oc.namePh':      { ko: '이름 입력', en: 'Enter name' },
+  'oc.totalPlayers':{ ko: '총 플레이어 수 (봇 포함)', en: 'Total Players (incl. Bots)' },
+  'oc.create':      { ko: '방 생성', en: 'Create' },
+  // 온라인 방 참가
+  'oj.title':       { ko: '방 참가하기', en: 'Join Room' },
+  'oj.roomCode':    { ko: '방 코드', en: 'Room Code' },
+  'oj.join':        { ko: '참가', en: 'Join' },
+  // 대기실
+  'lobby.title':    { ko: '대기실', en: 'Waiting Room' },
+  'lobby.roomCode': { ko: '방 코드', en: 'Room Code' },
+  'lobby.waiting':  { ko: '다른 플레이어가 참가하길 기다리는 중...', en: 'Waiting for other players to join...' },
+  'lobby.leave':    { ko: '나가기', en: 'Leave' },
+  'lobby.start':    { ko: '게임 시작!', en: 'Start Game!' },
+  'lobby.waitHost': { ko: '호스트가 시작할 때까지 기다리는 중...', en: 'Waiting for the host to start...' },
+  // 게임 화면
+  'game.listen':    { ko: '현재 상태 듣기', en: 'Read Current State' },
+  'game.connect':   { ko: 'DotPad 연결', en: 'Connect DotPad' },
+  'game.quit':      { ko: '게임 종료', en: 'Quit Game' },
+  'game.total':     { ko: '현재 합계', en: 'Current Total' },
+  'game.lastCard':  { ko: '마지막 카드: ', en: 'Last card: ' },
+  'game.preparing': { ko: '게임 준비 중...', en: 'Preparing game...' },
+  'game.playCard':  { ko: '카드 내기', en: 'Play Card' },
+  'game.myTurn':    { ko: '내 차례입니다!', en: 'Your turn!' },
+  'game.turnOf':    { ko: '{name}의 차례', en: "{name}'s turn" },
+  'game.turnLabel': { ko: '내 차례', en: 'Your turn' },
+  'game.eliminated':{ ko: '탈락', en: 'Out' },
+  'game.botPlaying':{ ko: '봇이 카드를 내는 중...', en: 'Bot is playing...' },
+  'game.bot':       { ko: '봇', en: 'Bot' },
+  'game.botThinking':{ ko: '{name}이(가) 생각 중 ', en: '{name} is thinking ' },
+  'game.cardsRequired2':{ ko: '2장 내야 함', en: 'Play 2 cards' },
+  'lobby.hostCount':{ ko: '{n}/{total}명 입장. 방 코드를 공유하세요!', en: '{n}/{total} joined. Share the room code!' },
+  'game.dpMenuOn':  { ko: '현재 연결됨 ✅', en: 'Connected ✅' },
+  'game.dpMenuOff': { ko: '연결되지 않음', en: 'Not connected' },
+  // 게임오버 / 라운드
+  'over.win':       { ko: '승리!', en: 'Victory!' },
+  'over.winnerSub': { ko: '{name} 승리!', en: '{name} wins!' },
+  'over.retry':     { ko: '다시 하기', en: 'Play Again' },
+  'over.home':      { ko: '홈으로', en: 'Home' },
+  'round.end':      { ko: '라운드 종료!', en: 'Round Over!' },
+  'round.continue': { ko: '계속하기', en: 'Continue' },
+  // 알림(notify) — 화면 표시
+  'nt.dpConnected': { ko: 'DotPad 연결됨!', en: 'DotPad connected!' },
+  'nt.dpLost':      { ko: 'DotPad 연결 끊김', en: 'DotPad disconnected' },
+  'nt.noUsbSerial': { ko: 'USB Serial이 지원되지 않습니다. Chrome/Edge를 사용해주세요.', en: 'USB Serial is not supported. Please use Chrome/Edge.' },
+  'nt.usbConnecting':{ ko: 'USB 연결 중...', en: 'Connecting via USB...' },
+  'nt.usbFail':     { ko: 'USB 연결 실패: ', en: 'USB connection failed: ' },
+  'nt.noBle':       { ko: 'Web Bluetooth가 지원되지 않습니다.\nChrome 또는 Edge 브라우저를 사용해주세요.', en: 'Web Bluetooth is not supported.\nPlease use Chrome or Edge.' },
+  'nt.bleConnecting':{ ko: 'DotPad에 연결 중...', en: 'Connecting to DotPad...' },
+  'nt.bleFailDevice':{ ko: '연결 실패: 기기가 DotPad인지 확인하고 다시 시도해주세요.', en: 'Connection failed: check that the device is a DotPad and try again.' },
+  'nt.bleFailSec':  { ko: '보안 오류: HTTPS 또는 localhost에서 실행해주세요.', en: 'Security error: please run on HTTPS or localhost.' },
+  'nt.bleFail':     { ko: 'BLE 연결 실패: ', en: 'BLE connection failed: ' },
+  'nt.dpDisconnected':{ ko: 'DotPad 연결 해제됨', en: 'DotPad disconnected' },
+  'nt.dpAutoBle':   { ko: 'DotPad 자동 연결 중...', en: 'Auto-connecting to DotPad...' },
+  'nt.dpAutoUsb':   { ko: 'DotPad USB 자동 연결 중...', en: 'Auto-connecting to DotPad (USB)...' },
+  'nt.selectCard':  { ko: '카드를 먼저 선택하세요', en: 'Please select a card first' },
+  'nt.notFirstCard':{ ko: '첫 번째 카드로 낼 수 없습니다', en: 'This card cannot be played as the first card' },
+  'nt.selectCard2': { ko: '카드를 선택하세요', en: 'Please select a card' },
+  'nt.notFirstCard2':{ ko: '이 카드는 첫 번째 카드로 낼 수 없습니다', en: 'This card cannot be played as the first card' },
+  'nt.noAbly':      { ko: 'Ably 라이브러리가 로드되지 않았습니다. 인터넷 연결을 확인해주세요.', en: 'The Ably library failed to load. Please check your internet connection.' },
+  'nt.creatingRoom':{ ko: '방을 만드는 중...', en: 'Creating room...' },
+  'nt.createFail':  { ko: '방 생성 실패: ', en: 'Failed to create room: ' },
+  'nt.enterRoomCode':{ ko: '방 코드를 입력하세요', en: 'Please enter a room code' },
+  'nt.noAbly2':     { ko: 'Ably 라이브러리가 로드되지 않았습니다.', en: 'The Ably library failed to load.' },
+  'nt.connectingServer':{ ko: '서버에 연결 중...', en: 'Connecting to server...' },
+  'nt.joinFail':    { ko: '참가 실패: ', en: 'Failed to join: ' },
+  'nt.noTts':       { ko: '이 기기는 TTS를 지원하지 않습니다', en: 'This device does not support text-to-speech' }
 };
 
 function t(key) {
@@ -1189,6 +1263,14 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach(function (el) {
     var k = el.getAttribute('data-i18n');
     if (I18N[k]) el.textContent = t(k);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(function (el) {
+    var k = el.getAttribute('data-i18n-title');
+    if (I18N[k]) el.setAttribute('title', t(k));
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(function (el) {
+    var k = el.getAttribute('data-i18n-ph');
+    if (I18N[k]) el.setAttribute('placeholder', t(k));
   });
   // 언어 토글(홈/설정) on 상태 동기화
   ['seg-lang-ko', 'seg-lang-ko-set'].forEach(function (id) { var b = document.getElementById(id); if (b) b.classList.toggle('on', LANG === 'ko'); });
@@ -1261,7 +1343,7 @@ sdk.setCallBack(
       dotpadConnected = true;
       dotpadDevice = device;
       updateDotPadStatusUI(true);
-      notify('DotPad 연결됨!', 'success');
+      notify(t('nt.dpConnected'), 'success');
       // 연결 직후 전체 화면 초기화 후 게임 상태 출력
       setTimeout(() => {
         try {
@@ -1275,7 +1357,7 @@ sdk.setCallBack(
       dotpadConnected = false;
       dotpadDevice = null;
       updateDotPadStatusUI(false);
-      notify('DotPad 연결 끊김', 'info');
+      notify(t('nt.dpLost'), 'info');
     }
   },
   (device, keyCode) => {
@@ -1287,24 +1369,24 @@ window.connectDotPad = async function(method = 'ble') {
   if (method === 'usb') {
     // USB 연결
     if (!navigator.serial) {
-      notify('USB Serial이 지원되지 않습니다. Chrome/Edge를 사용해주세요.', 'info');
+      notify(t('nt.noUsbSerial'), 'info');
       return;
     }
     try {
       const usbDevice = await scanner.startUsbScan();
       if (usbDevice) {
-        notify('USB 연결 중...', 'info');
+        notify(t('nt.usbConnecting'), 'info');
         await sdk.connectUsbDevice(usbDevice);
       }
     } catch (e) {
-      if (e.name !== 'NotFoundError') notify('USB 연결 실패: ' + e.message, 'info');
+      if (e.name !== 'NotFoundError') notify(t('nt.usbFail') + e.message, 'info');
     }
     return;
   }
 
   // BLE 연결
   if (!navigator.bluetooth) {
-    notify('Web Bluetooth가 지원되지 않습니다.\nChrome 또는 Edge 브라우저를 사용해주세요.', 'info');
+    notify(t('nt.noBle'), 'info');
     return;
   }
 
@@ -1340,17 +1422,17 @@ window.connectDotPad = async function(method = 'ble') {
     }
 
     if (bleDevice) {
-      notify('DotPad에 연결 중...', 'info');
+      notify(t('nt.bleConnecting'), 'info');
       const connected = await sdk.connectBleDevice(bleDevice);
       if (!connected) {
-        notify('연결 실패: 기기가 DotPad인지 확인하고 다시 시도해주세요.', 'info');
+        notify(t('nt.bleFailDevice'), 'info');
       }
     }
   } catch (e) {
     if (e.name === 'SecurityError') {
-      notify('보안 오류: HTTPS 또는 localhost에서 실행해주세요.', 'info');
+      notify(t('nt.bleFailSec'), 'info');
     } else if (e.name !== 'NotFoundError') {
-      notify('BLE 연결 실패: ' + e.message, 'info');
+      notify(t('nt.bleFail') + e.message, 'info');
     }
   }
 };
@@ -1371,7 +1453,7 @@ function updateDotPadStatusUI(connected) {
 
 window.showDotPadMenu = function() {
   const st = document.getElementById('dotpad-menu-status');
-  if (st) st.textContent = dotpadConnected ? '현재 연결됨 ✅' : '연결되지 않음';
+  if (st) st.textContent = dotpadConnected ? t('game.dpMenuOn') : t('game.dpMenuOff');
   document.getElementById('dotpad-menu-overlay').classList.add('active');
 };
 
@@ -1385,7 +1467,7 @@ window.disconnectDotPad = function() {
   dotpadDevice = null;
   updateDotPadStatusUI(false);
   closeDotPadMenu();
-  notify('DotPad 연결 해제됨', 'info');
+  notify(t('nt.dpDisconnected'), 'info');
 };
 
 // 새로고침 후 자동 재연결 (이전에 허가한 기기)
@@ -1399,7 +1481,7 @@ async function tryAutoReconnect() {
       const devices = await navigator.bluetooth.getDevices();
       const dev = devices.find(d => isDotPad(d.name));
       if (dev) {
-        notify('DotPad 자동 연결 중...', 'info');
+        notify(t('nt.dpAutoBle'), 'info');
         await sdk.connectBleDevice(dev);
         return; // 성공하면 USB 시도 불필요
       }
@@ -1411,7 +1493,7 @@ async function tryAutoReconnect() {
     try {
       const ports = await navigator.serial.getPorts();
       if (ports.length > 0) {
-        notify('DotPad USB 자동 연결 중...', 'info');
+        notify(t('nt.dpAutoUsb'), 'info');
         await sdk.connectUsbDevice(ports[0]);
       }
     } catch(e) { /* 무시 */ }
@@ -1707,11 +1789,11 @@ function handleDotPadKey(keyCode) {
       return;
     }
     if (me.hand.length === 0) return;
-    if (dotpadCardIndex < 0) { notify('카드를 먼저 선택하세요', 'info'); return; }
+    if (dotpadCardIndex < 0) { notify(t('nt.selectCard'), 'info'); return; }
     const card = me.hand[dotpadCardIndex];
     if (!isValidCard(card, G)) {
       speak('이 카드는 첫 번째로 낼 수 없습니다');
-      notify('첫 번째 카드로 낼 수 없습니다', 'info');
+      notify(t('nt.notFirstCard'), 'info');
       return;
     }
     G.selectedCardIndex = dotpadCardIndex;
@@ -1991,12 +2073,12 @@ window.playSelectedCard = function() {
 
   const idx = G.selectedCardIndex;
   if (idx < 0 || idx >= p.hand.length) {
-    notify('카드를 선택하세요', 'info');
+    notify(t('nt.selectCard2'), 'info');
     return;
   }
   const card = p.hand[idx];
   if (!isValidCard(card, G)) {
-    notify('이 카드는 첫 번째 카드로 낼 수 없습니다', 'info');
+    notify(t('nt.notFirstCard2'), 'info');
     return;
   }
 
@@ -2139,7 +2221,7 @@ function executeCardPlay(playerIdx, cardIdx) {
 }
 
 function showRoundEnd(loser, dueTo77, msg) {
-  document.getElementById('round-end-title').textContent = '라운드 종료!';
+  document.getElementById('round-end-title').textContent = t('round.end');
   document.getElementById('round-end-penalty').innerHTML =
     `<strong>${loser.name}</strong>이(가) 라이프를 잃었습니다!<br>남은 라이프: ${'❤️'.repeat(loser.lives)}${'🖤'.repeat(Math.max(0, 3-loser.lives))}`;
   document.getElementById('round-end-info').textContent =
@@ -2322,7 +2404,7 @@ function renderPlayersPanel() {
       <div class="player-chip-name${isActive ? ' active-name' : ''}"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
   <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /></svg> ${me.name}</div>
       <div class="lives-row">${livesHTML}</div>
-      <div class="player-label">${me.eliminated ? '탈락' : (isActive ? '내 차례' : '')}</div>`;
+      <div class="player-label">${me.eliminated ? t('game.eliminated') : (isActive ? t('game.turnLabel') : '')}</div>`;
     panel.appendChild(el);
   }
 }
@@ -2369,11 +2451,12 @@ function renderFooter() {
   const badge = document.getElementById('cards-required-badge');
 
   if (p.type === 'bot') {
-    turnText.innerHTML = `${p.name}이(가) 생각 중 <span class="bot-thinking"><span class="bot-dot"></span><span class="bot-dot"></span><span class="bot-dot"></span></span>`;
+    turnText.innerHTML = `${t('game.botThinking').replace('{name}', p.name)}<span class="bot-thinking"><span class="bot-dot"></span><span class="bot-dot"></span><span class="bot-dot"></span></span>`;
     turnText.className = 'turn-text';
   } else {
     const isMe = !G.isOnline || p.isMe;
-    turnText.textContent = isMe ? '내 차례입니다!' : `${p.name}의 차례`;
+    turnText.textContent = isMe ? t('game.myTurn') : t('game.turnOf').replace('{name}', p.name);
+    if (isMe) turnText.setAttribute('data-i18n','game.myTurn'); else turnText.removeAttribute('data-i18n');
     turnText.className = 'turn-text' + (isMe ? ' my-turn' : '');
 
   }
@@ -2398,7 +2481,7 @@ function renderHand() {
   }
 
   if (!showHand && !G.isOnline) {
-    area.innerHTML = '<div style="color:var(--text2);font-size:13px;text-align:center;padding:10px;">봇이 카드를 내는 중...</div>';
+    area.innerHTML = '<div style="color:var(--text2);font-size:13px;text-align:center;padding:10px;"'+ t('game.botPlaying') +'</div>';
     btn.disabled = true;
     return;
   }
@@ -2452,7 +2535,7 @@ function showGameOver() {
   const w = G.winner;
   document.getElementById('winner-name').textContent = w ? w.name : '무승부';
   document.getElementById('winner-trophy').textContent = w?.eliminated ? '😵' : '🏆';
-  document.getElementById('gameover-sub').textContent = w ? `${w.name} 승리!` : '';
+  document.getElementById('gameover-sub').textContent = w ? t('over.winnerSub').replace('{name}', w.name) : '';
 
   const stats = document.getElementById('stats-table');
   stats.innerHTML = '<div class="stats-row"><strong>플레이어</strong><strong>남은 라이프</strong></div>';
@@ -2462,7 +2545,7 @@ function showGameOver() {
         <div class="stats-player">
           <span>${p.eliminated ? '💀' : '✅'}</span>
           <span>${p.name}</span>
-          <span style="font-size:11px;color:var(--text2)">${p.type==='bot'?'봇':''}</span>
+          <span style="font-size:11px;color:var(--text2)">${p.type==='bot'?t('game.bot'):''}</span>
         </div>
         <div>${p.eliminated ? '탈락' : '❤️'.repeat(p.lives)}</div>
       </div>`;
@@ -2654,13 +2737,13 @@ window.createOnlineRoom = async function() {
   const myName = document.getElementById('online-create-name').value.trim() || 'P1';
   try {
     if (typeof Ably === 'undefined') {
-      notify('Ably 라이브러리가 로드되지 않았습니다. 인터넷 연결을 확인해주세요.', 'info');
+      notify(t('nt.noAbly'), 'info');
       return;
     }
     const code = generateRoomCode();
     onlineRoomCode = code;
     onlineMyId = generateRoomCode();
-    notify('방을 만드는 중...', 'info');
+    notify(t('nt.creatingRoom'), 'info');
     ably = new Ably.Realtime({ key: ABLY_API_KEY, clientId: onlineMyId });
     await new Promise((res, rej) => {
       ably.connection.once('connected', res);
@@ -2689,22 +2772,22 @@ window.createOnlineRoom = async function() {
     document.getElementById('lobby-room-code').textContent = code;
     updateLobbyUI(true);
   } catch (e) {
-    notify('방 생성 실패: ' + e.message, 'info');
+    notify(t('nt.createFail') + e.message, 'info');
   }
 };
 
 window.joinOnlineRoom = async function() {
   const myName = document.getElementById('online-join-name').value.trim() || 'P2';
   const code = document.getElementById('room-code-input').value.trim().toUpperCase();
-  if (!code || code.length !== 6) { notify('방 코드를 입력하세요', 'info'); return; }
+  if (!code || code.length !== 6) { notify(t('nt.enterRoomCode'), 'info'); return; }
   try {
     if (typeof Ably === 'undefined') {
-      notify('Ably 라이브러리가 로드되지 않았습니다.', 'info');
+      notify(t('nt.noAbly2'), 'info');
       return;
     }
     onlineRoomCode = code;
     onlineMyId = generateRoomCode();
-    notify('서버에 연결 중...', 'info');
+    notify(t('nt.connectingServer'), 'info');
     ably = new Ably.Realtime({ key: ABLY_API_KEY, clientId: onlineMyId });
     await new Promise((res, rej) => {
       ably.connection.once('connected', res);
@@ -2734,7 +2817,7 @@ window.joinOnlineRoom = async function() {
     document.getElementById('lobby-room-code').textContent = code;
     updateLobbyUI(false);
   } catch (e) {
-    notify('참가 실패: ' + e.message, 'info');
+    notify(t('nt.joinFail') + e.message, 'info');
   }
 };
 
@@ -2776,8 +2859,8 @@ function updateLobbyUI(isHost) {
   });
   const hint = document.getElementById('lobby-hint');
   hint.textContent = isHost
-    ? `${onlinePlayers.length}/${onlinePlayerCount}명 입장. 방 코드를 공유하세요!`
-    : '호스트가 시작할 때까지 기다리는 중...';
+    ? t('lobby.hostCount').replace('{n}', onlinePlayers.length).replace('{total}', onlinePlayerCount)
+    : t('lobby.waitHost');
   const startBtn = document.getElementById('btn-start-online');
   startBtn.style.display = isHost && onlinePlayers.length >= 2 ? 'block' : 'none';
 }
@@ -2902,7 +2985,7 @@ window.toggleGoogleTTS = function(enabled) {
 };
 
 window.showVoiceModal = function() {
-  if (!window.speechSynthesis && !useGoogleTTS) { notify('이 기기는 TTS를 지원하지 않습니다'); return; }
+  if (!window.speechSynthesis && !useGoogleTTS) { notify(t('nt.noTts')); return; }
   allVoices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
   // Google TTS 토글 상태 동기화
   const toggle = document.getElementById('google-tts-toggle');
@@ -3262,7 +3345,7 @@ window.tutorialExit = function() {
   const descEl2 = document.getElementById('tut-turn-desc');
   if (descEl2) descEl2.style.display = 'none';
   const turnEl = document.getElementById('turn-text');
-  if (turnEl) { turnEl.textContent = '게임 준비 중...'; turnEl.className = 'turn-text'; turnEl.style.display = ''; }
+  if (turnEl) { turnEl.textContent = t('game.preparing'); turnEl.setAttribute('data-i18n','game.preparing'); turnEl.className = 'turn-text'; turnEl.style.display = ''; }
   const dpEl = document.getElementById('tut-dotpad-in-game');
   if (dpEl) { dpEl.innerHTML = ''; dpEl.style.display = 'none'; }
   document.getElementById('players-panel').innerHTML = '';
@@ -3310,7 +3393,7 @@ window.tutorialNext = function() {
     const turnEl = document.getElementById('turn-text');
     const descElN = document.getElementById('tut-turn-desc');
     if (descElN) descElN.style.display = 'none';
-    if (turnEl) { turnEl.textContent = '게임 준비 중...'; turnEl.className = 'turn-text'; turnEl.style.display = ''; }
+    if (turnEl) { turnEl.textContent = t('game.preparing'); turnEl.setAttribute('data-i18n','game.preparing'); turnEl.className = 'turn-text'; turnEl.style.display = ''; }
     const dpEl = document.getElementById('tut-dotpad-in-game');
     if (dpEl) { dpEl.innerHTML = ''; dpEl.style.display = 'none'; }
     document.getElementById('players-panel').innerHTML = '';
