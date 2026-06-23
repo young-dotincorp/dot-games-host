@@ -743,14 +743,6 @@ body.embed-mode #game-footer { padding: 8px 12px; }
 }
 .voice-modal h3 { font-size: 16px; font-weight: 700; margin: 0; }
 .voice-list { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; flex: 1; }
-.voice-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
-  background: #121220; border: 1.5px solid #2a2a4a; cursor: pointer; transition: border-color .15s;
-}
-.voice-item:hover, .voice-item.active { border-color: var(--accent); background: rgba(233,69,96,0.08); }
-.voice-item .vi-name { font-size: 13px; font-weight: 600; flex: 1; }
-.voice-item .vi-lang { font-size: 10px; color: var(--text2); }
-.voice-item .vi-test { font-size: 11px; color: var(--accent); text-decoration: underline; }
 /* Tutorial preview layout */
 .tut-preview-row { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; width: 100%; }
 .tut-preview-row .tut-display-wrap { flex: 0 0 auto; }
@@ -1087,71 +1079,9 @@ body.tut-on #game-footer{grid-area:cards;align-self:end;background:transparent;b
   </div>
 </div>
 
-<!-- ===== TUTORIAL ===== -->
-<div id="screen-tutorial" class="screen">
-  <div class="screen-header">
-    <button class="btn btn-ghost btn-sm" onclick="tutorialExit()"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" />
-  <path d="M6 6l12 12" /></svg></button>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span class="tut-section-badge" id="tut-section-badge">소개</span>
-      <span class="screen-title" style="font-size:16px">튜토리얼</span>
-    </div>
-    <span style="font-size:12px;color:var(--text2)" id="tut-step-num">1 / 14</span>
-  </div>
-
-  <div class="tut-body">
-    <div class="tut-preview-row">
-      <div class="tut-display-wrap">
-        <div class="tut-dotpad-box" id="tut-display"></div>
-        <div class="tut-display-lbl" id="tut-display-lbl">닷패드 화면 미리보기</div>
-      </div>
-      <div class="tut-game-box" id="tut-game-display" style="display:none"></div>
-    </div>
-    <div>
-      <h2 class="tut-step-title" id="tut-title"></h2>
-      <p class="tut-step-text" id="tut-text"></p>
-      <p class="tut-narration" id="tut-tts-text"></p>
-    </div>
-  </div>
-
-  <div class="tut-tts-bar">
-    <button class="btn btn-ghost btn-sm" onclick="tutorialSpeak()"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8" />
-  <path d="M17.7 5a9 9 0 0 1 0 14" />
-  <path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" /></svg> 다시 듣기</button>
-  </div>
-
-  <div class="tut-nav">
-    <button class="btn btn-ghost btn-sm" id="tut-prev" onclick="tutorialPrev()">◀ 이전</button>
-    <div class="tut-progress"><div class="tut-progress-bar" id="tut-progress-bar"></div></div>
-    <button class="btn btn-primary btn-sm" id="tut-next" onclick="tutorialNext()">다음 ▶</button>
-  </div>
-</div>
 
 <!-- 음성 선택 모달 -->
-<div id="voice-modal-overlay" class="voice-modal-overlay" style="display:none" onclick="hideVoiceModal(event)">
-  <div class="voice-modal" onclick="event.stopPropagation()">
-    <h3><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8" />
-  <path d="M17.7 5a9 9 0 0 1 0 14" />
-  <path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5" /></svg> TTS 음성 선택</h3>
-    <!-- Google TTS 토글 -->
-    <div style="display:flex;align-items:center;gap:10px;background:#121220;border-radius:10px;padding:10px 12px;border:1.5px solid #2a2a4a;display:none" id="google-tts-row">
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600">Google 번역 TTS</div>
-        <div style="font-size:10px;color:var(--text2)">자연스러운 구글 음성 · 인터넷 필요 · 비공식 API</div>
-      </div>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-        <input type="checkbox" id="google-tts-toggle" onchange="toggleGoogleTTS(this.checked)"
-          style="width:18px;height:18px;accent-color:var(--accent)">
-        <span id="google-tts-label" style="font-size:11px;color:var(--text2)">꺼짐</span>
-      </label>
-    </div>
-    <div id="native-voice-section">
-      <p style="font-size:11px;color:var(--text2);margin:4px 0 2px">기기 내장 음성 (Google TTS 꺼짐 시 사용)</p>
-      <div class="voice-list" id="voice-list"></div>
-    </div>
-    <button class="btn btn-ghost btn-sm" onclick="hideVoiceModal()">닫기</button>
-  </div>
-</div>
+
 
 <div id="notification"></div>
 
