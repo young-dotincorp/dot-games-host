@@ -832,15 +832,17 @@ body.embed-mode #game-footer { padding: 8px 12px; }
 .embed-mode #btn-quit-game{display:none!important;}
 .embed-mode #btn-tut-exit{display:none!important;}
 body.tut-on #game-header{display:none;}
-body.tut-on #screen-game{display:grid;grid-template-columns:minmax(0,44%) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"lives lives" "center desc" "cards cards";column-gap:20px;row-gap:8px;padding:104px 20px 14px;height:100vh;overflow:hidden;box-sizing:border-box;}
-body.tut-on #players-panel{grid-area:lives;background:transparent;border:none;padding:0;overflow:visible;}
-body.tut-on #game-center{grid-area:center;flex:initial;justify-content:center;align-items:center;gap:12px;padding:0;min-height:0;overflow:hidden;}
-body.tut-on .total-number{font-size:clamp(40px,6vw,72px);}
-body.tut-on #tut-dotpad-in-game{max-width:100%;}
-body.tut-on #tut-turn-desc{grid-area:desc;align-self:stretch;min-height:0;overflow-y:auto;border:1px solid #1c1c2e;border-radius:12px;background:rgba(12,12,24,.5);padding:16px 18px;width:auto;}
-body.tut-on #tut-title{font-size:17px!important;margin:0 0 10px!important;}
-body.tut-on #tut-text,body.tut-on #tut-tts-desc{font-size:13.5px!important;line-height:1.7!important;}
-body.tut-on #game-footer{grid-area:cards;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 0 0;}
+body.tut-on #screen-game{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);grid-template-rows:auto 1fr auto;grid-template-areas:"lives lives" "center desc" "cards cards";align-items:center;column-gap:30px;row-gap:10px;padding:100px 32px 18px;height:100vh;overflow:hidden;box-sizing:border-box;}
+body.tut-on #players-panel{grid-area:lives;align-self:start;justify-self:start;background:transparent;border:none;padding:0;overflow:visible;}
+body.tut-on #game-center{grid-area:center;align-self:center;flex:initial;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;padding:0;min-height:0;}
+body.tut-on .total-display{gap:6px;}
+body.tut-on .total-number{font-size:clamp(38px,4.4vw,58px);}
+body.tut-on #tut-dotpad-in-game{max-width:300px;width:100%;margin:0 auto;}
+body.tut-on #tut-turn-desc{grid-area:desc;align-self:center;justify-self:stretch;max-height:100%;overflow-y:auto;border:1px solid rgba(34,211,238,.18);border-radius:14px;background:rgba(12,12,24,.45);padding:22px 26px;width:auto;}
+body.tut-on #tut-title{font-size:17px!important;margin:0 0 14px!important;letter-spacing:.2px;}
+body.tut-on #tut-text{font-size:14px!important;line-height:1.8!important;margin:0 0 12px!important;color:var(--text2);}
+body.tut-on #tut-tts-desc{font-size:14px!important;line-height:1.8!important;}
+body.tut-on #game-footer{grid-area:cards;align-self:end;background:transparent;border:none;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 0 0;}
 .embed-mode #game-direction-wrap{display:none!important;}
 .embed-mode .voice-modal-overlay{align-items:center;}
 .embed-mode .voice-modal{max-height:78vh;border-radius:16px;}
