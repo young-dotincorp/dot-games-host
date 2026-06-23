@@ -127,20 +127,19 @@ html, body {
 .btn-danger { --btn-c: var(--neon-magenta); }
 .btn-success {
   --btn-c: var(--neon-green);
-  color: #052e22;
-  background: var(--neon-green);
-  border-color: var(--neon-green);
-  text-shadow: none;
-  font-weight: 700;
-  box-shadow: 0 6px 22px rgba(52,232,158,0.45), 0 0 0 1.5px rgba(3,12,10,0.35);
+  color: var(--neon-green);
+  background: rgba(4, 9, 7, 0.5);
+  border-color: color-mix(in srgb, var(--neon-green) 65%, transparent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--neon-green) 55%, transparent);
+  box-shadow: 0 6px 26px 6px rgba(2,4,8,0.6), 0 0 16px color-mix(in srgb, var(--neon-green) 22%, transparent);
 }
 .btn-success:hover {
-  color: #052e22;
-  background: color-mix(in srgb, var(--neon-green) 86%, #ffffff);
+  color: var(--neon-green);
   border-color: var(--neon-green);
-  box-shadow: 0 8px 28px rgba(52,232,158,0.6);
+  background: rgba(6, 13, 10, 0.58);
+  box-shadow: 0 6px 30px 6px rgba(2,4,8,0.66), 0 0 24px color-mix(in srgb, var(--neon-green) 40%, transparent);
 }
-.btn-success:active { transform: translateY(1px); box-shadow: 0 3px 14px rgba(52,232,158,0.5); }
+.btn-success:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ===== SETUP SCREEN ===== */
@@ -1145,29 +1144,29 @@ body.embed-mode #home-gear{top:10px;right:12px;}
   <div class="modal">
     <h3><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-14" />
   <path d="M11 4h2" />
-  <path d="M12 17v.01" /></svg> DotPad 연결</h3>
+  <path d="M12 17v.01" /></svg> <span data-i18n="dp.menuTitle">DotPad 연결</span></h3>
     <p id="dotpad-menu-status" style="font-size:14px;color:var(--text2);text-align:center"></p>
     <div class="modal-actions" style="flex-direction:column">
-      <button class="btn btn-secondary" onclick="connectDotPad('ble');closeDotPadMenu()"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8l10 8l-5 4l0 -16l5 4l-10 8" /></svg> Bluetooth (BLE) 연결</button>
+      <button class="btn btn-secondary" onclick="connectDotPad('ble');closeDotPadMenu()"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8l10 8l-5 4l0 -16l5 4l-10 8" /></svg> <span data-i18n="dp.connBLE">Bluetooth (BLE) 연결</span></button>
       <button class="btn btn-secondary" onclick="connectDotPad('usb');closeDotPadMenu()"><svg class="tbi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 19a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
   <path d="M12 17v-11.5" />
   <path d="M7 10v3l5 3" />
   <path d="M12 14.5l5 -2v-2.5" />
   <path d="M16 10h2v-2h-2l0 2" />
   <path d="M6 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-  <path d="M10 5.5h4l-2 -2.5l-2 2.5" /></svg> USB 연결</button>
-      <button class="btn btn-danger btn-sm" id="btn-dotpad-disconnect" onclick="disconnectDotPad()" style="display:none">연결 해제</button>
+  <path d="M10 5.5h4l-2 -2.5l-2 2.5" /></svg> <span data-i18n="dp.connUSB">USB 연결</span></button>
+      <button class="btn btn-danger btn-sm" id="btn-dotpad-disconnect" onclick="disconnectDotPad()" style="display:none"><span data-i18n="dp.disconnect">연결 해제</span></button>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="closeDotPadMenu()">닫기</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeDotPadMenu()"><span data-i18n="common.close">닫기</span></button>
   </div>
 </div>
 
 <div class="overlay" id="quit-overlay">
   <div class="modal">
-    <h3>게임을 종료할까요?</h3>
+    <h3 data-i18n="quit.confirm">게임을 종료할까요?</h3>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="document.getElementById('quit-overlay').classList.remove('active')"><span data-i18n="common.cancel">취소</span></button>
-      <button class="btn btn-danger" onclick="quitGame()">종료</button>
+      <button class="btn btn-danger" onclick="quitGame()"><span data-i18n="quit.yes">종료</span></button>
     </div>
   </div>
 </div>
@@ -1204,6 +1203,25 @@ const I18N = {
   'dp.connBLE':     { ko: 'BLE 연결', en: 'Connect BLE' },
   'dp.connUSB':     { ko: 'USB 연결', en: 'Connect USB' },
   'dp.disconnect':  { ko: '연결 해제', en: 'Disconnect' },
+  'dp.menuTitle':   { ko: 'DotPad 연결', en: 'Connect DotPad' },
+  'common.close':   { ko: '닫기', en: 'Close' },
+  'setup.human':    { ko: '사람', en: 'Human' },
+  'setup.diffEasy': { ko: '하', en: 'Easy' },
+  'setup.diffMed':  { ko: '중', en: 'Medium' },
+  'setup.diffHard': { ko: '상', en: 'Hard' },
+  'quit.confirm':   { ko: '게임을 종료할까요?', en: 'Quit the game?' },
+  'quit.yes':       { ko: '종료', en: 'Quit' },
+  'cardLabel.zero': { ko: '0점', en: 'Zero' },
+  'cardLabel.minus':{ ko: '빼기', en: 'Minus' },
+  'cardLabel.times2':{ ko: '2배턴', en: '2x Turn' },
+  'cardLabel.dir':  { ko: '방향', en: 'Reverse' },
+  'over.draw':      { ko: '무승부', en: 'Draw' },
+  'over.player':    { ko: '플레이어', en: 'Player' },
+  'over.livesLeft': { ko: '남은 라이프', en: 'Lives left' },
+  'over.eliminated':{ ko: '탈락', en: 'Eliminated' },
+  'round.lostLifeSuffix': { ko: '이(가) 라이프를 잃었습니다!', en: ' lost a life!' },
+  'round.info':     { ko: '합계가 {0}이 되어 라운드가 끝납니다. {1}부터 새 라운드를 시작합니다.', en: 'The total reached {0}, ending the round. {1} starts the new round.' },
+  'online.me':      { ko: '(나)', en: '(me)' },
   // 로컬 설정 화면
   'setup.title':    { ko: '로컬 게임 설정', en: 'Local Game Setup' },
   'common.back':    { ko: '뒤로', en: 'Back' },
@@ -2032,20 +2050,20 @@ function renderPlayerSlots() {
       <div class="player-slot">
         <div class="player-slot-num ${slotClass}">P${i+1}</div>
         <input class="player-name-input" id="slot-name-${i}"
-          value="${cfg.name}" placeholder="이름 입력"
+          value="${cfg.name}" placeholder="${t('oc.namePh')}"
           onchange="setupConfig.players[${i}].name = this.value">
         <div class="type-toggle">
           <button class="type-btn ${cfg.type==='human'?'active':''}"
-            onclick="setSlotType(${i},'human')">사람</button>
+            onclick="setSlotType(${i},'human')">${t('setup.human')}</button>
           <button class="type-btn ${cfg.type==='bot'?'active':''}"
-            onclick="setSlotType(${i},'bot')">봇</button>
+            onclick="setSlotType(${i},'bot')">${t('game.bot')}</button>
         </div>
         <select class="difficulty-select" id="slot-diff-${i}"
           style="display:${cfg.type==='bot'?'block':'none'}"
           onchange="setupConfig.players[${i}].difficulty = this.value">
-          <option value="easy" ${cfg.difficulty==='easy'?'selected':''}>하</option>
-          <option value="medium" ${cfg.difficulty==='medium'?'selected':''}>중</option>
-          <option value="hard" ${cfg.difficulty==='hard'?'selected':''}>상</option>
+          <option value="easy" ${cfg.difficulty==='easy'?'selected':''}>${t('setup.diffEasy')}</option>
+          <option value="medium" ${cfg.difficulty==='medium'?'selected':''}>${t('setup.diffMed')}</option>
+          <option value="hard" ${cfg.difficulty==='hard'?'selected':''}>${t('setup.diffHard')}</option>
         </select>
       </div>`;
   }
@@ -2276,9 +2294,9 @@ function executeCardPlay(playerIdx, cardIdx) {
 function showRoundEnd(loser, dueTo77, msg) {
   document.getElementById('round-end-title').textContent = t('round.end');
   document.getElementById('round-end-penalty').innerHTML =
-    `<strong>${loser.name}</strong>이(가) 라이프를 잃었습니다!<br>남은 라이프: ${'❤️'.repeat(loser.lives)}${'🖤'.repeat(Math.max(0, 3-loser.lives))}`;
+    `<strong>${loser.name}</strong>${t('round.lostLifeSuffix')}<br>${t('over.livesLeft')}: ${'❤️'.repeat(loser.lives)}${'🖤'.repeat(Math.max(0, 3-loser.lives))}`;
   document.getElementById('round-end-info').textContent =
-    `합계가 ${G.total}이 되어 라운드가 끝납니다. ${loser.name}부터 새 라운드를 시작합니다.`;
+    tf('round.info', G.total, loser.name);
   document.getElementById('round-end-overlay').classList.add('active');
   speak(tf('tts.lifeLossRound', G.total, loser.name));
 }
@@ -2564,12 +2582,12 @@ function renderHand() {
 
 function getCardLabel(card) {
   if (card.type === 'number') {
-    if (card.value === 0) return '0점';
+    if (card.value === 0) return t('cardLabel.zero');
     return '';
   }
-  if (card.type === 'minus10') return '빼기';
-  if (card.type === 'times2') return '2배턴';
-  if (card.type === 'direction') return '방향';
+  if (card.type === 'minus10') return t('cardLabel.minus');
+  if (card.type === 'times2') return t('cardLabel.times2');
+  if (card.type === 'direction') return t('cardLabel.dir');
   return '';
 }
 
@@ -2586,12 +2604,12 @@ function selectCard(idx) {
 function showGameOver() {
   stopBlinkLoop();
   const w = G.winner;
-  document.getElementById('winner-name').textContent = w ? w.name : '무승부';
+  document.getElementById('winner-name').textContent = w ? w.name : t('over.draw');
   document.getElementById('winner-trophy').textContent = w?.eliminated ? '😵' : '🏆';
   document.getElementById('gameover-sub').textContent = w ? t('over.winnerSub').replace('{name}', w.name) : '';
 
   const stats = document.getElementById('stats-table');
-  stats.innerHTML = '<div class="stats-row"><strong>플레이어</strong><strong>남은 라이프</strong></div>';
+  stats.innerHTML = '<div class="stats-row"><strong>'+t('over.player')+'</strong><strong>'+t('over.livesLeft')+'</strong></div>';
   G.players.forEach(p => {
     stats.innerHTML += `
       <div class="stats-row">
@@ -2600,7 +2618,7 @@ function showGameOver() {
           <span>${p.name}</span>
           <span style="font-size:11px;color:var(--text2)">${p.type==='bot'?t('game.bot'):''}</span>
         </div>
-        <div>${p.eliminated ? '탈락' : '❤️'.repeat(p.lives)}</div>
+        <div>${p.eliminated ? t('over.eliminated') : '❤️'.repeat(p.lives)}</div>
       </div>`;
   });
 
@@ -2901,7 +2919,7 @@ window.joinOnlineRoom = async function() {
 window.startOnlineGame = function() {
   if (!ablyChannel) return;
   while (onlinePlayers.length < onlinePlayerCount) {
-    onlinePlayers.push({ id: 'bot-' + onlinePlayers.length, name: `봇${onlinePlayers.length}`, type: 'bot', difficulty: 'medium' });
+    onlinePlayers.push({ id: 'bot-' + onlinePlayers.length, name: t('game.bot') + onlinePlayers.length, type: 'bot', difficulty: 'medium' });
   }
   ablyChannel.publish('startGame', { players: onlinePlayers });
 
@@ -2931,7 +2949,7 @@ function updateLobbyUI(isHost) {
       <div class="lobby-player">
         <div class="lobby-player-status"></div>
         <span>${p.name}</span>
-        ${p.id === onlineMyId ? '<span style="font-size:11px;color:var(--text2)">(나)</span>' : ''}
+        ${p.id === onlineMyId ? '<span style="font-size:11px;color:var(--text2)">${t('online.me')}</span>' : ''}
       </div>`;
   });
   const hint = document.getElementById('lobby-hint');
