@@ -10,27 +10,31 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg: #010101;
-  --surface: #1a1a2e;
-  --surface2: #16213e;
-  --surface3: #0d1b2a;
-  --accent: #e94560;
-  --accent2: #f5a623;
-  --gold: #ffd700;
+  --surface: #0d0d1a;
+  --surface2: #0b0b16;
+  --surface3: #090912;
+  --accent: #22d3ee;
+  --accent2: #ff2d95;
+  --gold: #ffd60a;
   --text: #e8e8f0;
-  --text2: #9999bb;
-  --life: #ff4466;
-  --life-lost: #2a2a3a;
-  --danger: #ff6b35;
-  --safe: #4caf50;
-  --card-bg: #1e2d45;
-  --card-border: #3a4a6a;
-  --card-num: #7ec8e3;
-  --card-special: #f5a623;
-  --card-minus: #e94560;
+  --text2: #8a8aa8;
+  --life: #ff2d95;
+  --life-lost: #1a1a2a;
+  --danger: #ff2d95;
+  --safe: #34e89e;
+  --card-bg: #10101e;
+  --card-border: rgba(34,211,238,0.22);
+  --card-num: #22d3ee;
+  --card-special: #ffd60a;
+  --card-minus: #ff2d95;
   --card-dir: #a78bfa;
-  --shadow: rgba(0,0,0,0.5);
-  --radius: 12px;
-  --radius-sm: 8px;
+  --shadow: rgba(0,0,0,0.6);
+  --radius: 13px;
+  --radius-sm: 9px;
+  --neon-cyan: #22d3ee;
+  --neon-magenta: #ff2d95;
+  --neon-purple: #a78bfa;
+  --neon-green: #34e89e;
 }
 html, body {
   height: 100%;
@@ -77,46 +81,48 @@ html, body {
 }
 .btn-group { display: flex; flex-direction: column; gap: 12px; width: 280px; }
 .btn {
-  padding: 14px 28px;
+  padding: 13px 24px;
   border-radius: var(--radius);
-  border: none;
+  border: 1.5px solid;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
-  letter-spacing: 0.5px;
+  transition: all 0.18s ease;
+  letter-spacing: 0.3px;
+  color: var(--btn-c, var(--neon-cyan));
+  border-color: color-mix(in srgb, var(--btn-c, var(--neon-cyan)) 50%, transparent);
+  background: color-mix(in srgb, var(--btn-c, var(--neon-cyan)) 8%, transparent);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--btn-c, var(--neon-cyan)) 45%, transparent);
 }
+.btn:hover {
+  border-color: var(--btn-c, var(--neon-cyan));
+  background: color-mix(in srgb, var(--btn-c, var(--neon-cyan)) 15%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--btn-c, var(--neon-cyan)) 35%, transparent);
+  transform: translateY(-1px);
+}
+.btn:active { transform: translateY(0); }
 .btn:active { transform: scale(0.97); }
-.btn-primary {
-  background: linear-gradient(135deg, var(--accent) 0%, #c0392b 100%);
-  color: #fff;
-  box-shadow: 0 4px 20px rgba(233,69,96,0.4);
-}
+.btn-primary { --btn-c: var(--neon-cyan); }
 .btn-primary:hover { box-shadow: 0 6px 28px rgba(233,69,96,0.6); }
-.btn-secondary {
-  background: var(--surface2);
-  color: var(--text);
-  border: 1px solid var(--card-border);
-}
+.btn-secondary { --btn-c: var(--neon-purple); }
 .btn-secondary:hover { background: var(--surface); border-color: var(--accent); }
 .btn-ghost {
   background: transparent;
   color: var(--text2);
-  border: 1px solid #333;
+  border-color: #26263c;
+  text-shadow: none;
+}
+.btn-ghost:hover {
+  color: var(--neon-cyan);
+  border-color: color-mix(in srgb, var(--neon-cyan) 60%, transparent);
+  background: color-mix(in srgb, var(--neon-cyan) 8%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--neon-cyan) 30%, transparent);
 }
 .btn-ghost:hover { color: var(--text); border-color: #666; }
 .btn-sm { padding: 8px 16px; font-size: 14px; }
 .btn-icon { padding: 10px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-.btn-danger {
-  background: rgba(233,69,96,0.15);
-  color: var(--accent);
-  border: 1px solid rgba(233,69,96,0.3);
-}
-.btn-success {
-  background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(39,174,96,0.3);
-}
+.btn-danger { --btn-c: var(--neon-magenta); }
+.btn-success { --btn-c: var(--neon-green); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ===== SETUP SCREEN ===== */
@@ -441,10 +447,10 @@ html, body {
 .cards-required-badge {
   font-size: 12px;
   padding: 2px 10px;
-  background: rgba(245,166,35,0.15);
-  color: var(--accent2);
+  background: color-mix(in srgb, var(--neon-magenta) 16%, transparent);
+  color: var(--neon-magenta);
   border-radius: 20px;
-  border: 1px solid rgba(245,166,35,0.3);
+  border: 1px solid color-mix(in srgb, var(--neon-magenta) 40%, transparent);
 }
 #hand-area {
   display: flex;
@@ -712,13 +718,14 @@ body.embed-mode #game-footer { padding: 8px 12px; }
 }
 .tut-progress { flex: 1; height: 4px; background: #1e1e3a; border-radius: 2px; overflow: hidden; }
 .tut-progress-bar {
-  height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
-  border-radius: 2px; transition: width 0.4s ease;
+  height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+  border-radius: 2px; transition: width 0.4s ease; box-shadow: 0 0 10px var(--neon-cyan);
 }
 .tut-section-badge {
   font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 12px;
-  background: rgba(233,69,96,0.15); color: var(--accent); border: 1px solid rgba(233,69,96,0.3);
-  white-space: nowrap;
+  background: color-mix(in srgb, var(--neon-cyan) 16%, transparent); color: var(--neon-cyan);
+  border: 1px solid color-mix(in srgb, var(--neon-cyan) 42%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--neon-cyan) 30%, transparent); white-space: nowrap;
 }
 /* Button diagram */
 .tut-btn-diagram { padding: 14px; background: #07070f; border-radius: 8px; border: 1px solid #2a2a4a; width: 100%; }
