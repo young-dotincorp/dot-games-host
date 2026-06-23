@@ -137,14 +137,9 @@ html, body {
   flex-direction: column;
   gap: 20px;
 }
-.screen-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
-  border-bottom: 1px solid #1e1e3a;
-  background: var(--surface);
-}
+.screen-header { position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #1e1e3a; background: var(--surface); }
+.screen-header > button:first-child { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); }
+.screen-title { text-align: center; }
 .screen-title { font-size: 20px; font-weight: 700; }
 .section-card {
   background: var(--surface);
@@ -227,15 +222,7 @@ html, body {
   transition: all 0.1s;
 }
 .type-btn.active { border-color: var(--accent2); color: var(--accent2); background: rgba(245,166,35,0.1); }
-.difficulty-select {
-  background: var(--surface3);
-  border: 1px solid #333;
-  color: var(--text);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 12px;
-  cursor: pointer;
-}
+.difficulty-select { -webkit-appearance: none; appearance: none; background: var(--surface3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8aa8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center; border: 1px solid rgba(34,211,238,0.25); color: var(--text); border-radius: 6px; padding: 6px 30px 6px 12px; font-size: 13px; cursor: pointer; }
 
 /* ===== ONLINE SCREENS ===== */
 #screen-online-create, #screen-online-join, #screen-online-lobby {
@@ -2702,9 +2689,6 @@ window.showScreen = function(name) {
   if (el) {
     el.classList.add('active');
     sendResizeMsg();
-  }
-  if (EMBED_MODE && name === 'home') {
-    postMsg('exit');
   }
 };
 
