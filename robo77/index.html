@@ -838,7 +838,7 @@ body.tut-on #game-center{grid-area:center;align-self:center;flex:initial;display
 body.tut-on .total-display{gap:6px;}
 body.tut-on .total-number{font-size:clamp(38px,4.4vw,58px);}
 body.tut-on #tut-dotpad-in-game{max-width:300px;width:100%;margin:0 auto;}
-body.tut-on #tut-turn-desc{grid-area:desc;align-self:center;justify-self:stretch;max-height:100%;overflow-y:auto;border:1px solid rgba(34,211,238,.18);border-radius:14px;background:rgba(12,12,24,.45);padding:22px 26px;width:auto;}
+body.tut-on #tut-turn-desc{grid-area:desc;align-self:center;justify-self:stretch;max-height:100%;overflow-y:auto;scrollbar-gutter:stable;border:1px solid rgba(34,211,238,.18);border-radius:14px;background:rgba(12,12,24,.45);padding:26px 30px;width:auto;}
 body.tut-on #tut-title{font-size:17px!important;margin:0 0 14px!important;letter-spacing:.2px;}
 body.tut-on #tut-text{font-size:14px!important;line-height:1.8!important;margin:0 0 12px!important;color:var(--text2);}
 body.tut-on #tut-tts-desc{font-size:14px!important;line-height:1.8!important;}
@@ -3261,6 +3261,7 @@ window.tutorialNext = function() {
     document.getElementById('hand-area').innerHTML = '';
     const fa = document.getElementById('footer-actions');
     if (fa) fa.style.display = '';
+    document.body.classList.remove('tut-on');
     showScreen('home');
     notify('튜토리얼 완료! 이제 게임을 시작해봐요 🎉');
   }
