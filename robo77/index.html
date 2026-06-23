@@ -448,11 +448,11 @@ html, body {
   flex-shrink: 0;
   user-select: none;
 }
-.card:hover { transform: translateY(-6px); border-color: rgba(255,255,255,0.3); }
-.card.selected {
+.card:hover { transform: translateY(-6px); }
+.card.selected, .card.dotpad-focus {
   transform: translateY(-10px);
-  border-color: var(--gold);
-  box-shadow: 0 8px 24px rgba(255,214,10,0.45), 0 0 0 2px var(--gold);
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--gold), 0 10px 26px rgba(255,214,10,0.4);
 }
 .card.invalid { opacity: 0.35; cursor: not-allowed; }
 /* ===== 네온 카드 디자인 이미지 ===== */
@@ -470,7 +470,7 @@ html, body {
 .card.card-type-minus .card-value, .card.card-type-minus .card-label,
 .card.card-type-dir .card-value, .card.card-type-dir .card-label { display: none; }
 .card[class*="card-type-"] .card-corner { opacity: 0.85; text-shadow: 0 0 4px #000, 0 1px 2px #000; }
-.card[class*="card-type-"]:hover { border-color: transparent; box-shadow: 0 6px 16px rgba(34,211,238,0.3); }
+.card[class*="card-type-"]:hover:not(.selected):not(.dotpad-focus) { border-color: transparent; box-shadow: 0 6px 18px rgba(34,211,238,0.28); }
 .card.invalid:hover { transform: none; }
 .card-value {
   font-size: 22px;
@@ -501,10 +501,6 @@ html, body {
   opacity: 0;
 }
 .card.dotpad-focus .dotpad-indicator { opacity: 1; }
-.card.dotpad-focus {
-  border-color: var(--gold);
-  transform: translateY(-8px);
-}
 #footer-actions {
   display: flex;
   gap: 8px;
