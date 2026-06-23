@@ -369,16 +369,19 @@ html, body {
   color: var(--text2);
 }
 .total-number {
+  font-family: ui-monospace, 'SF Mono', 'Segoe UI Mono', 'Consolas', monospace;
   font-size: clamp(72px, 12vw, 120px);
-  font-weight: 900;
+  font-weight: 800;
   line-height: 1;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
   transition: all 0.3s ease;
   text-shadow: 0 0 40px currentColor;
 }
-.total-number.safe { color: var(--text); text-shadow: none; }
-.total-number.warning { color: var(--accent2); text-shadow: 0 0 30px rgba(245,166,35,0.5); }
-.total-number.danger { color: var(--danger); text-shadow: 0 0 30px color-mix(in srgb, var(--danger) 55%, transparent); }
-.total-number.critical { color: #ff0040; text-shadow: 0 0 40px rgba(255,0,64,0.7); animation: pulse 0.5s infinite alternate; }
+.total-number.safe { color: var(--neon-cyan); text-shadow: 0 0 26px color-mix(in srgb, var(--neon-cyan) 55%, transparent), 0 0 9px color-mix(in srgb, var(--neon-cyan) 80%, transparent); }
+.total-number.warning { color: var(--gold); text-shadow: 0 0 28px color-mix(in srgb, var(--gold) 55%, transparent), 0 0 9px color-mix(in srgb, var(--gold) 80%, transparent); }
+.total-number.danger { color: var(--neon-magenta); text-shadow: 0 0 30px color-mix(in srgb, var(--neon-magenta) 60%, transparent), 0 0 10px color-mix(in srgb, var(--neon-magenta) 85%, transparent); }
+.total-number.critical { color: #ff2d6b; text-shadow: 0 0 44px color-mix(in srgb, var(--neon-magenta) 75%, transparent), 0 0 14px #ff2d6b; animation: pulse 0.5s infinite alternate; }
 @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.04); } }
 .last-card-display {
   display: flex;
@@ -388,10 +391,15 @@ html, body {
   color: var(--text2);
 }
 .last-card-badge {
-  padding: 3px 10px;
+  padding: 3px 11px;
   border-radius: 20px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--neon-cyan);
+  background: color-mix(in srgb, var(--neon-cyan) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--neon-cyan) 38%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--neon-cyan) 28%, transparent);
 }
 .direction-indicator {
   font-size: 24px;
