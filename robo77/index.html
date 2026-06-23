@@ -1693,10 +1693,7 @@ function cardEffect(card, total) {
 }
 
 function isValidCard(card, state) {
-  if (state.cardsPlayedThisRound === 0) {
-    if (card.type === 'times2') return false;
-  }
-  return true;
+  return true; // 모든 카드(특별카드 포함) 첫 턴부터 낼 수 있음
 }
 
 function resolveCardPlay(card, total) {
@@ -2074,13 +2071,19 @@ window.continueAfterRoundEnd = function() {
 function scheduleBotTurn() {
   const p = G.players[G.currentPlayerIdx];
   if (!p || p.type !== 'bot') return;
-  const delay = 800 + Math.random() * 700;
-  setTimeout(() => {
+  const delay = 1400 + Math.random() * 700;
+  let waited = 0;
+  const botPlay = () => {
     if (G.phase !== 'playing') return;
     if (G.currentPlayerIdx !== G.players.indexOf(p)) return;
+    // 시각장애인 접근성: 직전 안내(TTS)가 끝날 때까지 대기 (최대 약 4초 안전 상한)
+    if (typeof window !== 'undefined' && window.speechSynthesis && window.speechSynthesis.speaking && waited < 12) {
+      waited++; setTimeout(botPlay, 350); return;
+    }
     const cardIdx = getBotMove(p, G);
     if (cardIdx >= 0) executeCardPlay(G.currentPlayerIdx, cardIdx);
-  }, delay);
+  };
+  setTimeout(botPlay, delay);
 }
 
 function getBotMove(player, state) {
