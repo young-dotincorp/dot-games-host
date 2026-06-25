@@ -117,9 +117,9 @@
   const cellBtns=[];
 
   let koVoice=null;
-  function pickVoice(){const vs=speechSynthesis.getVoices();const NOV=['Eddy','Flo','Grandma','Grandpa','Reed','Rocko','Sandy','Shelley','Bubbles','Jester','Superstar','Trinoids','Bells','Boing','Bahh','Wobble','Cellos','Organ','Zarvox','Whisper','Albert','Bad News','Good News','Junior','Kathy','Ralph'];const isNov=v=>NOV.some(x=>v.name&&v.name.includes(x));const ko=v=>v.lang&&v.lang.toLowerCase().startsWith('ko');koVoice=vs.find(v=>ko(v)&&['Yuna','유나','Heami','SunHi'].some(x=>v.name&&v.name.includes(x)))||vs.find(v=>ko(v)&&v.localService&&!isNov(v))||vs.find(v=>ko(v)&&v.name&&v.name.includes('Google 한국'))||vs.find(v=>ko(v)&&!isNov(v))||vs.find(ko)||null;}
-  if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}
-  function speak(t){if(!soundOn||!('speechSynthesis' in window))return;
+  function pickVoice(){const vs=speechSynthesis.getVoices();if(!vs||!vs.length)return;const NOV=['Eddy','Flo','Grandma','Grandpa','Reed','Rocko','Sandy','Shelley','Bubbles','Jester','Superstar','Trinoids','Bells','Boing','Bahh','Wobble','Cellos','Organ','Zarvox','Whisper','Albert','Bad News','Good News','Junior','Kathy','Ralph'];const isNov=v=>NOV.some(x=>v.name&&v.name.includes(x));const ko=v=>v.lang&&v.lang.toLowerCase().startsWith('ko');const _v=vs.find(v=>ko(v)&&['Yuna','유나','Heami','SunHi'].some(x=>v.name&&v.name.includes(x)))||vs.find(v=>ko(v)&&v.localService&&!isNov(v))||vs.find(v=>ko(v)&&v.name&&v.name.includes('Google 한국'))||vs.find(v=>ko(v)&&!isNov(v))||vs.find(ko);if(_v)koVoice=_v;}
+  if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;var _vt=0,_vi=setInterval(function(){pickVoice();if(koVoice||++_vt>40)clearInterval(_vi);},120);}
+  function speak(t){if(!soundOn||!('speechSynthesis' in window))return;if(!koVoice)pickVoice();
     try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=1.05;u.pitch=1.0;if(koVoice)u.voice=koVoice;speechSynthesis.speak(u);}catch(e){}}
   function cellSay(v){return v===1?'동그라미':v===2?'엑스':'빈 칸';}
 
