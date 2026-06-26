@@ -1058,8 +1058,8 @@ body.embed-mode #game-footer { padding: 8px 12px; }
   0%, 100% { outline-color: var(--accent); }
   50% { outline-color: transparent; }
 }
-.embed-mode #btn-quit-game{display:none!important;}
-.embed-mode #btn-tut-exit{display:none!important;}
+
+
 body.tut-on #game-header{display:none;}
 body.tut-on #screen-game{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);grid-template-rows:auto 1fr auto;grid-template-areas:"lives lives" "center desc" "cards cards";align-items:center;column-gap:30px;row-gap:10px;padding:120px 32px 18px;height:100vh;overflow:hidden;box-sizing:border-box;}
 body.tut-on #players-panel{grid-area:lives;align-self:start;justify-self:start;background:transparent;border:none;padding:0;overflow:visible;margin-top:18px;}
@@ -3437,7 +3437,7 @@ function showGameOver() {
   });
   speak(tf('tts.gameOver', w?.name || ''));
   a11yAnnounce(iWon ? (LANG === 'ko' ? '게임 종료! 축하합니다, 승리하셨습니다!' : 'Game over! Congratulations, you won!') : (LANG === 'ko' ? `게임 종료. 승자: ${w?.name || ''}` : `Game over. Winner: ${w?.name || ''}`), 'assertive');
-  if (EMBED_MODE) postMsg('exit');
+  /* 게임종료 시엔 결과 팝업 유지: exit는 나가기 버튼에서만 */
 
   if (iWon) launchConfetti();
   playGameOverBGM(iWon);
@@ -5200,10 +5200,7 @@ window.tutorialNext = function() {
     const fa = document.getElementById('footer-actions');
     if (fa) fa.style.display = '';
     document.body.classList.remove('tut-on');
-    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
-    var _homeScr = document.getElementById('screen-home');
-    if (_homeScr) _homeScr.classList.add('active');
-    if (typeof sendResizeMsg === 'function') sendResizeMsg();
+    showScreen('home');
     notify(t('nt.tutDone'));
   }
 };
