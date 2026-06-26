@@ -459,6 +459,7 @@ html, body {
   animation-iteration-count: infinite;
   animation-timing-function: linear;
 }
+.dir-arrow-wrap span svg { width: 14px; height: 14px; display: block; }
 .dir-arrow-wrap.fwd span { animation-name: dir-flow-fwd; color: var(--card-dir); }
 .dir-arrow-wrap.rev span { animation-name: dir-flow-rev; color: var(--accent2); }
 .dir-arrow-wrap span:nth-child(1) { animation-delay: 0s; }
@@ -3038,7 +3039,7 @@ function renderPlayersPanel() {
   const dirChip = document.createElement('div');
   dirChip.className = 'player-chip';
   dirChip.style.cssText = `border-color:${dirColor};background:color-mix(in srgb,${dirColor} 10%,transparent);min-width:56px;`;
-  const arrow = cw ? '>' : '<';
+  const arrow = cw ? '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 6l6 6l-6 6\"/></svg>' : '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 6l-6 6l6 6\"/></svg>';
   dirChip.setAttribute('aria-label', LANG === 'ko' ? ('진행 방향: ' + (cw ? '정방향' : '역방향')) : ('Direction: ' + (cw ? 'Forward' : 'Reverse')));
   dirChip.innerHTML = `
     <div class="dir-arrow-wrap ${cw ? 'fwd' : 'rev'}" aria-hidden="true">
