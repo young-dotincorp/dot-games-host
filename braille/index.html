@@ -402,12 +402,9 @@ async function connectDotPad(){
         optionalServices:[scanner.DOTPAD_SERVICE]
       });
     }catch(e){
-      if(e && e.name==='NotFoundError'){
-        // 2차: 필터 없이 전체 기기 (사용자가 직접 선택)
-        try{
-          device = await navigator.bluetooth.requestDevice({ acceptAllDevices:true, optionalServices:[scanner.DOTPAD_SERVICE] });
-        }catch(e2){ if(e2 && e2.name!=='NotFoundError') throw e2; return; }
-      } else throw e;
+      // 사용자가 취소했거나 기기를 못 찾음 → 조용히 종료 (팝업 다시 띄우지 않음)
+      if(e && e.name==='NotFoundError') return;
+      throw e;
     }
     if(!device) return;
     const connected = await sdk.connectBleDevice(device);
