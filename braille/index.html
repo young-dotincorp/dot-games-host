@@ -1,1 +1,606 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>점자 탐험 · Dot Braille</title>
+<style>
+:root{
+  --bg:#F4F5FA; --card:#FFFFFF; --card2:#EDEEF4; --card3:#F0F1F6;
+  --line:#E6E7EF; --line2:#DADBE4;
+  --ink:#1C1B26; --ink-soft:#6B6A78; --ink-faint:#9A99A6; --ink-lock:#9C9CA8;
+  --accent:#FF7A1E; --accent-soft:#FFEEE0;
+  --gold:#FFB800; --blue:#4B7BEC; --green:#22A45D; --teal:#0EA5A5; --red:#E5484D;
+  --sh:0 6px 20px rgba(28,27,40,.07); --sh-lg:0 10px 28px rgba(28,27,40,.12);
+  --r:14px; --r-lg:20px; --r-full:999px;
+  --dot-on:#1C1B26; --dot-off:#DFDEE8; --cell-bg:#FFFFFF;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:'Pretendard','Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--ink);-webkit-tap-highlight-color:transparent;overflow-x:hidden;display:flex;flex-direction:column;min-height:100vh;}
+button{font-family:inherit;cursor:pointer;}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;}
 
+/* 상단바 */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;gap:10px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;}
+.topbar .brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:var(--ink);}
+.topbar .brand .logo{width:28px;height:28px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;}
+.topbar .ctrls{display:flex;align-items:center;gap:8px;}
+.chip-btn{display:inline-flex;align-items:center;gap:6px;background:var(--card3);border:1px solid var(--line);color:var(--ink-soft);font-size:12px;font-weight:600;padding:7px 12px;border-radius:var(--r-full);}
+.chip-btn.on{color:var(--blue);border-color:var(--blue);background:#EEF4FF;}
+.chip-btn .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);}
+.chip-btn.on .dot{background:var(--blue);}
+
+main{flex:1;display:flex;flex-direction:column;}
+.screen{display:none;flex:1;flex-direction:column;padding:24px 20px 30px;max-width:480px;width:100%;margin:0 auto;animation:fade .28s ease;}
+.screen.active{display:flex;}
+@keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.title-xl{font-size:24px;font-weight:800;line-height:1.25;margin-bottom:5px;color:var(--ink);}
+.subtle{font-size:14px;color:var(--ink-soft);line-height:1.55;}
+.spacer{flex:1;}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:none;border-radius:var(--r);font-size:16px;font-weight:700;padding:16px 20px;width:100%;transition:transform .12s,filter .15s;}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(255,122,30,.3);}
+.btn-ghost{background:var(--card);color:var(--ink);border:1.5px solid var(--line2);}
+.btn-row{display:flex;gap:10px;}
+.icon-btn{width:42px;height:42px;border-radius:50%;background:var(--card);border:1.5px solid var(--line2);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto;}
+
+/* 홈 */
+#screen-home{justify-content:center;text-align:center;align-items:center;}
+#screen-home .hero{width:100px;height:100px;border-radius:28px;background:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:24px;box-shadow:0 14px 36px rgba(255,122,30,.3);}
+#screen-home .hero .cell{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
+#screen-home .hero .pin{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.4);}
+#screen-home .hero .pin.on{background:#fff;}
+#screen-home .actions{width:100%;max-width:340px;display:flex;flex-direction:column;gap:11px;margin-top:32px;}
+
+/* 레벨 맵 */
+.level-list{display:flex;flex-direction:column;gap:13px;margin-top:8px;}
+.level-card{display:flex;align-items:center;gap:14px;background:var(--card);border:none;border-radius:var(--r-lg);padding:15px;text-align:left;width:100%;box-shadow:var(--sh);transition:transform .14s;}
+.level-card:active{transform:scale(.99);}
+.level-card.locked{background:var(--card2);box-shadow:none;}
+.level-card .ic{width:56px;height:56px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:27px;flex:0 0 auto;}
+.level-card.locked .ic{filter:grayscale(.45);opacity:.6;background:#E1E2EA!important;}
+.level-card .ic .dotgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;}
+.level-card .ic .dotgrid i{width:8px;height:8px;border-radius:50%;background:#C3D4F7;}
+.level-card .ic .dotgrid i.on{background:var(--blue);}
+.level-card .meta{flex:1;min-width:0;}
+.level-card .meta h3{font-size:16px;font-weight:700;margin-bottom:2px;color:var(--ink);}
+.level-card .meta p{font-size:13px;color:var(--ink-faint);}
+.level-card.locked .meta h3{color:var(--ink-lock);}
+.level-card.locked .meta p{color:#B6B6C0;}
+.level-card .stars{font-size:15px;color:var(--gold);letter-spacing:1px;flex:0 0 auto;}
+.level-card .stars.empty{color:#D8D9E2;}
+.level-card .lock{font-size:17px;flex:0 0 auto;}
+
+/* 점자 셀 */
+.cell-big{background:var(--cell-bg);border:1px solid var(--line);border-radius:24px;padding:26px 34px;display:grid;grid-template-columns:repeat(2,1fr);gap:18px 30px;box-shadow:var(--sh-lg);}
+.cell-big .pin{width:38px;height:38px;border-radius:50%;background:var(--dot-off);transition:background .2s,transform .2s;position:relative;}
+.cell-big .pin.on{background:var(--dot-on);box-shadow:0 3px 7px rgba(28,27,40,.25);}
+.cell-big .pin .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--ink-faint);opacity:0;transition:opacity .2s;}
+.cell-big.shownum .pin .num{opacity:.9;}
+.cell-big.shownum .pin.on .num{color:rgba(255,255,255,.92);}
+.cell-big .pin.focus{outline:3px solid var(--accent);outline-offset:3px;}
+.cell-wrap{display:flex;justify-content:center;margin:16px 0;}
+
+.dotpad-hint{display:flex;align-items:center;justify-content:center;gap:7px;color:var(--ink-faint);font-size:12px;margin-bottom:6px;}
+.dotpad-hint .bt{color:var(--blue);font-size:14px;}
+
+/* 배우기 */
+#screen-learn{align-items:center;}
+.learn-char{font-size:66px;font-weight:800;text-align:center;line-height:1;margin:6px 0;color:var(--ink);}
+.learn-name{font-size:17px;color:var(--ink-soft);text-align:center;margin-bottom:4px;}
+.learn-progress{font-size:13px;color:var(--ink-faint);text-align:center;}
+.learn-nav{display:flex;gap:10px;width:100%;max-width:380px;margin-top:26px;}
+
+/* 퀴즈 */
+.quiz-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;width:100%;}
+.quiz-top .lvtag{font-size:12px;color:var(--green);background:#E6F6EC;padding:5px 12px;border-radius:var(--r-full);font-weight:700;}
+.quiz-top .qcount{font-size:13px;color:var(--ink-soft);font-weight:600;}
+.bar{height:9px;background:var(--card2);border-radius:var(--r-full);overflow:hidden;margin-bottom:24px;}
+.bar > i{display:block;height:100%;background:var(--accent);border-radius:var(--r-full);transition:width .35s ease;}
+.quiz-q{text-align:center;font-size:15px;color:var(--ink-soft);margin-bottom:4px;font-weight:600;}
+.opts{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin-top:16px;}
+.opt{display:flex;align-items:center;gap:11px;background:var(--card);border:2px solid var(--line2);border-radius:var(--r);padding:15px 16px;text-align:left;transition:border-color .15s,background .15s;box-shadow:var(--sh);}
+.opt .k{display:inline-flex;width:25px;height:25px;border-radius:8px;background:var(--card2);color:var(--ink-soft);font-size:12px;font-weight:700;align-items:center;justify-content:center;flex:0 0 auto;}
+.opt .lbl{font-size:25px;font-weight:800;color:var(--ink);}
+.opt.focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.opt.correct{border-color:var(--green);background:#E9F9F0;}
+.opt.correct .k{background:var(--green);color:#fff;}
+.opt.wrong{border-color:var(--red);background:#FDECEC;}
+.opt:disabled{cursor:default;}
+.hint-keys{text-align:center;font-size:11px;color:var(--ink-faint);margin-top:18px;}
+
+/* 결과 */
+#screen-result{justify-content:center;align-items:center;text-align:center;}
+.result-stars{font-size:48px;letter-spacing:6px;color:var(--gold);margin-bottom:12px;}
+.result-score{font-size:20px;font-weight:800;margin-bottom:6px;color:var(--ink);}
+.result-actions{width:100%;max-width:340px;display:flex;flex-direction:column;gap:11px;margin-top:28px;}
+
+/* 점 마을 */
+.tap-hint{text-align:center;font-size:14px;color:var(--ink-soft);margin-top:12px;line-height:1.6;}
+
+@media(max-width:420px){
+  .cell-big{padding:22px 26px;gap:15px 24px;}
+  .cell-big .pin{width:33px;height:33px;}
+  .title-xl{font-size:22px;}
+  .learn-char{font-size:56px;}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="logo">점</span><span data-i18n="app.title">점자 탐험</span></div>
+  <div class="ctrls">
+    <button class="chip-btn" id="btn-dotpad" aria-label="DotPad 연결">
+      <span class="dot"></span><span data-i18n="bt.connect">DotPad 연결</span>
+    </button>
+    <button class="chip-btn" id="btn-lang" aria-label="언어 변경">EN</button>
+  </div>
+</div>
+
+<main>
+  <!-- 홈 -->
+  <section class="screen active" id="screen-home" aria-labelledby="home-title">
+    <div class="hero" aria-hidden="true">
+      <div class="cell">
+        <span class="pin on"></span><span class="pin"></span>
+        <span class="pin"></span><span class="pin on"></span>
+        <span class="pin on"></span><span class="pin"></span>
+      </div>
+    </div>
+    <h1 class="title-xl" id="home-title" data-i18n="home.title">점자 탐험</h1>
+    <p class="subtle" data-i18n="home.sub">손끝으로 읽고, 듣고, 맞히며 점자를 배워요</p>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-start" data-i18n="home.start">탐험 시작</button>
+      <button class="btn btn-ghost" id="btn-how" data-i18n="home.how">어떻게 하나요?</button>
+    </div>
+  </section>
+
+  <!-- 레벨 맵 -->
+  <section class="screen" id="screen-map" aria-labelledby="map-title">
+    <h2 class="title-xl" id="map-title" data-i18n="map.title">점자 세계</h2>
+    <p class="subtle" data-i18n="map.sub">단계를 골라 떠나보세요</p>
+    <div class="level-list" id="level-list"></div>
+  </section>
+
+  <!-- 점 마을 (점 위치 학습) -->
+  <section class="screen" id="screen-village" aria-labelledby="vil-title">
+    <div class="quiz-top"><span class="lvtag" data-i18n="lv.village">점 마을</span>
+      <button class="icon-btn" id="vil-back" aria-label="뒤로">←</button></div>
+    <h2 class="title-xl" id="vil-title" data-i18n="vil.title">점은 6개예요</h2>
+    <p class="subtle" data-i18n="vil.sub">점자 한 칸은 점 6개로 이뤄져요. 점을 눌러 위치를 익혀보세요.</p>
+    <div class="cell-wrap"><div class="cell-big shownum" id="vil-cell"></div></div>
+    <p class="tap-hint" id="vil-hint" data-i18n="vil.hint">점을 누르면 번호와 위치를 읽어줘요</p>
+    <div class="spacer"></div>
+    <button class="btn btn-primary" id="vil-done" data-i18n="vil.done">자음 숲으로</button>
+  </section>
+
+  <!-- 배우기 -->
+  <section class="screen" id="screen-learn" aria-labelledby="learn-title">
+    <div class="quiz-top" style="width:100%"><span class="lvtag" id="learn-tag">자음 숲</span>
+      <button class="icon-btn" id="learn-back" aria-label="뒤로">←</button></div>
+    <h2 class="sr-only" id="learn-title">자모 배우기</h2>
+    <p class="subtle" style="text-align:center;margin-bottom:6px" data-i18n="learn.intro">이 글자의 점자예요</p>
+    <div class="dotpad-hint"><span class="bt">⠿</span> <span data-i18n="learn.dotpad">DotPad에도 같이 출력돼요</span></div>
+    <div class="cell-wrap"><div class="cell-big" id="learn-cell"></div></div>
+    <div class="learn-char" id="learn-char">ㄱ</div>
+    <div class="learn-name" id="learn-name">기역</div>
+    <div class="learn-progress" id="learn-prog">1 / 13</div>
+    <div class="learn-nav">
+      <button class="btn btn-ghost" id="learn-prev" data-i18n="nav.prev">이전</button>
+      <button class="btn btn-primary" id="learn-next" data-i18n="nav.next">다음</button>
+    </div>
+    <div style="height:10px"></div>
+    <button class="btn btn-ghost" id="learn-quiz" style="max-width:380px" data-i18n="learn.toquiz">퀴즈 풀기 →</button>
+  </section>
+
+  <!-- 퀴즈 -->
+  <section class="screen" id="screen-quiz" aria-labelledby="quiz-title">
+    <div class="quiz-top">
+      <span class="lvtag" id="quiz-tag">자음 숲</span>
+      <span class="qcount"><span id="quiz-n">1</span> / <span id="quiz-total">10</span></span>
+    </div>
+    <div class="bar"><i id="quiz-bar" style="width:10%"></i></div>
+    <h2 class="sr-only" id="quiz-title">점자 퀴즈</h2>
+    <p class="quiz-q" id="quiz-q" data-i18n="quiz.q">이 점자는 무슨 글자일까요?
+      <button class="icon-btn" id="quiz-replay" style="width:30px;height:30px;font-size:14px;vertical-align:middle;margin-left:4px" aria-label="다시 듣기">🔊</button>
+    </p>
+    <div class="dotpad-hint"><span class="bt">⠿</span> <span data-i18n="quiz.dotpad">DotPad에서 손끝으로 읽어보세요</span></div>
+    <div class="cell-wrap"><div class="cell-big" id="quiz-cell"></div></div>
+    <div class="opts" id="quiz-opts"></div>
+    <p class="hint-keys" data-i18n="quiz.keys">키보드 1~4 또는 화살표 + Enter로 선택</p>
+  </section>
+
+  <!-- 결과 -->
+  <section class="screen" id="screen-result" aria-labelledby="res-title">
+    <div class="result-stars" id="res-stars" aria-hidden="true">★★★</div>
+    <h2 class="title-xl" id="res-title" data-i18n="res.title">잘했어요!</h2>
+    <div class="result-score"><span id="res-correct">0</span> / <span id="res-total">10</span></div>
+    <p class="subtle" id="res-msg" data-i18n="res.msg">점자를 점점 잘 읽고 있어요</p>
+    <div class="result-actions">
+      <button class="btn btn-primary" id="res-retry" data-i18n="res.retry">다시 도전</button>
+      <button class="btn btn-ghost" id="res-map" data-i18n="res.map">지도로</button>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+/* ========== 점자 데이터 (훈맹정음 기준 · 점역사 검수 예정) ==========
+   dots = 점 번호 배열. 점 배치:  1 4
+                                  2 5
+                                  3 6                                    */
+const CONSONANTS = [
+  {ch:'ㄱ', ko:'기역', en:'g',  dots:[4]},
+  {ch:'ㄴ', ko:'니은', en:'n',  dots:[1,4]},
+  {ch:'ㄷ', ko:'디귿', en:'d',  dots:[2,4]},
+  {ch:'ㄹ', ko:'리을', en:'r',  dots:[5]},
+  {ch:'ㅁ', ko:'미음', en:'m',  dots:[1,5]},
+  {ch:'ㅂ', ko:'비읍', en:'b',  dots:[4,5]},
+  {ch:'ㅅ', ko:'시옷', en:'s',  dots:[6]},
+  {ch:'ㅈ', ko:'지읒', en:'j',  dots:[4,6]},
+  {ch:'ㅊ', ko:'치읓', en:'ch', dots:[5,6]},
+  {ch:'ㅋ', ko:'키읔', en:'k',  dots:[1,2,4]},
+  {ch:'ㅌ', ko:'티읕', en:'t',  dots:[1,2,5]},
+  {ch:'ㅍ', ko:'피읖', en:'p',  dots:[1,4,5]},
+  {ch:'ㅎ', ko:'히읗', en:'h',  dots:[2,4,5]},
+];
+const VOWELS = [
+  {ch:'ㅏ', ko:'아', en:'a',   dots:[1,2,6]},
+  {ch:'ㅑ', ko:'야', en:'ya',  dots:[3,4,5]},
+  {ch:'ㅓ', ko:'어', en:'eo',  dots:[2,3,4]},
+  {ch:'ㅕ', ko:'여', en:'yeo', dots:[1,5,6]},
+  {ch:'ㅗ', ko:'오', en:'o',   dots:[1,3,6]},
+  {ch:'ㅛ', ko:'요', en:'yo',  dots:[3,4,6]},
+  {ch:'ㅜ', ko:'우', en:'u',   dots:[1,3,4]},
+  {ch:'ㅠ', ko:'유', en:'yu',  dots:[1,4,6]},
+  {ch:'ㅡ', ko:'으', en:'eu',  dots:[2,4,6]},
+  {ch:'ㅣ', ko:'이', en:'i',   dots:[1,3,5]},
+];
+// 점 번호 배열 → 점자 바이트 (점1=bit0 ... 점6=bit5)
+function dotsToByte(dots){ let v=0; for(const d of dots) v |= (1 << (d-1)); return v; }
+const KO_NUM=['일','이','삼','사','오','육'];
+
+/* ========== i18n ========== */
+let LANG = 'ko';
+try { const s = localStorage.getItem('braille_lang'); if (s==='ko'||s==='en') LANG = s; } catch(e){}
+const I18N = {
+  'app.title':{ko:'점자 탐험',en:'Dot Braille'},
+  'bt.connect':{ko:'DotPad 연결',en:'Connect DotPad'},
+  'bt.connected':{ko:'DotPad 연결됨',en:'DotPad connected'},
+  'home.title':{ko:'점자 탐험',en:'Dot Braille'},
+  'home.sub':{ko:'손끝으로 읽고, 듣고, 맞히며 점자를 배워요',en:'Read, listen, and learn braille by touch'},
+  'home.start':{ko:'탐험 시작',en:'Start'},
+  'home.how':{ko:'어떻게 하나요?',en:'How to play'},
+  'map.title':{ko:'점자 세계',en:'Braille World'},
+  'map.sub':{ko:'단계를 선택하고 모험을 떠나봐요!',en:'Choose a stage and start your adventure!'},
+  'lv.village':{ko:'점 마을',en:'Dot Village'},
+  'lv.consonant':{ko:'자음 숲',en:'Consonant Forest'},
+  'lv.vowel':{ko:'모음 강',en:'Vowel River'},
+  'lv.syllable':{ko:'글자 도시',en:'Syllable City'},
+  'lv.speed':{ko:'속도 광장',en:'Speed Plaza'},
+  'lv.village.d':{ko:'점 6개의 위치 익히기',en:'Learn the 6 dot positions'},
+  'lv.consonant.d':{ko:'ㄱ ㄴ ㄷ … 자음 점자',en:'ㄱ ㄴ ㄷ … consonants'},
+  'lv.vowel.d':{ko:'ㅏ ㅑ ㅓ … 모음 점자',en:'ㅏ ㅑ ㅓ … vowels'},
+  'lv.syllable.d':{ko:'자음+모음 글자 조합',en:'Combine into syllables'},
+  'lv.speed.d':{ko:'제한 시간 도전',en:'Beat the clock'},
+  'lv.locked':{ko:'잠김',en:'Locked'},
+  'vil.title':{ko:'점은 6개예요',en:'Six dots'},
+  'vil.sub':{ko:'점자 한 칸은 점 6개로 이뤄져요. 점을 눌러 위치를 익혀보세요.',en:'A braille cell has 6 dots. Tap each to learn its position.'},
+  'vil.hint':{ko:'점을 누르면 번호와 위치를 읽어줘요',en:'Tap a dot to hear its number and position'},
+  'vil.done':{ko:'자음 숲으로',en:'To Consonant Forest'},
+  'learn.intro':{ko:'이 글자의 점자예요',en:'This is the braille for this letter'},
+  'learn.dotpad':{ko:'DotPad에도 같이 출력돼요',en:'Also shown on DotPad'},
+  'learn.toquiz':{ko:'퀴즈 풀기 →',en:'Take the quiz →'},
+  'nav.prev':{ko:'이전',en:'Prev'},
+  'nav.next':{ko:'다음',en:'Next'},
+  'quiz.q':{ko:'이 점자는 무슨 글자일까요?',en:'Which letter is this braille?'},
+  'quiz.dotpad':{ko:'DotPad에서 손끝으로 읽어보세요',en:'Read it by touch on DotPad'},
+  'quiz.keys':{ko:'화살표나 숫자로 보기를 듣고, Enter로 선택해요',en:'Hear options with arrows or numbers, then Enter to select'},
+  'res.title':{ko:'잘했어요!',en:'Well done!'},
+  'res.title.perfect':{ko:'완벽해요!',en:'Perfect!'},
+  'res.title.good':{ko:'잘했어요!',en:'Great job!'},
+  'res.title.try':{ko:'좋은 시작이에요',en:'Good start'},
+  'res.msg':{ko:'점자를 점점 잘 읽고 있어요',en:'You are reading braille better and better'},
+  'res.retry':{ko:'다시 도전',en:'Try again'},
+  'res.map':{ko:'지도로',en:'To map'},
+  'tts.dotPos':{ko:'번 점',en:'dot'},
+  'tts.correct':{ko:'정답이에요',en:'Correct'},
+  'tts.wrong':{ko:'아쉬워요. 정답은',en:'Not quite. The answer is'},
+  'tts.howTo':{ko:'화살표나 숫자로 보기를 듣고 엔터로 선택하세요',en:'Use arrows or numbers to hear the options, then Enter to select'},
+};
+function t(k){ const e=I18N[k]; return e ? (e[LANG]||e.ko) : k; }
+function applyI18n(){
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n'); const v=I18N[k];
+    if(v){
+      // 자식 버튼이 있는 노드(quiz-q)는 첫 텍스트 노드만 교체
+      if(el.id==='quiz-q'){ el.childNodes[0].nodeValue = v[LANG]+' '; }
+      else el.textContent = v[LANG]||v.ko;
+    }
+  });
+  document.getElementById('btn-lang').textContent = LANG==='ko' ? 'EN' : '한';
+  const bt=document.getElementById('btn-dotpad');
+  bt.querySelector('span:last-child').textContent = dotpadConnected ? t('bt.connected') : t('bt.connect');
+}
+
+/* ========== TTS ========== */
+let _voices=[];
+function loadVoices(){ try{ _voices = window.speechSynthesis.getVoices()||[]; }catch(e){} }
+if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged = loadVoices; }
+function pickVoice(){
+  const want = LANG==='en' ? 'en' : 'ko';
+  return _voices.find(v=>v.lang && v.lang.toLowerCase().startsWith(want)) || null;
+}
+function speak(text){
+  if(!('speechSynthesis' in window) || !text) return;
+  try{
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = LANG==='en' ? 'en-US' : 'ko-KR';
+    const v = pickVoice(); if(v) u.voice = v;
+    u.rate = 1.02;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+// 자모를 읽어줄 텍스트
+function jamoSpeak(item){ return LANG==='en' ? item.en : item.ko; }
+
+/* ========== DotPad SDK (동적 로드 · 없어도 게임 동작) ========== */
+let sdk=null, scanner=null, dotpadConnected=false;
+async function ensureSdk(){
+  if(sdk) return true;
+  try{
+    const mod = await import('./dotpad-sdk/DotPadSDK-3.0.0.js');
+    sdk = new mod.DotPadSDK();
+    scanner = new mod.DotPadScanner();
+    return true;
+  }catch(e){ console.warn('DotPad SDK 로드 실패 (화면 모드로 진행):', e); return false; }
+}
+async function connectDotPad(){
+  const ok = await ensureSdk();
+  if(!ok){ alert(LANG==='en'?'DotPad SDK not available in this build.':'이 환경에서는 DotPad SDK를 찾을 수 없어요. 화면·음성으로 플레이할 수 있어요.'); return; }
+  try{
+    const device = await scanner.requestDevice({ filters:[{ services:[scanner.DOTPAD_SERVICE] }] });
+    if(!device) return;
+    const connected = await sdk.connectBleDevice(device);
+    dotpadConnected = !!connected;
+    document.getElementById('btn-dotpad').classList.toggle('on', dotpadConnected);
+    applyI18n();
+  }catch(e){ console.warn('DotPad 연결 실패:', e); }
+}
+// 한 글자(자모) 점자를 DotPad에 출력
+function dotpadShow(item){
+  if(!dotpadConnected || !sdk) return;
+  try{ sdk.displayTextData([ dotsToByte(item.dots) ]); }catch(e){ console.warn('DotPad 출력 오류:', e); }
+}
+
+/* ========== 점자 셀 렌더 ========== */
+// 점 배치 순서(그리드): 1,4,2,5,3,6
+const PIN_ORDER = [1,4,2,5,3,6];
+function renderCell(el, dots, opts){
+  opts = opts||{};
+  el.innerHTML = '';
+  PIN_ORDER.forEach(n=>{
+    const pin = document.createElement('span');
+    pin.className = 'pin' + (dots.includes(n) ? ' on':'');
+    pin.dataset.num = n;
+    if(opts.num){ const s=document.createElement('span'); s.className='num'; s.textContent=n; pin.appendChild(s); }
+    el.appendChild(pin);
+  });
+}
+
+/* ========== 화면 전환 ========== */
+const screens = ['home','map','village','learn','quiz','result'];
+let current = 'home';
+function showScreen(id){
+  current = id;
+  screens.forEach(s=>{
+    document.getElementById('screen-'+s).classList.toggle('active', s===id);
+  });
+  window.scrollTo({top:0});
+}
+
+/* ========== 레벨 맵 ========== */
+const DOTGRID = '<span class="dotgrid"><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i></i></span>';
+const LEVELS = [
+  {id:'village',   key:'lv.village',   d:'lv.village.d',   bg:'#E6EEFF', icon:DOTGRID, open:true},
+  {id:'consonant', key:'lv.consonant', d:'lv.consonant.d', bg:'#E1F6E9', icon:'🌳',    open:true},
+  {id:'vowel',     key:'lv.vowel',     d:'lv.vowel.d',     bg:'#E0F5F5', icon:'🌊',    open:false},
+  {id:'syllable',  key:'lv.syllable',  d:'lv.syllable.d',  bg:'#FEF3DC', icon:'🏙️',    open:false},
+  {id:'speed',     key:'lv.speed',     d:'lv.speed.d',     bg:'#FFEDE0', icon:'⚡',    open:false},
+];
+function renderMap(){
+  const list = document.getElementById('level-list');
+  list.innerHTML='';
+  LEVELS.forEach(lv=>{
+    const b=document.createElement('button');
+    b.className='level-card'+(lv.open?'':' locked');
+    const right = lv.open
+      ? '<span class="stars empty" aria-hidden="true">☆☆☆</span>'
+      : '<span class="lock" aria-label="'+t('lv.locked')+'">🔒</span>';
+    b.innerHTML = '<span class="ic" style="background:'+lv.bg+'">'+lv.icon+'</span>'
+      + '<span class="meta"><h3>'+t(lv.key)+'</h3><p>'+t(lv.d)+'</p></span>' + right;
+    if(lv.open){
+      b.addEventListener('click', ()=>{
+        if(lv.id==='village') startVillage();
+        else if(lv.id==='consonant') startLearn('consonant');
+      });
+    } else { b.disabled=true; }
+    list.appendChild(b);
+  });
+}
+
+/* ========== 점 마을 ========== */
+function startVillage(){
+  showScreen('village');
+  const cell=document.getElementById('vil-cell');
+  renderCell(cell, [], {num:true});
+  cell.querySelectorAll('.pin').forEach(pin=>{
+    pin.addEventListener('click', ()=>{
+      cell.querySelectorAll('.pin').forEach(p=>p.classList.remove('focus','on'));
+      pin.classList.add('focus','on');
+      const n=pin.dataset.num;
+      speak(LANG==='en' ? ('Dot '+n) : (KO_NUM[n-1]+'번 점'));
+    });
+  });
+  speak(t('vil.sub'));
+}
+
+/* ========== 배우기 ========== */
+let learnSet = CONSONANTS, learnIdx = 0, learnCat = 'consonant';
+function startLearn(cat){
+  learnCat = cat;
+  learnSet = cat==='vowel' ? VOWELS : CONSONANTS;
+  learnIdx = 0;
+  document.getElementById('learn-tag').textContent = t('lv.'+cat);
+  showScreen('learn');
+  renderLearn();
+}
+function renderLearn(){
+  const item = learnSet[learnIdx];
+  renderCell(document.getElementById('learn-cell'), item.dots, {});
+  document.getElementById('learn-char').textContent = item.ch;
+  document.getElementById('learn-name').textContent = LANG==='en' ? item.en : item.ko;
+  document.getElementById('learn-prog').textContent = (learnIdx+1)+' / '+learnSet.length;
+  document.getElementById('learn-prev').disabled = learnIdx===0;
+  dotpadShow(item);
+  speak(jamoSpeak(item));
+}
+
+/* ========== 퀴즈 ========== */
+let quiz = null;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function startQuiz(cat){
+  const set = cat==='vowel' ? VOWELS : CONSONANTS;
+  const total = 10;
+  const order = shuffle(set).concat(shuffle(set)).slice(0, total);
+  quiz = { cat, set, order, idx:0, correct:0, total, locked:false };
+  document.getElementById('quiz-tag').textContent = t('lv.'+cat);
+  document.getElementById('quiz-total').textContent = total;
+  showScreen('quiz');
+  renderQuiz();
+}
+function speakOption(idx){
+  if(!quiz||!quiz.opts) return;
+  const o=quiz.opts[idx]; if(!o) return;
+  const num = LANG==='en' ? ('Option '+(idx+1)) : (KO_NUM[idx]+'번');
+  speak(num+', '+(LANG==='en'?o.en:o.ko));
+}
+function moveFocus(idx){
+  if(!quiz||quiz.locked||!quiz.opts) return;
+  const n=quiz.opts.length;
+  quiz.focusIdx=((idx%n)+n)%n;
+  document.querySelectorAll('#quiz-opts .opt').forEach((b,i)=>b.classList.toggle('focus',i===quiz.focusIdx));
+  speakOption(quiz.focusIdx);
+}
+function renderQuiz(){
+  quiz.locked = false;
+  quiz.focusIdx = 0;
+  const item = quiz.order[quiz.idx];
+  document.getElementById('quiz-n').textContent = quiz.idx+1;
+  document.getElementById('quiz-bar').style.width = ((quiz.idx)/quiz.total*100)+'%';
+  renderCell(document.getElementById('quiz-cell'), item.dots, {});
+  dotpadShow(item);
+  // 보기: 정답 + 오답 3
+  const others = shuffle(quiz.set.filter(x=>x.ch!==item.ch)).slice(0,3);
+  const opts = shuffle(others.concat([item]));
+  quiz.opts = opts;
+  const wrap = document.getElementById('quiz-opts');
+  wrap.innerHTML='';
+  opts.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='opt'+(i===0?' focus':''); b.dataset.ch=o.ch; b.dataset.i=i;
+    b.setAttribute('aria-label', (i+1)+'. '+(LANG==='en'?o.en:o.ko));
+    b.innerHTML = `<span class="k">${i+1}</span><span class="lbl">${o.ch}</span>`;
+    b.addEventListener('click', ()=>answer(o, b));
+    wrap.appendChild(b);
+  });
+  speak(t('quiz.q') + (quiz.idx===0 ? (' '+t('tts.howTo')) : ''));
+}
+function answer(o, btn){
+  if(quiz.locked) return;
+  quiz.locked = true;
+  const item = quiz.order[quiz.idx];
+  const right = o.ch===item.ch;
+  if(right){ quiz.correct++; btn.classList.add('correct'); speak(t('tts.correct')); }
+  else{
+    btn.classList.add('wrong');
+    // 정답 표시
+    document.querySelectorAll('#quiz-opts .opt').forEach(b=>{ if(b.dataset.ch===item.ch) b.classList.add('correct'); });
+    speak(t('tts.wrong')+' '+ jamoSpeak(item));
+  }
+  document.querySelectorAll('#quiz-opts .opt').forEach(b=> b.disabled=true);
+  setTimeout(()=>{
+    quiz.idx++;
+    if(quiz.idx>=quiz.total) finishQuiz();
+    else renderQuiz();
+  }, right?900:1700);
+}
+function finishQuiz(){
+  document.getElementById('quiz-bar').style.width='100%';
+  const c=quiz.correct, tot=quiz.total;
+  const stars = c>=tot-1 ? 3 : c>=tot*0.6 ? 2 : c>=tot*0.3 ? 1 : 0;
+  document.getElementById('res-stars').textContent = '★★★☆☆☆'.slice(3-stars,6-stars).padEnd(3,'☆').slice(0,3);
+  document.getElementById('res-stars').textContent = '★'.repeat(stars)+'☆'.repeat(3-stars);
+  document.getElementById('res-correct').textContent=c;
+  document.getElementById('res-total').textContent=tot;
+  const titleKey = c>=tot-1?'res.title.perfect':c>=tot*0.6?'res.title.good':'res.title.try';
+  document.getElementById('res-title').textContent = t(titleKey);
+  showScreen('result');
+  speak(t(titleKey));
+}
+
+/* ========== 키보드 ========== */
+document.addEventListener('keydown', (e)=>{
+  if(current==='quiz' && quiz && !quiz.locked){
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'){ e.preventDefault(); moveFocus(quiz.focusIdx+1); }
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){ e.preventDefault(); moveFocus(quiz.focusIdx-1); }
+    else if(e.key>='1' && e.key<='4'){ const i=+e.key-1; if(i<quiz.opts.length) moveFocus(i); }
+    else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); const b=document.querySelector('#quiz-opts .opt[data-i="'+quiz.focusIdx+'"]'); if(b) b.click(); }
+  }
+  if(current==='learn'){
+    if(e.key==='ArrowRight'){ document.getElementById('learn-next').click(); }
+    if(e.key==='ArrowLeft'){ document.getElementById('learn-prev').click(); }
+  }
+  if(e.key==='Escape'){
+    if(current==='quiz'||current==='learn'||current==='village') showScreen('map');
+    else if(current==='map') showScreen('home');
+  }
+});
+
+/* ========== 이벤트 바인딩 ========== */
+document.getElementById('btn-start').addEventListener('click', ()=>{ renderMap(); showScreen('map'); });
+document.getElementById('btn-how').addEventListener('click', ()=> startVillage());
+document.getElementById('btn-dotpad').addEventListener('click', connectDotPad);
+document.getElementById('btn-lang').addEventListener('click', ()=>{
+  LANG = LANG==='ko'?'en':'ko';
+  try{ localStorage.setItem('braille_lang', LANG); }catch(e){}
+  applyI18n();
+  if(current==='map') renderMap();
+  else if(current==='learn') renderLearn();
+});
+document.getElementById('vil-back').addEventListener('click', ()=>showScreen('map'));
+document.getElementById('vil-done').addEventListener('click', ()=>startLearn('consonant'));
+document.getElementById('learn-back').addEventListener('click', ()=>showScreen('map'));
+document.getElementById('learn-prev').addEventListener('click', ()=>{ if(learnIdx>0){ learnIdx--; renderLearn(); } });
+document.getElementById('learn-next').addEventListener('click', ()=>{
+  if(learnIdx<learnSet.length-1){ learnIdx++; renderLearn(); }
+  else startQuiz(learnCat);
+});
+document.getElementById('learn-quiz').addEventListener('click', ()=>startQuiz(learnCat));
+document.getElementById('quiz-replay').addEventListener('click', (e)=>{ e.stopPropagation(); speak(t('quiz.q')); });
+document.getElementById('res-retry').addEventListener('click', ()=>startQuiz(quiz?quiz.cat:'consonant'));
+document.getElementById('res-map').addEventListener('click', ()=>{ renderMap(); showScreen('map'); });
+
+/* ========== 초기화 ========== */
+applyI18n();
+renderMap();
+</script>
+</body>
+</html>
