@@ -355,12 +355,18 @@ function jamoSpeak(item){ return LANG==='en' ? item.en : item.ko; }
 let sdk=null, scanner=null, dotpadConnected=false;
 async function ensureSdk(){
   if(sdk) return true;
-  try{
-    const mod = await import('./dotpad-sdk/DotPadSDK-3.0.0.js');
-    sdk = new mod.DotPadSDK();
-    scanner = new mod.DotPadScanner();
-    return true;
-  }catch(e){ console.warn('DotPad SDK 로드 실패 (화면 모드로 진행):', e); return false; }
+  // SDK 위치를 두 곳 다 시도 (braille/dotpad-sdk/ 또는 braille/ 바로 아래)
+  const paths=['./dotpad-sdk/DotPadSDK-3.0.0.js','./DotPadSDK-3.0.0.js'];
+  for(const p of paths){
+    try{
+      const mod = await import(p);
+      sdk = new mod.DotPadSDK();
+      scanner = new mod.DotPadScanner();
+      return true;
+    }catch(e){ /* 다음 경로 시도 */ }
+  }
+  console.warn('DotPad SDK 로드 실패 (화면·음성·키보드 모드로 진행)');
+  return false;
 }
 async function connectDotPad(){
   const ok = await ensureSdk();
