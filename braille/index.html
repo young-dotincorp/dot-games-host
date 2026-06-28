@@ -23,6 +23,10 @@ button{font-family:inherit;cursor:pointer;}
 
 /* 상단바 */
 .float-ctrls{position:fixed;top:12px;right:12px;z-index:100;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:7px 9px;border-radius:var(--r-full);box-shadow:0 6px 22px rgba(0,0,0,.13);border:1px solid rgba(255,255,255,.6);}
+.float-back{position:fixed;top:12px;left:12px;z-index:100;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:8px 14px 8px 11px;border-radius:var(--r-full);box-shadow:0 6px 22px rgba(0,0,0,.13);border:1px solid rgba(255,255,255,.6);cursor:pointer;font-size:14px;font-weight:700;color:var(--ink);line-height:1;}
+.float-back span:first-child{font-size:17px;font-weight:800;margin-top:-1px;}
+.float-back:hover{background:rgba(255,255,255,.96);}
+.float-back[hidden]{display:none;}
 .topbar .brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:var(--ink);}
 .topbar .brand .logo{width:28px;height:28px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;}
 .topbar .ctrls{display:flex;align-items:center;gap:8px;}
@@ -147,6 +151,7 @@ body.with-bg{background:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2
 </head>
 <body>
 
+<button class="float-back" id="btn-back" aria-label="뒤로 가기" hidden><span aria-hidden="true">←</span><span data-i18n="ui.back">뒤로</span></button>
 <div class="float-ctrls">
     <div class="dp-wrap">
       <button class="chip-btn" id="btn-dotpad" aria-label="DotPad 연결" aria-haspopup="true">
@@ -290,6 +295,7 @@ const KO_NUM=['일','이','삼','사','오','육'];
 let LANG = 'ko';
 try { const s = localStorage.getItem('braille_lang'); if (s==='ko'||s==='en') LANG = s; } catch(e){}
 const I18N = {
+  'ui.back':{ko:'뒤로',en:'Back'},
   'app.title':{ko:'점자 탐험',en:'Dot Braille'},
   'bt.connect':{ko:'DotPad 연결',en:'Connect DotPad'},
   'bt.connected':{ko:'DotPad 연결됨',en:'DotPad connected'},
@@ -501,6 +507,7 @@ function showScreen(id){
   });
   // 탐험 화면(맵·점마을·배우기·퀴즈)에서만 전체 배경 켜기
   document.body.classList.toggle('with-bg', ['map','village','learn','quiz'].includes(id));
+  const _bb=document.getElementById('btn-back'); if(_bb) _bb.hidden = !(id==='map'||id==='quiz');
   window.scrollTo({top:0});
 }
 
@@ -676,6 +683,7 @@ document.addEventListener('keydown', (e)=>{
 
 /* ========== 이벤트 바인딩 ========== */
 document.getElementById('btn-start').addEventListener('click', ()=>{ renderMap(); showScreen('map'); });
+document.getElementById('btn-back').addEventListener('click', ()=>{ if(current==='map') showScreen('home'); else if(current==='quiz') showScreen('map'); });
 document.getElementById('btn-how').addEventListener('click', ()=> startVillage());
 document.getElementById('btn-dotpad').addEventListener('click', toggleDpMenu);
 document.getElementById('dp-ble').addEventListener('click', ()=>{ connectDotPad('ble'); closeDpMenu(); });
