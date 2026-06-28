@@ -79,6 +79,8 @@ body.with-bg{background:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2
 .level-card{display:flex;align-items:center;gap:14px;background:var(--card);border:none;border-radius:var(--r-lg);padding:15px;text-align:left;width:100%;box-shadow:var(--sh);transition:transform .14s;}
 .level-card:active{transform:scale(.99);}
 .level-card.locked{background:var(--card2);box-shadow:none;}
+.level-card.focus{outline:3px solid var(--accent);outline-offset:3px;box-shadow:var(--sh-lg);}
+.level-card.locked.focus{outline-color:var(--ink-lock);}
 .level-card .ic{width:56px;height:56px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:27px;flex:0 0 auto;}
 .level-card.locked .ic{filter:grayscale(.45);opacity:.6;background:#E1E2EA!important;}
 .level-card .ic .dotgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;}
@@ -295,6 +297,9 @@ const KO_NUM=['일','이','삼','사','오','육'];
 let LANG = 'ko';
 try { const s = localStorage.getItem('braille_lang'); if (s==='ko'||s==='en') LANG = s; } catch(e){}
 const I18N = {
+  'tts.vilNav':{ko:'숫자 1번부터 6번 키, 또는 화살표나 패닝 키로 점을 옮겨 위치를 익혀보세요. 닷패드를 연결하면 점 위치를 만질 수 있어요.',en:'Move between dots with number keys 1 to 6, or the arrow and panning keys, to learn each position. Connect a DotPad to feel where each dot is.'},
+  'tts.mapOpen':{ko:'시작하려면 엔터나 선택 키를 누르세요.',en:'Press Enter or the select key to start.'},
+  'tts.mapLocked':{ko:'아직 잠긴 단계입니다. 앞 단계를 먼저 끝내면 열려요.',en:'This stage is still locked. Finish the earlier stages first.'},
   'ui.back':{ko:'뒤로',en:'Back'},
   'nav.home':{ko:'점자 탐험 게임입니다. 탐험을 시작하려면 탐험 시작 버튼을 누르세요.',en:'Dot Braille game. Press the Start button to begin.'},
   'nav.map':{ko:'점자 세계입니다. 위아래 화살표나 닷패드 패닝키로 단계를 이동하고, 엔터나 선택 키로 들어가세요.',en:'Braille World. Use up and down arrows or the DotPad panning keys to move between stages, then Enter to select.'},
@@ -521,6 +526,7 @@ function showScreen(id){
 }
 
 /* ========== 레벨 맵 ========== */
+let mapFocusIdx = 0;
 const DOTGRID = '<span class="dotgrid"><i class="on"></i><i></i><i></i><i class="on"></i><i class="on"></i><i></i></span>';
 const LEVELS = [
   {id:'village',   key:'lv.village',   d:'lv.village.d',   bg:'#E6EEFF', icon:DOTGRID, open:true},
@@ -532,39 +538,83 @@ const LEVELS = [
 function renderMap(){
   const list = document.getElementById('level-list');
   list.innerHTML='';
-  LEVELS.forEach(lv=>{
+  LEVELS.forEach((lv,idx)=>{
     const b=document.createElement('button');
-    b.className='level-card'+(lv.open?'':' locked');
+    b.className='level-card'+(lv.open?'':' locked')+(idx===mapFocusIdx?' focus':'');
+    b.dataset.idx=idx;
     const right = lv.open
       ? '<span class="stars empty" aria-hidden="true">☆☆☆</span>'
       : '<span class="lock" aria-label="'+t('lv.locked')+'">🔒</span>';
     b.innerHTML = '<span class="ic" style="background:'+lv.bg+'">'+lv.icon+'</span>'
       + '<span class="meta"><h3>'+t(lv.key)+'</h3><p>'+t(lv.d)+'</p></span>' + right;
     if(lv.open){
-      b.addEventListener('click', ()=>{
-        if(lv.id==='village') startVillage();
-        else if(lv.id==='consonant') startLearn('consonant');
-        else if(lv.id==='vowel') startLearn('vowel');
-      });
+      b.addEventListener('click', ()=>{ mapFocusIdx=idx; mapActivate(); });
     } else { b.disabled=true; }
     list.appendChild(b);
   });
 }
 
+// 레벨 음성 안내: 이름 + 설명 + 열림/잠긴 상태
+function mapSpeak(idx){
+  const lv = LEVELS[idx];
+  if(!lv) return;
+  const name = t(lv.key), desc = t(lv.d);
+  const status = lv.open ? t('tts.mapOpen') : t('tts.mapLocked');
+  speak(name + '. ' + desc + '. ' + status);
+}
+// 화살표/패닝키로 레벨 이동 (잠긴 단계도 포함해 전체 구조 파악)
+function mapMoveFocus(dir){
+  const n = LEVELS.length;
+  mapFocusIdx = ((mapFocusIdx + dir) % n + n) % n;
+  const cards = document.querySelectorAll('#level-list .level-card');
+  cards.forEach((c,i)=> c.classList.toggle('focus', i===mapFocusIdx));
+  const cur = cards[mapFocusIdx];
+  if(cur && cur.scrollIntoView) try{ cur.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){}
+  mapSpeak(mapFocusIdx);
+}
+// 엔터/선택키: 열린 단계 진입, 잠긴 단계는 안내만
+function mapActivate(){
+  const lv = LEVELS[mapFocusIdx];
+  if(!lv) return;
+  if(!lv.open){ speak(t('tts.mapLocked')); return; }
+  if(lv.id==='village') startVillage();
+  else if(lv.id==='consonant') startLearn('consonant');
+  else if(lv.id==='vowel') startLearn('vowel');
+}
+
 /* ========== 점 마을 ========== */
+let vilDot = 1;
 function startVillage(){
   showScreen('village');
+  vilDot = 1;
   const cell=document.getElementById('vil-cell');
   renderCell(cell, [], {num:true});
   cell.querySelectorAll('.pin').forEach(pin=>{
-    pin.addEventListener('click', ()=>{
-      cell.querySelectorAll('.pin').forEach(p=>p.classList.remove('focus','on'));
-      pin.classList.add('focus','on');
-      const n=pin.dataset.num;
-      speak(LANG==='en' ? ('Dot '+n) : (KO_NUM[n-1]+'번 점'));
-    });
+    pin.addEventListener('click', ()=> vilSelect(+pin.dataset.num));
   });
-  speak(t('vil.sub'));
+  // 진입 시 1번 점에 포커스만 표시(음성·출력은 조작 시)
+  const first = cell.querySelector('.pin[data-num="1"]');
+  if(first) first.classList.add('focus');
+  speak(t('tts.vilNav'));
+}
+// 점 선택: 해당 점만 켜고 포커스 + 음성 + DotPad 출력
+function vilSelect(n){
+  n = +n;
+  if(!(n>=1 && n<=6)) return;
+  vilDot = n;
+  const cell=document.getElementById('vil-cell');
+  if(!cell) return;
+  cell.querySelectorAll('.pin').forEach(p=>p.classList.remove('focus','on'));
+  const pin=cell.querySelector('.pin[data-num="'+n+'"]');
+  if(pin) pin.classList.add('focus','on');
+  speak(LANG==='en' ? ('Dot '+n) : (KO_NUM[n-1]+'번 점'));
+  dotpadShow({dots:[n]});
+}
+// 화살표/패닝키로 점 순환 (1→…→6→1)
+function vilMove(dir){
+  let n = vilDot + dir;
+  if(n>6) n=1; if(n<1) n=6;
+  vilSelect(n);
 }
 
 /* ========== 배우기 ========== */
@@ -697,25 +747,42 @@ function handleDotPadKey(keyCode){
     if(NEXT) document.getElementById('learn-next').click();
     else if(PREV) document.getElementById('learn-prev').click();
     else if(READ||PICK) speak(jamoSpeak(learnSet[learnIdx]));
+  } else if(current==='map'){
+    if(NEXT) mapMoveFocus(1);
+    else if(PREV) mapMoveFocus(-1);
+    else if(READ) mapSpeak(mapFocusIdx);
+    else if(PICK) mapActivate();
+  } else if(current==='village'){
+    if(NEXT) vilMove(1);
+    else if(PREV) vilMove(-1);
+    else if(READ||PICK) vilSelect(vilDot);
   }
-  // map(점자 세계)·village(점 마을) 패닝키는 다음 단계에서 연결
 }
 
 /* ========== 키보드 ========== */
 document.addEventListener('keydown', (e)=>{
-  if(current==='quiz' && quiz && !quiz.locked){
+  const scr = current; // 이벤트 시작 시점의 화면 고정 (진입 키가 새 화면 분기로 연쇄되지 않게)
+  if(scr==='quiz' && quiz && !quiz.locked){
     if(e.key==='ArrowRight'||e.key==='ArrowDown'){ e.preventDefault(); moveFocus(quiz.focusIdx+1); }
     else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){ e.preventDefault(); moveFocus(quiz.focusIdx-1); }
     else if(e.key>='1' && e.key<='4'){ const i=+e.key-1; if(i<quiz.opts.length) moveFocus(i); }
     else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); const b=document.querySelector('#quiz-opts .opt[data-i="'+quiz.focusIdx+'"]'); if(b) b.click(); }
-  }
-  if(current==='learn'){
+  } else if(scr==='learn'){
     if(e.key==='ArrowRight'){ document.getElementById('learn-next').click(); }
     if(e.key==='ArrowLeft'){ document.getElementById('learn-prev').click(); }
+  } else if(scr==='map'){
+    if(e.key==='ArrowDown'||e.key==='ArrowRight'){ e.preventDefault(); mapMoveFocus(1); }
+    else if(e.key==='ArrowUp'||e.key==='ArrowLeft'){ e.preventDefault(); mapMoveFocus(-1); }
+    else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); mapActivate(); }
+  } else if(scr==='village'){
+    if(e.key>='1' && e.key<='6'){ e.preventDefault(); vilSelect(+e.key); }
+    else if(e.key==='ArrowRight'||e.key==='ArrowDown'){ e.preventDefault(); vilMove(1); }
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){ e.preventDefault(); vilMove(-1); }
+    else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); vilSelect(vilDot); }
   }
   if(e.key==='Escape'){
-    if(current==='quiz'||current==='learn'||current==='village') showScreen('map');
-    else if(current==='map') showScreen('home');
+    if(scr==='quiz'||scr==='learn'||scr==='village') showScreen('map');
+    else if(scr==='map') showScreen('home');
   }
 });
 
