@@ -22,7 +22,7 @@ button{font-family:inherit;cursor:pointer;}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;}
 
 /* 상단바 */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;gap:10px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;}
+.float-ctrls{position:fixed;top:12px;right:12px;z-index:100;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:7px 9px;border-radius:var(--r-full);box-shadow:0 6px 22px rgba(0,0,0,.13);border:1px solid rgba(255,255,255,.6);}
 .topbar .brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:var(--ink);}
 .topbar .brand .logo{width:28px;height:28px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;}
 .topbar .ctrls{display:flex;align-items:center;gap:8px;}
@@ -147,9 +147,7 @@ body.with-bg{background:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2
 </head>
 <body>
 
-<div class="topbar">
-  <div class="brand"><span class="logo">점</span><span data-i18n="app.title">점자 탐험</span></div>
-  <div class="ctrls">
+<div class="float-ctrls">
     <div class="dp-wrap">
       <button class="chip-btn" id="btn-dotpad" aria-label="DotPad 연결" aria-haspopup="true">
         <span class="dot"></span><span data-i18n="bt.connect">DotPad 연결</span>
@@ -164,7 +162,6 @@ body.with-bg{background:url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2
       <button id="seg-ko">한</button>
       <button id="seg-en">EN</button>
     </div>
-  </div>
 </div>
 
 <main>
