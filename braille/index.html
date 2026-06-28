@@ -296,6 +296,8 @@ let LANG = 'ko';
 try { const s = localStorage.getItem('braille_lang'); if (s==='ko'||s==='en') LANG = s; } catch(e){}
 const I18N = {
   'ui.back':{ko:'뒤로',en:'Back'},
+  'nav.home':{ko:'점자 탐험 게임입니다. 탐험을 시작하려면 탐험 시작 버튼을 누르세요.',en:'Dot Braille game. Press the Start button to begin.'},
+  'nav.map':{ko:'점자 세계입니다. 위아래 화살표나 닷패드 패닝키로 단계를 이동하고, 엔터나 선택 키로 들어가세요.',en:'Braille World. Use up and down arrows or the DotPad panning keys to move between stages, then Enter to select.'},
   'app.title':{ko:'점자 탐험',en:'Dot Braille'},
   'bt.connect':{ko:'DotPad 연결',en:'Connect DotPad'},
   'bt.connected':{ko:'DotPad 연결됨',en:'DotPad connected'},
@@ -406,6 +408,7 @@ function playFeedbackSound(correct){
 
 /* ========== DotPad SDK (동적 로드 · 없어도 게임 동작) ========== */
 let sdk=null, scanner=null, dotpadConnected=false;
+let KeyCodes=null, DataCodes=null;
 async function ensureSdk(){
   if(sdk) return true;
   // SDK 위치를 두 곳 다 시도 (braille/dotpad-sdk/ 또는 braille/ 바로 아래)
@@ -415,6 +418,9 @@ async function ensureSdk(){
       const mod = await import(p);
       sdk = new mod.DotPadSDK();
       scanner = new mod.DotPadScanner();
+      KeyCodes = mod.KeyCodes; DataCodes = mod.DataCodes;
+      // 패닝키·기능키 입력을 게임으로 전달 (검증된 robo77 패턴)
+      try{ sdk.setCallBack(onDpMessage, (device, keyCode)=>handleDotPadKey(keyCode)); }catch(e){ console.warn('setCallBack 등록 실패:', e); }
       return true;
     }catch(e){ /* 다음 경로 시도 */ }
   }
@@ -509,6 +515,9 @@ function showScreen(id){
   document.body.classList.toggle('with-bg', ['map','village','learn','quiz'].includes(id));
   const _bb=document.getElementById('btn-back'); if(_bb) _bb.hidden = !(id==='map'||id==='quiz');
   window.scrollTo({top:0});
+  // 화면 진입 음성 안내 (village/learn/quiz/result는 자체 안내가 있어 제외)
+  if(id==='map') speak(t('nav.map'));
+  else if(id==='home') speak(t('nav.home'));
 }
 
 /* ========== 레벨 맵 ========== */
@@ -660,7 +669,36 @@ function finishQuiz(){
   const titleKey = c>=tot-1?'res.title.perfect':c>=tot*0.6?'res.title.good':'res.title.try';
   document.getElementById('res-title').textContent = t(titleKey);
   showScreen('result');
-  speak(t(titleKey));
+  const scoreMsg = LANG==='en'
+    ? (t(titleKey)+'. '+c+' out of '+tot+' correct. '+stars+(stars===1?' star.':' stars.'))
+    : (t(titleKey)+'. '+tot+'문제 중 '+c+'개 정답. 별 '+stars+'개.');
+  speak(scoreMsg);
+}
+
+/* ========== DotPad 패닝키 입력 ========== */
+// 연결 상태 메시지 콜백 (해제 감지 시 UI 갱신)
+function onDpMessage(device, code, data){
+  try{ if(DataCodes && code===DataCodes.Disconnected){ dotpadConnected=false; updateDpUI(); } }catch(e){}
+}
+// 패닝키/기능키 → 화면별 동작으로 라우팅
+// 패닝 오른쪽=다음, 왼쪽=이전, 전체(가운데)=현재 내용 다시 듣기, 기능키=선택/확인
+function handleDotPadKey(keyCode){
+  if(!KeyCodes) return;
+  const NEXT = keyCode===KeyCodes.PanningRight;
+  const PREV = keyCode===KeyCodes.PanningLeft;
+  const READ = keyCode===KeyCodes.PanningAll;
+  const PICK = keyCode===KeyCodes.KeyFunction1 || keyCode===KeyCodes.KeyFunction4;
+  if(current==='quiz' && quiz && !quiz.locked){
+    if(NEXT) moveFocus(quiz.focusIdx+1);
+    else if(PREV) moveFocus(quiz.focusIdx-1);
+    else if(READ) speak(t('quiz.q'));
+    else if(PICK){ const b=document.querySelector('#quiz-opts .opt[data-i="'+quiz.focusIdx+'"]'); if(b) b.click(); }
+  } else if(current==='learn'){
+    if(NEXT) document.getElementById('learn-next').click();
+    else if(PREV) document.getElementById('learn-prev').click();
+    else if(READ||PICK) speak(jamoSpeak(learnSet[learnIdx]));
+  }
+  // map(점자 세계)·village(점 마을) 패닝키는 다음 단계에서 연결
 }
 
 /* ========== 키보드 ========== */
