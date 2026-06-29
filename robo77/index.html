@@ -3859,6 +3859,7 @@ window._secretLogoClick = function() {
 // ── Google TTS ──────────────────────────────────────────────
 let _gQueue = [];
 let _gCurrent = null;
+let _gTok = 0;
 
 function _gSplitText(text, maxLen) {
   if (text.length <= maxLen) return [text];
@@ -3877,28 +3878,27 @@ function _gSplitText(text, maxLen) {
   return parts.filter(p => p);
 }
 
-function _gPlay(queue, onEnd) {
+function _gPlay(queue, onEnd, tok, isRetry) {
+  if (tok !== _gTok) return;
   if (!queue.length) { if (onEnd) onEnd(); return; }
-  const seg = queue.shift();
-  // Vercel 서버리스 프록시 경유 (Google 직접 호출은 차단됨)
-  const url = '/api/tts?q=' + encodeURIComponent(seg) + '&tl=' + (LANG === 'en' ? 'en' : 'ko');
-  const audio = new Audio(url);
+  var seg = queue[0];
+  var url = '/api/tts?q=' + encodeURIComponent(seg) + '&tl=' + (LANG === 'en' ? 'en' : 'ko');
+  var audio = new Audio(url);
   _gCurrent = audio;
-  let errorFired = false;
-  const onFail = () => {
-    if (errorFired) return;
-    errorFired = true;
-    console.warn('[Google TTS] 재생 실패 — 브라우저 음성으로 자동 전환합니다.');
-    var _remain = [seg].concat(queue).join(' ');
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      var _u = new SpeechSynthesisUtterance(_remain);
-      applyTtsVoice(_u);
-      if (onEnd) _u.onend = onEnd;
-      window.speechSynthesis.speak(_u);
-    } else { if (onEnd) onEnd(); }
+  var done = false;
+  var onFail = function() {
+    if (done || tok !== _gTok) return; done = true;
+    if (!isRetry) { setTimeout(function(){ _gPlay(queue, onEnd, tok, true); }, 250); return; }
+    var inF = false; try { inF = window.self !== window.top; } catch(e) { inF = true; }
+    var rest = queue.slice(1);
+    if (inF || !window.speechSynthesis) { _gPlay(rest, onEnd, tok, false); return; }
+    window.speechSynthesis.cancel();
+    var _u = new SpeechSynthesisUtterance([seg].concat(rest).join(' '));
+    applyTtsVoice(_u);
+    if (onEnd) _u.onend = onEnd;
+    window.speechSynthesis.speak(_u);
   };
-  audio.onended = () => _gPlay(queue, onEnd);
+  audio.onended = function() { if (done || tok !== _gTok) return; done = true; _gPlay(queue.slice(1), onEnd, tok, false); };
   audio.onerror = onFail;
   audio.play().catch(onFail);
 }
@@ -3915,14 +3915,17 @@ function showGoogleTTSError() {
 }
 
 function _stopGoogleTTS() {
-  if (_gCurrent) { _gCurrent.pause(); _gCurrent.src = ''; _gCurrent = null; }
+  _gTok++;
+  if (_gCurrent) { try{_gCurrent.pause(); _gCurrent.src = '';}catch(e){} _gCurrent = null; }
   _gQueue = [];
+  try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
 }
 
 function speakGoogle(text, onEnd) {
   _stopGoogleTTS();
+  var tok = _gTok;
   _gQueue = _gSplitText(text, 190);
-  _gPlay([..._gQueue], onEnd);
+  _gPlay(_gQueue.slice(), onEnd, tok, false);
 }
 
 // ── 통합 speak() ─────────────────────────────────────────────
