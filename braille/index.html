@@ -378,16 +378,17 @@ function pickVoice(){
   const want = LANG==='en' ? 'en' : 'ko';
   return _voices.find(v=>v.lang && v.lang.toLowerCase().startsWith(want)) || null;
 }
+var _bAudio=null,_bTok=0;
+function _bSplit(s,m){if(s.length<=m)return[s];var p=[],r=s;while(r.length>m){var c=m;for(var sep of ['. ','! ','? ','\n',', ',' ']){var i=r.lastIndexOf(sep,m);if(i>m*0.4){c=i+sep.length;break;}}p.push(r.slice(0,c).trim());r=r.slice(c).trim();}if(r)p.push(r);return p.filter(function(x){return x;});}
+function _bSpeakSynth(text){try{if(!('speechSynthesis' in window))return;window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.lang=LANG==='en'?'en-US':'ko-KR';var v=pickVoice();if(v)u.voice=v;u.rate=1.02;window.speechSynthesis.speak(u);}catch(e){}}
+function _bPlay(q,tok){if(tok!==_bTok)return;if(!q.length){_bAudio=null;return;}var seg=q.shift();var a=new Audio('/api/tts?q='+encodeURIComponent(seg)+'&tl='+(LANG==='en'?'en':'ko'));_bAudio=a;var f=false;var onF=function(){if(f||tok!==_bTok)return;f=true;_bSpeakSynth([seg].concat(q).join(' '));};a.onended=function(){if(tok===_bTok)_bPlay(q,tok);};a.onerror=onF;a.play().catch(onF);}
 function speak(text){
-  if(!('speechSynthesis' in window) || !text) return;
-  try{
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = LANG==='en' ? 'en-US' : 'ko-KR';
-    const v = pickVoice(); if(v) u.voice = v;
-    u.rate = 1.02;
-    window.speechSynthesis.speak(u);
-  }catch(e){}
+  if(!text)return;
+  var _inFrame=false;try{_inFrame=window.self!==window.top;}catch(e){_inFrame=true;}
+  _bTok++;var tok=_bTok;
+  if(_bAudio){try{_bAudio.pause();}catch(e){}_bAudio=null;}
+  if('speechSynthesis' in window){try{window.speechSynthesis.cancel();}catch(e){}}
+  if(_inFrame){_bPlay(_bSplit(String(text),190),tok);}else{_bSpeakSynth(String(text));}
 }
 // 자모를 읽어줄 텍스트
 function jamoSpeak(item){ return LANG==='en' ? item.en : item.ko; }
