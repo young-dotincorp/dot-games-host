@@ -3881,7 +3881,7 @@ function _gPlay(queue, onEnd) {
   if (!queue.length) { if (onEnd) onEnd(); return; }
   const seg = queue.shift();
   // Vercel 서버리스 프록시 경유 (Google 직접 호출은 차단됨)
-  const url = '/api/tts?q=' + encodeURIComponent(seg);
+  const url = '/api/tts?q=' + encodeURIComponent(seg) + '&tl=' + (LANG === 'en' ? 'en' : 'ko');
   const audio = new Audio(url);
   _gCurrent = audio;
   let errorFired = false;
@@ -3954,7 +3954,8 @@ function applyTtsVoice(utt) {
   utt.rate = 1.05;
 }
 function speak(text, onEnd) {
-  if (useGoogleTTS) {
+  var _inFrame=false;try{_inFrame=window.self!==window.top;}catch(e){_inFrame=true;}
+  if (useGoogleTTS || _inFrame) {
     speakGoogle(text, onEnd);
     return;
   }
