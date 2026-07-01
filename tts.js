@@ -1,16 +1,22 @@
 /* ============================================================
- * TW_TTS — Dot Games 공용 음성(TTS) 모듈  (표준: 틱택토 패턴)
- *  • /api/tts 서버 오디오를 조각내 순서대로 재생
- *  • 토큰으로 '한 번에 하나만' 보장(새로 말하면 이전 것 자동 중지)
- *  • 오디오 실패 시 speechSynthesis 폴백 — 단, iframe(임베드)에선 기본 차단
- *  • 화면 숨김/닫힘 시 자동 정지
+ * TW_TTS v2 — Dot Games 공용 음성(TTS) 모듈  (한국어/영어 이중언어)
+ *  로보77의 검증된 고급 TTS 로직을 일반화한 표준 모듈.
  *
- *  사용법(게임 쪽):
- *    <script src="/tts.js"></script>            // dot-games-host 루트에 두기
- *    TW_TTS.setEnabled(soundOn);                 // 소리 on/off 상태 전달
- *    TW_TTS.speak("안내 문구");                    // 말하기
- *    TW_TTS.stop();                              // 즉시 멈추기
- *  ※ 게임의 기존 speak(t)는 → function speak(t){ if(soundOn) TW_TTS.speak(t); } 로 얇게 감싸면 됩니다.
+ *  핵심:
+ *   • /api/tts?q=..&tl=ko|en  서버 음성을 조각내 순서대로 재생(언어별)
+ *   • 한 번에 하나만(토큰) — 새로 말하면 이전 것 자동 중지
+ *   • 실패 시 1회 재시도 → 그래도 실패면: iframe/브라우저음성 불가 시 다음 조각으로,
+ *     최상위 창에선 브라우저 음성(언어별 voice)으로 폴백
+ *   • 완료 콜백(onEnd) 지원 / 화면 숨김·닫힘 시 자동 정지
+ *
+ *  사용법:
+ *    <script src="/tts.js"></script>
+ *    TW_TTS.setLang('ko'|'en');            // 게임 언어에 맞춰 (기본 ko)
+ *    TW_TTS.setEnabled(soundOn);           // 소리 on/off
+ *    TW_TTS.speak("문구");                  // 말하기 (현재 언어)
+ *    TW_TTS.speak("Hello", {lang:'en', onEnd:fn});   // 언어/콜백 지정
+ *    TW_TTS.speak("문구", fn);              // (text, onEnd) 형태도 허용
+ *    TW_TTS.stop();
  * ============================================================ */
 (function () {
   "use strict";
@@ -21,37 +27,49 @@
     maxLen: 190,
     rate: 1.05,
     pitch: 1.0,
-    lang: "ko-KR",
-    // iframe(임베드) 안에서는 브라우저가 speechSynthesis를 막는 경우가 많아 기본 차단.
-    // 최상위 창(직접 접속)에서는 폴백 허용.
-    allowSpeechFallback: (window.self === window.top)
+    serverFirst: true,          // 서버 음성 우선(표준). false면 최상위 창에서 브라우저 음성 우선
+    allowSpeechFallback: true,  // 브라우저 음성 폴백 허용(iframe에선 자동 비활성)
+    retry: true                 // 서버 오디오 1회 재시도
   };
-
   var enabled = true;
-  var koVoice = null;
-  var _a = null;    // 현재 재생 중인 Audio
-  var _tok = 0;     // 중복 재생 차단용 토큰
+  var lang = "ko";
+  var koVoice = null, enVoice = null;
+  var _cur = null, _tok = 0;
 
-  var NOV = ['Eddy','Flo','Grandma','Grandpa','Reed','Rocko','Sandy','Shelley','Bubbles','Jester','Superstar','Trinoids','Bells','Boing','Bahh','Wobble','Cellos','Organ','Zarvox','Whisper','Albert','Bad News','Good News','Junior','Kathy','Ralph'];
-  function isNov(v){ return NOV.some(function(x){ return v.name && v.name.indexOf(x) > -1; }); }
-  function isKo(v){ return v.lang && v.lang.toLowerCase().indexOf('ko') === 0; }
+  function inFrame(){ try { return window.self !== window.top; } catch (e) { return true; } }
+  function hasSS(){ return !!(typeof window.speechSynthesis !== "undefined" && window.speechSynthesis); }
+  function voices(){ return (hasSS() ? window.speechSynthesis.getVoices() : []) || []; }
+  function nov(v, list){ return list.some(function (x) { return v.name && v.name.indexOf(x) > -1; }); }
 
-  function pickVoice(){
-    if (!('speechSynthesis' in window)) return;
-    var vs = speechSynthesis.getVoices();
-    if (!vs || !vs.length) return;
-    var v = vs.find(function(x){ return isKo(x) && ['Yuna','유나','Heami','SunHi'].some(function(n){ return x.name && x.name.indexOf(n) > -1; }); })
-         || vs.find(function(x){ return isKo(x) && x.localService && !isNov(x); })
-         || vs.find(function(x){ return isKo(x) && x.name && x.name.indexOf('Google 한국') > -1; })
-         || vs.find(function(x){ return isKo(x) && !isNov(x); })
-         || vs.find(isKo);
+  var KO_NOV = ['Eddy','Flo','Grandma','Grandpa','Reed','Rocko','Sandy','Shelley','Bubbles','Jester','Superstar','Trinoids','Bells','Boing','Bahh','Wobble','Cellos','Organ','Zarvox','Whisper','Albert','Bad News','Good News','Junior','Kathy','Ralph'];
+  var EN_NOV = ['Novelty','Bad News','Good News','Bubbles','Jester','Trinoids','Whisper','Zarvox','Albert','Wobble','Bahh','Boing','Bells','Cellos','Deranged','Hysterical','Organ','Superstar'];
+
+  function pickKo(){
+    var vs = voices(); if (!vs.length) return;
+    var ko = function (v) { return v.lang && v.lang.toLowerCase().indexOf('ko') === 0; };
+    var v = vs.find(function (x) { return ko(x) && ['Yuna','유나','Heami','SunHi'].some(function (n) { return x.name && x.name.indexOf(n) > -1; }); })
+         || vs.find(function (x) { return ko(x) && x.localService && !nov(x, KO_NOV); })
+         || vs.find(function (x) { return ko(x) && x.name && x.name.indexOf('Google 한국') > -1; })
+         || vs.find(function (x) { return ko(x) && !nov(x, KO_NOV); })
+         || vs.find(ko);
     if (v) koVoice = v;
   }
-  if ('speechSynthesis' in window) {
+  function pickEn(){
+    var vs = voices(); if (!vs.length) return;
+    if (enVoice && vs.indexOf(enVoice) !== -1) return;
+    var en = function (v) { return v.lang && v.lang.toLowerCase().indexOf('en') === 0; };
+    enVoice =
+      vs.find(function (v) { return en(v) && ['Samantha','Google US English','Microsoft Aria','Microsoft Jenny','Aria','Jenny'].some(function (x) { return v.name && v.name.indexOf(x) > -1; }); })
+      || vs.find(function (v) { return en(v) && v.lang.toLowerCase() === 'en-us' && v.localService && !nov(v, EN_NOV); })
+      || vs.find(function (v) { return en(v) && v.localService && !nov(v, EN_NOV); })
+      || vs.find(function (v) { return en(v) && !nov(v, EN_NOV); })
+      || vs.find(en) || enVoice;
+  }
+  if (hasSS()) {
     try {
-      pickVoice();
-      speechSynthesis.onvoiceschanged = pickVoice;
-      var _vt = 0, _vi = setInterval(function(){ pickVoice(); if (koVoice || ++_vt > 40) clearInterval(_vi); }, 120);
+      pickKo(); pickEn();
+      window.speechSynthesis.onvoiceschanged = function () { pickKo(); pickEn(); };
+      var _vt = 0, _vi = setInterval(function () { pickKo(); pickEn(); if ((koVoice && enVoice) || ++_vt > 40) clearInterval(_vi); }, 120);
     } catch (e) {}
   }
 
@@ -68,62 +86,78 @@
       r = r.slice(cut).trim();
     }
     if (r) out.push(r);
-    return out.filter(function(x){ return x; });
+    return out.filter(function (x) { return x; });
   }
 
-  function fallback(text, tok){
-    if (tok !== _tok) return;
-    if (!CFG.allowSpeechFallback) return;         // iframe 임베드 등에선 폴백 안 함
-    if (!('speechSynthesis' in window)) return;
+  function applyVoice(u, lg){
+    if (lg === 'en') { u.lang = 'en-US'; if (!enVoice) pickEn(); if (enVoice) u.voice = enVoice; }
+    else { u.lang = 'ko-KR'; if (!koVoice) pickKo(); if (koVoice) u.voice = koVoice; }
+    u.rate = CFG.rate; u.pitch = CFG.pitch;
+  }
+
+  function speakSpeech(text, lg, onEnd){
+    if (!hasSS()) { if (onEnd) onEnd(); return; }
     try {
-      if (!koVoice) pickVoice();
-      speechSynthesis.cancel();
+      window.speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
-      u.lang = CFG.lang; u.rate = CFG.rate; u.pitch = CFG.pitch;
-      if (koVoice) u.voice = koVoice;
-      speechSynthesis.speak(u);
-    } catch (e) {}
+      applyVoice(u, lg);
+      if (onEnd) u.onend = onEnd;
+      window.speechSynthesis.speak(u);
+    } catch (e) { if (onEnd) onEnd(); }
   }
 
-  function play(q, tok){
+  function playServer(queue, tok, lg, onEnd, isRetry){
     if (tok !== _tok) return;
-    if (!q.length) { _a = null; return; }
-    var seg = q.shift();
-    var a = new Audio(CFG.endpoint + '?q=' + encodeURIComponent(seg));
-    _a = a;
-    var failed = false;
-    var onFail = function(){ if (failed || tok !== _tok) return; failed = true; fallback([seg].concat(q).join(' '), tok); };
-    a.onended = function(){ if (tok === _tok) play(q, tok); };
+    if (!queue.length) { if (onEnd) onEnd(); return; }
+    var seg = queue[0];
+    var url = CFG.endpoint + '?q=' + encodeURIComponent(seg) + '&tl=' + (lg === 'en' ? 'en' : 'ko');
+    var a = new Audio(url); _cur = a; var done = false;
+    var onFail = function () {
+      if (done || tok !== _tok) return; done = true;
+      if (CFG.retry && !isRetry) { setTimeout(function () { playServer(queue, tok, lg, onEnd, true); }, 250); return; }
+      var rest = queue.slice(1);
+      if (inFrame() || !hasSS() || !CFG.allowSpeechFallback) { playServer(rest, tok, lg, onEnd, false); return; }
+      speakSpeech([seg].concat(rest).join(' '), lg, onEnd);
+    };
+    a.onended = function () { if (done || tok !== _tok) return; done = true; playServer(queue.slice(1), tok, lg, onEnd, false); };
     a.onerror = onFail;
     a.play().catch(onFail);
   }
 
   function stop(){
     _tok++;
-    if (_a) { try { _a.pause(); } catch (e) {} _a = null; }
-    if ('speechSynthesis' in window) { try { speechSynthesis.cancel(); } catch (e) {} }
+    if (_cur) { try { _cur.pause(); _cur.src = ''; } catch (e) {} _cur = null; }
+    if (hasSS()) { try { window.speechSynthesis.cancel(); } catch (e) {} }
   }
 
-  function speak(text){
+  function speak(text, opts){
     if (!enabled || !text) return;
-    _tok++;
-    var tok = _tok;
-    if (_a) { try { _a.pause(); } catch (e) {} _a = null; }
-    if ('speechSynthesis' in window) { try { speechSynthesis.cancel(); } catch (e) {} }
-    play(split(String(text), CFG.maxLen).slice(), tok);
+    var onEnd;
+    if (typeof opts === 'function') { onEnd = opts; opts = {}; }
+    else { opts = opts || {}; onEnd = opts.onEnd; }
+    var lg = (opts.lang === 'en' || opts.lang === 'ko') ? opts.lang : lang;
+    _tok++; var tok = _tok;
+    if (_cur) { try { _cur.pause(); _cur.src = ''; } catch (e) {} _cur = null; }
+    if (hasSS()) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+    if (CFG.serverFirst || inFrame()) {
+      playServer(split(String(text), CFG.maxLen).slice(), tok, lg, onEnd, false);
+    } else {
+      speakSpeech(String(text), lg, onEnd);
+    }
   }
 
-  // 화면이 숨겨지거나 닫힐 때 자동 정지 (임베드 안전)
   try {
     window.addEventListener('pagehide', stop);
-    document.addEventListener('visibilitychange', function(){ if (document.hidden) stop(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); });
   } catch (e) {}
 
   window.TW_TTS = {
     speak: speak,
     stop: stop,
-    setEnabled: function(on){ enabled = !!on; if (!enabled) stop(); },
-    isEnabled: function(){ return enabled; },
-    config: function(opts){ if (opts) for (var k in opts) if (Object.prototype.hasOwnProperty.call(opts, k)) CFG[k] = opts[k]; return CFG; }
+    setLang: function (lg) { if (lg === 'en' || lg === 'ko') lang = lg; },
+    getLang: function () { return lang; },
+    setEnabled: function (on) { enabled = !!on; if (!enabled) stop(); },
+    isEnabled: function () { return enabled; },
+    config: function (o) { if (o) for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) CFG[k] = o[k]; return CFG; }
   };
 })();
