@@ -92,6 +92,7 @@
   <div class="cap">실제 핀 출력 (60×40)</div>
 </div>
 
+<script src="/tts.js"></script>
 <script>
 (function(){
   "use strict";
@@ -116,10 +117,7 @@
   const pin=document.getElementById('pin'), pctx=pin.getContext('2d');
   const cellBtns=[];
 
-  let koVoice=null;
-  function pickVoice(){const vs=speechSynthesis.getVoices();if(!vs||!vs.length)return;const NOV=['Eddy','Flo','Grandma','Grandpa','Reed','Rocko','Sandy','Shelley','Bubbles','Jester','Superstar','Trinoids','Bells','Boing','Bahh','Wobble','Cellos','Organ','Zarvox','Whisper','Albert','Bad News','Good News','Junior','Kathy','Ralph'];const isNov=v=>NOV.some(x=>v.name&&v.name.includes(x));const ko=v=>v.lang&&v.lang.toLowerCase().startsWith('ko');const _v=vs.find(v=>ko(v)&&['Yuna','유나','Heami','SunHi'].some(x=>v.name&&v.name.includes(x)))||vs.find(v=>ko(v)&&v.localService&&!isNov(v))||vs.find(v=>ko(v)&&v.name&&v.name.includes('Google 한국'))||vs.find(v=>ko(v)&&!isNov(v))||vs.find(ko);if(_v)koVoice=_v;}
-  if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;var _vt=0,_vi=setInterval(function(){pickVoice();if(koVoice||++_vt>40)clearInterval(_vi);},120);}
-  var _gQ=[],_gA=null,_gTok=0;function _gSplit(s,m){if(s.length<=m)return[s];var p=[],r=s;while(r.length>m){var c=m;for(var sep of ['. ','! ','? ','\n',', ',' ']){var i=r.lastIndexOf(sep,m);if(i>m*0.4){c=i+sep.length;break;}}p.push(r.slice(0,c).trim());r=r.slice(c).trim();}if(r)p.push(r);return p.filter(function(x){return x;});}function _gFallback(s,tok){if(tok!==_gTok)return;if(!('speechSynthesis' in window))return;try{if(!koVoice)pickVoice();speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(s);u.lang='ko-KR';u.rate=1.05;u.pitch=1.0;if(koVoice)u.voice=koVoice;speechSynthesis.speak(u);}catch(e){}}function _gPlay(q,tok){if(tok!==_gTok)return;if(!q.length){_gA=null;return;}var seg=q.shift();var a=new Audio('/api/tts?q='+encodeURIComponent(seg));_gA=a;var f=false;var onF=function(){if(f||tok!==_gTok)return;f=true;_gFallback([seg].concat(q).join(' '),tok);};a.onended=function(){if(tok===_gTok)_gPlay(q,tok);};a.onerror=onF;a.play().catch(onF);}function speak(t){if(!soundOn||!t)return;_gTok++;var tok=_gTok;if(_gA){try{_gA.pause();}catch(e){}_gA=null;}if('speechSynthesis' in window){try{speechSynthesis.cancel();}catch(e){}}_gQ=_gSplit(String(t),190);_gPlay(_gQ.slice(),tok);}
+  function speak(t){ if(soundOn && window.TW_TTS) TW_TTS.speak(t); }
   function cellSay(v){return v===1?'동그라미':v===2?'엑스':'빈 칸';}
 
   // ---- tactile frame (pin output) ----
@@ -255,7 +253,7 @@
   soundBtn.innerHTML=SVG_VOL;
   soundBtn.addEventListener('click',()=>{soundOn=!soundOn;soundBtn.setAttribute('aria-pressed',String(soundOn));
     soundBtn.innerHTML=soundOn?SVG_VOL:SVG_VOL_OFF;soundBtn.setAttribute('aria-label',soundOn?'음성 켜짐, 누르면 끔':'음성 꺼짐, 누르면 켬');
-    if(soundOn)speak('음성을 켰어요.');else{_gTok++;if(_gA){try{_gA.pause();}catch(e){}_gA=null;}try{speechSynthesis.cancel();}catch(e){}}});
+    if(soundOn)speak('음성을 켰어요.');else{if(window.TW_TTS)TW_TTS.stop();}});
   newBtn.addEventListener('click',newGame);
   dpBtn.addEventListener('click',connectDotPad);
   pinToggle.addEventListener('click',()=>{const on=pinwrap.classList.toggle('show');pinToggle.setAttribute('aria-pressed',String(on));if(on)drawPin();});
