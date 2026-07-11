@@ -3702,6 +3702,18 @@ window.executeSurrender = function() {
     } else {
       ablyChannel.publish('playerLeft', { id: onlineMyId });
     }
+  } else {
+    // 로컬(오프라인) 항복: 사람(플레이어) 탈락 처리 (자연 패배와 동일한 방식)
+    let myIdx = G.players.findIndex(p => p.isMe && !p.eliminated);
+    if (myIdx < 0) myIdx = G.currentPlayerIdx;
+    if (myIdx >= 0 && G.players[myIdx] && !G.players[myIdx].eliminated) {
+      G.players[myIdx].lives = 0;
+      G.players[myIdx].eliminated = true;
+      if (G.currentPlayerIdx === myIdx) {
+        G.currentPlayerIdx = nextPlayerIdx(G, myIdx);
+        G.cardsPlayedThisTurn = 0;
+      }
+    }
   }
 
   // 버튼을 나가기로 전환
@@ -3711,6 +3723,8 @@ window.executeSurrender = function() {
   // 게임 아직 진행 중이면 관전 배너 표시, 아니면 게임오버
   const alive = G.players.filter(p => !p.eliminated);
   if (alive.length <= 1) {
+    if (alive.length === 1 && !G.winner) G.winner = alive[0];
+    G.phase = 'gameover';
     setTimeout(showGameOver, 600);
   } else {
     renderGame();
