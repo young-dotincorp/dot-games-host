@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>닷 77 — Dot Games</title>
 <script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<script src="/tts.js"></script>
 <style>
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -3971,6 +3972,14 @@ function applyTtsVoice(utt) {
   utt.rate = 1.05;
 }
 function speak(text, onEnd) {
+  if (!text) { if (onEnd) onEnd(); return; }
+  // 표준 공용 음성 모듈 사용 — 서버 음성 우선이라 새 탭/임베드 음성이 통일됨
+  if (window.TW_TTS) {
+    try { TW_TTS.setLang(LANG === 'en' ? 'en' : 'ko'); } catch(e){}
+    TW_TTS.speak(String(text), onEnd);
+    return;
+  }
+  // 폴백: 표준 모듈이 로드되지 않았을 때만 기존 경로 사용
   var _inFrame=false;try{_inFrame=window.self!==window.top;}catch(e){_inFrame=true;}
   if (useGoogleTTS || _inFrame) {
     speakGoogle(text, onEnd);
@@ -3985,6 +3994,7 @@ function speak(text, onEnd) {
 }
 
 function cancelSpeak() {
+  try { window.TW_TTS && TW_TTS.stop(); } catch(e){}
   try { _stopGoogleTTS(); } catch(e){}
   try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){}
 }
