@@ -22,8 +22,31 @@
   "use strict";
   if (window.TW_TTS) return;
 
+  // 이 스크립트가 로드된 origin 을 감지해 서버 음성 엔드포인트를 정한다.
+  //   · 같은 도메인에서 로드(내부 게임): 상대경로 "/api/tts" 유지 → 기존과 100% 동일.
+  //   · 다른 도메인에서 로드(커뮤니티 게임이 우리 tts.js 를 절대주소로 로드):
+  //     그 스크립트 도메인의 "/api/tts" 절대경로 사용 → 제출자 도메인엔 서버가
+  //     없어도 우리 음성 서버로 붙어 음성이 정상 동작(우리 /api/tts 는 CORS 허용).
+  //   config({endpoint:...}) 로 수동 지정하면 그 값이 우선.
+  function _selfBase() {
+    try {
+      var s = document.currentScript;
+      if (!s) {
+        var list = document.getElementsByTagName("script");
+        for (var i = list.length - 1; i >= 0; i--) {
+          if (list[i].src && /(^|\/)tts\.js(\?|$)/.test(list[i].src)) { s = list[i]; break; }
+        }
+      }
+      if (s && s.src) {
+        var u = new URL(s.src, window.location.href);
+        if (u.origin && u.origin !== window.location.origin) return u.origin;
+      }
+    } catch (e) {}
+    return "";
+  }
+
   var CFG = {
-    endpoint: "/api/tts",
+    endpoint: _selfBase() + "/api/tts",
     maxLen: 190,
     rate: 1.05,
     pitch: 1.0,
