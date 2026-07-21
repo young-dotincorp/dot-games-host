@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>점자 퀴즈 · DOT BRAILLE</title>
+<style>
+  :root{ --accent:#FF4F00; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#f2ede0;overflow:hidden;}
+  /* 배경: 지금은 그라데이션. assets/bg.webp 주시면 center/cover 로 넣습니다. */
+  .stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:10px 10px 12px;gap:8px;overflow:hidden;
+    background:linear-gradient(rgba(10,8,20,.5),rgba(10,8,20,.68)),radial-gradient(120% 90% at 50% 0%,#3a2f66 0%,#241d45 55%,#140f2a 100%);}
+
+  .status{position:relative;z-index:5;flex:0 0 auto;margin-top:2px;background:rgba(16,12,30,.9);border:2px solid rgba(255,180,90,.55);border-radius:16px;color:#fff6ea;
+    padding:9px 18px;font-size:clamp(14px,2.6vmin,20px);font-weight:800;white-space:nowrap;max-width:94%;display:flex;align-items:center;gap:10px;box-shadow:0 0 18px rgba(255,170,80,.25),0 6px 18px -6px rgba(0,0,0,.7);}
+  .status .dot{width:12px;height:12px;border-radius:50%;background:#d8b98a;flex:0 0 auto;}
+  .status[data-phase="ask"] .dot{background:#FFB44A;}
+  .status[data-phase="right"] .dot{background:#2ecc71;}
+  .status[data-phase="wrong"] .dot{background:#e2504e;}
+  .status[data-phase="over"] .dot{background:#5cc8ff;}
+
+  .hud{position:relative;z-index:5;flex:0 0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;
+    background:rgba(16,12,30,.82);border:1.5px solid rgba(255,180,90,.42);border-radius:999px;padding:8px 18px;font-size:clamp(13px,2.2vmin,17px);font-weight:800;color:#fff6ea;max-width:94%;}
+  .hud b{color:#ffd08a;}
+  .hud-sep{color:#8a7a5a;}
+
+  .quiz-area{flex:1 1 auto;min-height:0;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:min(2.4vmin,18px);}
+
+  /* 점자 카드 (촉각 학습용 크림 카드에 볼록한 점) */
+  .card{background:linear-gradient(160deg,#fbf3e0,#efe2c6);border-radius:22px;padding:min(3.2vmin,22px);
+    box-shadow:0 0 26px rgba(255,190,110,.25),0 16px 36px -16px rgba(0,0,0,.8);border:1px solid rgba(255,220,170,.5);}
+  .cell{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(3,1fr);gap:min(2.4vmin,16px);
+    width:min(34vmin,30vh,190px);aspect-ratio:2/3;}
+  .bdot{border-radius:50%;background:radial-gradient(circle at 35% 30%,#eadcc0,#cdb98f);box-shadow:inset 0 2px 4px rgba(0,0,0,.15);}
+  .bdot.on{background:radial-gradient(circle at 35% 30%,#5a4a30,#241a0c);box-shadow:0 3px 5px rgba(0,0,0,.4),inset 0 2px 3px rgba(255,255,255,.25);}
+
+  .options{display:grid;grid-template-columns:repeat(4,1fr);gap:min(2vmin,12px);width:min(92vw,520px);}
+  .opt{-webkit-appearance:none;appearance:none;border:2px solid rgba(255,190,110,.4);background:rgba(255,255,255,.95);color:#241d10;
+    border-radius:14px;cursor:pointer;padding:min(2.4vmin,16px) 0;font-size:clamp(20px,5vmin,34px);font-weight:900;position:relative;transition:.1s ease;
+    box-shadow:0 5px 13px -6px rgba(0,0,0,.5);}
+  .opt .num{position:absolute;top:5px;left:8px;font-size:clamp(10px,1.7vmin,13px);font-weight:800;color:#b08a4a;}
+  .opt:hover:not(:disabled){transform:translateY(-1px);}
+  .opt.cursor{outline:0;box-shadow:0 0 0 3px #140f2a,0 0 0 6px var(--accent);}
+  .opt.right{background:#2ecc71;color:#fff;border-color:#2ecc71;}
+  .opt.wrong{background:#e2504e;color:#fff;border-color:#e2504e;}
+  .opt:disabled{cursor:default;}
+
+  .controls{position:relative;z-index:6;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:9px;max-width:96vw;}
+  .ctl-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;}
+  .btn{font-family:inherit;font-size:clamp(12px,1.9vmin,15px);font-weight:800;border-radius:13px;border:0;cursor:pointer;background:rgba(255,255,255,.95);color:#241d3a;
+    box-shadow:0 5px 13px -6px rgba(0,0,0,.5);transition:.12s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 13px;line-height:1;}
+  .btn.icon{padding:10px;}
+  .btn:hover{transform:translateY(-1px);}
+  .btn-primary{background:var(--accent);color:#fff;padding:11px 18px;}
+  .btn.dpbtn[data-on="1"]{background:#1F9D55;color:#fff;}
+  .ti{width:19px;height:19px;flex:0 0 auto;display:block;}
+
+  .howto{position:relative;z-index:5;flex:0 0 auto;color:#efe6d4;font-size:clamp(12px,2vmin,15px);font-weight:700;background:rgba(16,12,30,.72);border:1px solid rgba(255,180,90,.4);border-radius:999px;padding:6px 16px;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis;}
+
+  .pinwrap{position:fixed;right:12px;bottom:12px;z-index:7;background:rgba(255,255,255,.96);border-radius:12px;padding:8px;box-shadow:0 8px 20px -8px rgba(0,0,0,.4);display:none;}
+  .pinwrap.show{display:block;}
+  .pinwrap canvas{width:150px;display:block;border-radius:6px;background:#FBF7EE;}
+  .pinwrap .cap{font-size:10px;color:#5a4a7a;text-align:center;margin-top:4px;font-weight:700;}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="status" id="status" role="status" aria-live="assertive" data-phase="ask">
+    <span class="dot" aria-hidden="true"></span><span id="statusText">시작하려면 시작 버튼이나 엔터를 누르세요.</span>
+  </div>
+  <div class="hud" id="hud">
+    <span class="hud-item"><span id="hudQLbl">문제</span> <b id="qN">0</b>/<span id="totN">10</span></span>
+    <span class="hud-sep">·</span>
+    <span class="hud-item"><span id="hudScoreLbl">점수</span> <b id="scoreN">0</b></span>
+  </div>
+  <div class="quiz-area">
+    <div class="card"><div class="cell" id="cell" role="img" aria-label="점자 한 글자"></div></div>
+    <div class="options" id="options" role="group" aria-label="보기. 숫자 1에서 4로 고르세요."></div>
+  </div>
+  <div class="howto" id="howtoText">숫자 1~4 선택 · R 다시 듣기 · H 도움말 · N 새 퀴즈</div>
+  <div class="controls">
+    <div class="ctl-row">
+      <button id="help" class="btn" type="button" aria-label="게임 방법 듣기"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2 -3 3 -3 3"/><path d="M12 17h.01"/></svg><span id="helpLbl">게임 방법</span></button>
+      <button id="repeat" class="btn" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8"/><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5"/></svg><span id="repeatLbl">다시 듣기</span></button>
+      <button id="sound" class="btn icon" aria-pressed="true" aria-label="음성 켜짐, 누르면 끔" type="button"></button>
+      <button id="dpBtn" class="btn dpbtn" data-on="0" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8l10 8l-5 4v-16l5 4l-10 8"/></svg><span id="dpLbl">닷패드 연결</span></button>
+      <button id="pinToggle" class="btn icon" type="button" aria-pressed="false" aria-label="닷패드 핀 화면 미리보기"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h.01M12 5h.01M19 5h.01M5 12h.01M12 12h.01M19 12h.01M5 19h.01M12 19h.01M19 19h.01"/></svg></button>
+    </div>
+    <button id="newgame" class="btn btn-primary" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/></svg><span id="newLbl">시작</span></button>
+  </div>
+</div>
+
+<div class="pinwrap" id="pinwrap"><canvas id="pin" aria-hidden="true"></canvas><div class="cap">실제 핀 출력 (60×40)</div></div>
+
+<script src="/tts.js"></script>
+<script>
+(function(){
+  "use strict";
+  const N=60,M=40, TOTAL=10;
+  // 표준 영문 점자 (점 번호 1~6). 1,2,3 = 왼쪽 위→아래, 4,5,6 = 오른쪽 위→아래.
+  const BRAILLE={a:[1],b:[1,2],c:[1,4],d:[1,4,5],e:[1,5],f:[1,2,4],g:[1,2,4,5],h:[1,2,5],i:[2,4],j:[2,4,5],
+    k:[1,3],l:[1,2,3],m:[1,3,4],n:[1,3,4,5],o:[1,3,5],p:[1,2,3,4],q:[1,2,3,4,5],r:[1,2,3,5],s:[2,3,4],t:[2,3,4,5],
+    u:[1,3,6],v:[1,2,3,6],w:[2,4,5,6],x:[1,3,4,6],y:[1,3,4,5,6],z:[1,3,5,6]};
+  const LETTERS=Object.keys(BRAILLE);
+  const KO={a:'에이',b:'비',c:'씨',d:'디',e:'이',f:'에프',g:'지',h:'에이치',i:'아이',j:'제이',k:'케이',l:'엘',m:'엠',n:'엔',o:'오',p:'피',q:'큐',r:'알',s:'에스',t:'티',u:'유',v:'브이',w:'더블유',x:'엑스',y:'와이',z:'제트'};
+  const say=(L)=>LANG==='en'?L.toUpperCase():KO[L];
+  const B_NUM=0x3C,B_SP=0x00,B_DIG={'0':0x35,'1':0x01,'2':0x03,'3':0x09,'4':0x19,'5':0x11,'6':0x0B,'7':0x1B,'8':0x13,'9':0x0A};
+  const DOTPOS={1:[22,10],2:[22,20],3:[22,30],4:[38,10],5:[38,20],6:[38,30]};
+
+  const params=new URLSearchParams(location.search);
+  if(params.get('embed')==='1') document.body.classList.add('embed');
+  const LANG=(params.get('lang')==='en')?'en':'ko';
+  const S=(ko,en)=>LANG==='en'?en:ko;
+
+  let letter='a', options=[], cursor=0, qNum=0, score=0, over=true, busy=false, soundOn=true, firstGame=true, lastL='';
+  let sdk=null,scanner=null,KeyCodes=null,DataCodes=null,dpConnected=false, ac=null;
+
+  const statusEl=document.getElementById('status'), statusText=document.getElementById('statusText');
+  const cellEl=document.getElementById('cell'), optionsEl=document.getElementById('options');
+  const soundBtn=document.getElementById('sound'), newBtn=document.getElementById('newgame'), dpBtn=document.getElementById('dpBtn');
+  const helpBtn=document.getElementById('help'), repeatBtn=document.getElementById('repeat'), pinToggle=document.getElementById('pinToggle'), pinwrap=document.getElementById('pinwrap');
+  const pin=document.getElementById('pin'), pctx=pin.getContext('2d');
+  const dotEls=[], optEls=[];
+
+  function speak(t){ if(soundOn && window.TW_TTS) TW_TTS.speak(t); }
+  if(window.TW_TTS){ TW_TTS.setLang(LANG); }
+  function ensureAudio(){ if(!ac){ try{ ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(ac&&ac.state==='suspended'){ try{ac.resume();}catch(e){} } }
+  function beep(freq,dur,type){ if(!soundOn||!ac)return; try{const o=ac.createOscillator(),g=ac.createGain(),t0=ac.currentTime;
+    o.type=type||'sine';o.frequency.value=freq;g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(0.28,t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);o.connect(g);g.connect(ac.destination);o.start(t0);o.stop(t0+dur+0.02);}catch(e){} }
+
+  // ---- tactile frame (큰 점자 한 글자) ----
+  function disk(set,cx,cy,r){ for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++) if(dx*dx+dy*dy<=r*r) set(cx+dx,cy+dy); }
+  function buildFrame(){
+    const g=Array.from({length:M},()=>new Uint8Array(N));
+    const set=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x>=0&&x<N&&y>=0&&y<M)g[y][x]=1;};
+    for(const d of (BRAILLE[letter]||[])){ const [cx,cy]=DOTPOS[d]; disk(set,cx,cy,4); }
+    return g;
+  }
+  const EA=[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3]];
+  function encodeFrame(g){let h='';for(let s=0;s<10;s++)for(let n=0;n<30;n++){let b=0;
+    for(let m=0;m<8;m++){const u=EA[m][0],p=EA[m][1];if(g[s*4+p][n*2+u])b|=(1<<m);}h+=(b<16?'0':'')+b.toString(16);}return h;}
+  function brailleByte(L){ let b=0; for(const d of (BRAILLE[L]||[])) b|=(1<<(d-1)); return b; }
+  function brailleLine(){ const by=[brailleByte(letter)]; while(by.length<20)by.push(B_SP);
+    return by.slice(0,20).map(b=>(b<16?'0':'')+b.toString(16)).join(''); }
+  function drawPin(){if(!pinwrap.classList.contains('show'))return;
+    const Wp=pin.clientWidth||150,gap=Wp/N,cssH=gap*M,dpr=window.devicePixelRatio||1;const frame=buildFrame();
+    pin.style.height=cssH+'px';pin.width=Math.round(Wp*dpr);pin.height=Math.round(cssH*dpr);pctx.setTransform(dpr,0,0,dpr,0,0);pctx.clearRect(0,0,Wp,cssH);
+    const rOn=gap*0.34,rOff=gap*0.13;
+    for(let y=0;y<M;y++)for(let x=0;x<N;x++){const px=x*gap+gap/2,py=y*gap+gap/2;
+      pctx.fillStyle=frame[y][x]?'#211d16':'#d9d3c6';pctx.beginPath();pctx.arc(px,py,frame[y][x]?rOn:rOff,0,6.2832);pctx.fill();}}
+  function renderPad(){ if(pinwrap.classList.contains('show')) drawPin();
+    if(!dpConnected||!sdk)return;try{sdk.displayGraphicData(encodeFrame(buildFrame()));sdk.displayTextData(brailleLine());}catch(e){}}
+
+  // ---- screen ----
+  function buildCell(){ cellEl.innerHTML=''; dotEls.length=0;
+    const order=[1,4,2,5,3,6]; // 화면 배치: 왼1 오4 / 왼2 오5 / 왼3 오6
+    for(const d of order){ const el=document.createElement('div'); el.className='bdot'; el.dataset.d=d; cellEl.appendChild(el); dotEls.push(el); } }
+  function renderCell(){ const on=new Set(BRAILLE[letter]||[]); for(const el of dotEls) el.classList.toggle('on', on.has(+el.dataset.d)); }
+  function buildOptions(){ optionsEl.innerHTML=''; optEls.length=0;
+    for(let i=0;i<4;i++){ const b=document.createElement('button'); b.className='opt'; b.type='button'; b.dataset.i=i;
+      b.addEventListener('click',()=>{ if(over){newGame();return;} answer(i); }); optionsEl.appendChild(b); optEls.push(b); } }
+  function renderOptions(){ for(let i=0;i<4;i++){ const b=optEls[i];
+      b.innerHTML='<span class="num" aria-hidden="true">'+(i+1)+'</span>'+(options[i]?options[i].toUpperCase():'');
+      b.className='opt'+(i===cursor&&!over&&!busy?' cursor':''); b.disabled=over||busy;
+      b.setAttribute('aria-label',(i+1)+'번 '+(options[i]?say(options[i]):'')); } }
+  function render(){ renderCell(); renderOptions(); document.getElementById('qN').textContent=qNum; document.getElementById('scoreN').textContent=score; drawPin(); renderPad(); }
+  function setStatus(t,phase,doSpeak){ statusText.textContent=t; if(phase)statusEl.dataset.phase=phase; if(doSpeak!==false)speak(t); }
+
+  function tutorial(){ speak(S(
+    '점자 퀴즈예요. 점자로 된 글자 하나를 보여드릴게요. 닷패드에서는 점이 볼록하게 올라오니 손끝으로 읽어 보세요. 그다음 네 개의 보기 중에서 맞는 글자를 고르면 돼요. 숫자 1에서 4, 또는 닷패드 F1에서 F4로 고릅니다. 맞히면 점수가 올라가요. 다시 듣고 싶으면 알, 도움말은 에이치예요. 모두 열 문제예요.',
+    'This is a braille quiz. I will show one braille letter. On the DotPad the dots rise up, so read it with your fingertips. Then choose the correct letter from four options. Pick with number keys 1 to 4, or F1 to F4 on the DotPad. Correct answers score points. Press R to hear again and H for help. Ten questions in total.'
+  )); }
+  function askText(){ return S('이 점자는 무슨 글자일까요? ','What letter is this braille? ')
+      + options.map((o,i)=>(i+1)+'번 '+say(o)).join(', ') + '.'; }
+  function speakQuestion(){ speak(askText()); }
+
+  function nextQuestion(){ qNum++;
+    do { letter=LETTERS[(Math.random()*LETTERS.length)|0]; } while(letter===lastL); lastL=letter;
+    const opts=new Set([letter]); while(opts.size<4){ opts.add(LETTERS[(Math.random()*LETTERS.length)|0]); }
+    options=Array.from(opts); for(let i=options.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[options[i],options[j]]=[options[j],options[i]];}
+    cursor=options.indexOf(letter)>=0?0:0; busy=false; over=false;
+    statusEl.dataset.phase='ask'; statusText.textContent=S(qNum+'번 문제.','Question '+qNum+'.');
+    render();
+    speak(S(qNum+'번 문제. ','Question '+qNum+'. ')+askText());
+  }
+  function answer(i){ if(over||busy)return; ensureAudio(); const pick=options[i]; if(!pick)return; busy=true;
+    if(pick===letter){ score++; beep(680,0.12);setTimeout(()=>beep(880,0.16),110);
+      optEls[i].classList.add('right');
+      setStatus(S('정답! '+say(letter)+'이에요.','Correct! It is '+say(letter)+'.'),'right');
+    } else { beep(180,0.22,'triangle');
+      optEls[i].classList.add('wrong'); const ci=options.indexOf(letter); if(ci>=0)optEls[ci].classList.add('right');
+      setStatus(S('아쉬워요. 정답은 '+say(letter)+'이에요.','Not quite. The answer is '+say(letter)+'.'),'wrong');
+    }
+    document.getElementById('scoreN').textContent=score;
+    setTimeout(()=>{ if(qNum>=TOTAL) finish(); else nextQuestion(); }, 1700);
+  }
+  function finish(){ over=true; busy=true; for(const b of optEls)b.disabled=true;
+    beep(523,0.14);setTimeout(()=>beep(659,0.14),150);setTimeout(()=>beep(784,0.26),300);
+    setStatus(S('퀴즈 끝! 열 문제 중 '+score+'개 맞혔어요. 다시 하려면 시작을 누르세요.','Quiz done! You got '+score+' out of 10. Press start to play again.'),'over'); }
+
+  function newGame(){ ensureAudio(); qNum=0; score=0; over=false; busy=false; lastL='';
+    document.getElementById('scoreN').textContent='0';
+    if(firstGame){ firstGame=false; tutorial(); setTimeout(nextQuestion, 200); } else nextQuestion(); }
+  function moveCursor(d){ if(over||busy)return; cursor=(cursor+d+4)%4; renderOptions(); speak((cursor+1)+S('번, ','. ')+say(options[cursor])); }
+
+  // ---- DotPad ----
+  function handleDotPadKey(keyCode){ if(!KeyCodes)return; document.body.classList.add('kbd');
+    if(over){ if(keyCode===KeyCodes.KeyFunction1||keyCode===KeyCodes.LPF1) newGame(); return; }
+    switch(keyCode){
+      case KeyCodes.KeyFunction1: answer(0); break; case KeyCodes.KeyFunction2: answer(1); break;
+      case KeyCodes.KeyFunction3: answer(2); break; case KeyCodes.KeyFunction4: answer(3); break;
+      case KeyCodes.PanningAll: tutorial(); break;
+      case KeyCodes.PanningLeft: case KeyCodes.PanningRight: speakQuestion(); break;
+      case KeyCodes.LPF1: newGame(); break;
+    } }
+  function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+  async function loadSDK(){ try{ const m=await import('./dotpad-sdk/DotPadSDK-3.0.0.js');
+    KeyCodes=m.KeyCodes;DataCodes=m.DataCodes;sdk=new m.DotPadSDK();scanner=new m.DotPadScanner();
+    sdk.setCallBack((device,code)=>{ if(code===DataCodes.Connected){dpConnected=true;setDpUI(true);
+        setTimeout(()=>{try{sdk.displayAllDown();setTimeout(renderPad,300);}catch(e){}},200);}
+      else if(code===DataCodes.Disconnected){dpConnected=false;setDpUI(false);}},
+      (device,keyCode)=>handleDotPadKey(keyCode)); return true;}catch(e){return false;} }
+  function setDpUI(on){ dpBtn.dataset.on=on?'1':'0'; document.getElementById('dpLbl').textContent=on?S('닷패드 연결됨','DotPad connected'):S('닷패드 연결','Connect DotPad');
+    if(on)speak(S('닷패드가 연결됐어요. 점자를 손끝으로 읽고 F1에서 F4로 답을 고르세요.','DotPad connected. Read the braille with your fingertips and answer with F1 to F4.')); }
+  async function connectDotPad(){
+    if(!navigator.bluetooth){ setStatus(S('이 브라우저는 블루투스를 지원하지 않아요. 크롬이나 엣지에서 열어 주세요.','This browser does not support Bluetooth. Please use Chrome or Edge.'),'',true); return; }
+    if(!sdk){ loadSDK(); setStatus(S('닷패드 준비 중이에요. 잠시 후 한 번 더 눌러 주세요.','Preparing DotPad. Please tap once more in a moment.'),'',true); return; }
+    try{ let dev=null;
+      try{ dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'DotPad'},{namePrefix:'KM2-'},{namePrefix:'KM3-'},{namePrefix:'DPK'},{namePrefix:'DMI'}],optionalServices:[scanner.DOTPAD_SERVICE]}); }
+      catch(e){ if(e.name==='NotFoundError'){ dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:[scanner.DOTPAD_SERVICE]}); } else throw e; }
+      if(dev){ setStatus(S('닷패드에 연결 중…','Connecting to DotPad…'),'',false); await sdk.connectBleDevice(dev); }
+    }catch(e){ if(e.name!=='NotFoundError') setStatus(S('닷패드 연결 실패: ','DotPad connection failed: ')+(e.message||e.name),'',false); }
+  }
+
+  // ---- input ----
+  document.addEventListener('keydown',(ev)=>{ const k=ev.key; document.body.classList.add('kbd');
+    if(k>='1'&&k<='4'){ if(over){newGame();}else{answer(parseInt(k,10)-1);} ev.preventDefault(); return; }
+    if(k==='ArrowLeft'||k==='ArrowUp'){moveCursor(-1);ev.preventDefault();return;}
+    if(k==='ArrowRight'||k==='ArrowDown'){moveCursor(1);ev.preventDefault();return;}
+    if(k==='Enter'||k===' '){ if(over){newGame();}else{answer(cursor);} ev.preventDefault(); return; }
+    if(k==='r'||k==='R'){ speakQuestion(); ev.preventDefault(); return; }
+    if(k==='h'||k==='H'||k==='?'){ tutorial(); ev.preventDefault(); return; }
+    if(k==='n'||k==='N'){ newGame(); ev.preventDefault(); return; }
+  });
+
+  const SVG_VOL='<svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8"/><path d="M17.7 5a9 9 0 0 1 0 14"/><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5"/></svg>';
+  const SVG_VOL_OFF='<svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 1.912 4.934m-1.377 2.602a5 5 0 0 1 -.535 .464"/><path d="M17.7 5a9 9 0 0 1 2.362 11.086m-1.676 2.299a9 9 0 0 1 -.686 .615"/><path d="M9.069 5.054l.431 -.554a.8 .8 0 0 1 1.5 .5v2m0 4v8a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l1.294 -1.664"/><path d="M3 3l18 18"/></svg>';
+  soundBtn.innerHTML=SVG_VOL;
+  soundBtn.addEventListener('click',()=>{ soundOn=!soundOn; soundBtn.setAttribute('aria-pressed',String(soundOn));
+    soundBtn.innerHTML=soundOn?SVG_VOL:SVG_VOL_OFF; soundBtn.setAttribute('aria-label',soundOn?S('음성 켜짐, 누르면 끔','Sound on, tap to mute'):S('음성 꺼짐, 누르면 켬','Sound off, tap to unmute'));
+    if(soundOn)speak(S('소리를 켰어요.','Sound on.')); else if(window.TW_TTS)TW_TTS.stop(); });
+  newBtn.addEventListener('click',newGame);
+  helpBtn.addEventListener('click',tutorial);
+  repeatBtn.addEventListener('click',speakQuestion);
+  dpBtn.addEventListener('click',connectDotPad);
+  pinToggle.addEventListener('click',()=>{const on=pinwrap.classList.toggle('show');pinToggle.setAttribute('aria-pressed',String(on));if(on)drawPin();});
+  window.addEventListener('resize',()=>{clearTimeout(window.__rz);window.__rz=setTimeout(drawPin,150);});
+  window.getDotpadFrame=()=>encodeFrame(buildFrame());
+
+  if(LANG==='en'){ document.documentElement.lang='en'; document.title='DOT BRAILLE';
+    document.getElementById('newLbl').textContent='Start'; document.getElementById('helpLbl').textContent='How to play';
+    document.getElementById('repeatLbl').textContent='Repeat'; document.getElementById('dpLbl').textContent='Connect DotPad';
+    document.getElementById('hudQLbl').textContent='Q'; document.getElementById('hudScoreLbl').textContent='Score';
+    document.getElementById('howtoText').textContent='Keys 1-4 answer · R repeat · H help · N new';
+    setStatus('Press start or Enter to begin.','ask',false); }
+  else { setStatus('시작하려면 시작 버튼이나 엔터를 누르세요.','ask',false); }
+  buildCell(); buildOptions(); letter='a'; options=['a','b','c','d']; render(); loadSDK();
+  if(params.get('preview')==='1'){ pinwrap.classList.add('show'); pinToggle.setAttribute('aria-pressed','true'); drawPin(); }
+  document.addEventListener('pointerdown',()=>document.body.classList.remove('kbd'));
+  document.body.addEventListener('pointerdown',function once(){ ensureAudio(); try{speechSynthesis.resume();}catch(e){} document.body.removeEventListener('pointerdown',once); },{once:true});
+})();
+</script>
+</body>
+</html>
