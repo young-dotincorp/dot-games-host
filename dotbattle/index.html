@@ -14,43 +14,44 @@
   /* .stage 배경: 지금은 바다 그라데이션. 배경 이미지(assets/bg.webp) 주시면 여기에 center/cover 로 넣습니다. */
   .stage{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,#12406e 0%,#0c2c4d 55%,#071d34 100%);}
 
-  .status{position:absolute;top:5%;left:50%;transform:translateX(-50%);z-index:5;
-    background:rgba(255,255,255,.95);border:2px solid #fff;border-radius:16px;color:#183153;
-    padding:6px 14px;font-size:clamp(11px,2vmin,13px);font-weight:800;white-space:nowrap;max-width:92%;
-    display:flex;align-items:center;gap:8px;box-shadow:0 6px 16px -7px rgba(0,0,0,.5);}
-  .status .dot{width:11px;height:11px;border-radius:50%;background:#8fb3d6;flex:0 0 auto;}
+  .status{position:absolute;top:4%;left:50%;transform:translateX(-50%);z-index:5;
+    background:#fff;border:3px solid #FFC400;border-radius:16px;color:#0b1f38;
+    padding:9px 18px;font-size:clamp(14px,2.6vmin,20px);font-weight:800;white-space:nowrap;max-width:94%;
+    display:flex;align-items:center;gap:10px;box-shadow:0 6px 18px -6px rgba(0,0,0,.6);}
+  .status .dot{width:14px;height:14px;border-radius:50%;background:#8fb3d6;flex:0 0 auto;}
   .status[data-phase="play"] .dot{background:#3FA0EC;}
   .status[data-phase="over"] .dot{background:#2ecc71;}
 
   .board-wrap{position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);
-    display:grid;grid-template-columns:auto min(80vmin,460px);grid-template-rows:auto auto;gap:4px;}
+    display:grid;grid-template-columns:auto min(86vmin,520px);grid-template-rows:auto auto;gap:4px;}
   .corner{}
-  .col-labels{grid-column:2;grid-row:1;display:grid;grid-template-columns:repeat(5,1fr);gap:min(1.4vmin,8px);padding:0 min(1.6vmin,9px);}
-  .row-labels{grid-column:1;grid-row:2;display:grid;grid-template-rows:repeat(5,1fr);gap:min(1.4vmin,8px);padding:min(1.6vmin,9px) 0;}
-  .col-labels span,.row-labels span{display:flex;align-items:center;justify-content:center;font-size:clamp(11px,2vmin,14px);font-weight:800;color:#bcd3ea;}
-  .row-labels span{padding-right:6px;}
+  .col-labels{grid-column:2;grid-row:1;display:grid;grid-template-columns:repeat(5,1fr);gap:min(1.8vmin,10px);padding:0 min(1.8vmin,11px);}
+  .row-labels{grid-column:1;grid-row:2;display:grid;grid-template-rows:repeat(5,1fr);gap:min(1.8vmin,10px);padding:min(1.8vmin,11px) 0;}
+  .col-labels span,.row-labels span{display:flex;align-items:center;justify-content:center;font-size:clamp(13px,2.4vmin,18px);font-weight:800;color:#dbe9f8;}
+  .row-labels span{padding-right:8px;}
   .board{grid-column:2;grid-row:2;
-    width:min(80vmin,460px);aspect-ratio:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);
-    gap:min(1.4vmin,8px);background:rgba(4,18,34,.55);padding:min(1.6vmin,9px);border-radius:14px;
+    width:min(86vmin,520px);aspect-ratio:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);
+    gap:min(1.8vmin,10px);background:rgba(4,18,34,.6);padding:min(1.8vmin,11px);border-radius:14px;
     box-shadow:0 14px 30px -14px rgba(0,0,0,.7);}
-  .hud{position:absolute;top:15%;left:50%;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
-    background:rgba(9,26,45,.7);border:1px solid #24557f;border-radius:999px;padding:7px 16px;font-size:clamp(11px,1.9vmin,13px);font-weight:700;color:#dcebfb;max-width:92%;}
-  .hud b{color:#fff;}
+  .hud{position:absolute;top:14%;left:50%;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;
+    background:rgba(9,26,45,.82);border:2px solid #3f74a6;border-radius:999px;padding:8px 18px;font-size:clamp(13px,2.2vmin,17px);font-weight:800;color:#eaf4ff;max-width:94%;}
+  .hud b{color:#FFD54A;}
   .hud-sep{color:#5f86ad;}
-  .hud-ships{display:inline-flex;gap:6px;flex-wrap:wrap;}
-  .chip{display:inline-flex;align-items:center;gap:4px;background:rgba(63,160,236,.22);border:1px solid #3f7fb8;border-radius:8px;padding:2px 8px;font-size:11.5px;}
-  .chip.sunk{background:rgba(46,204,113,.25);border-color:#2ecc71;color:#c9f7d8;text-decoration:line-through;}
-  .howto{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);z-index:5;color:#bcd3ea;font-size:clamp(10.5px,1.7vmin,12.5px);font-weight:600;background:rgba(9,26,45,.55);border-radius:999px;padding:5px 14px;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis;}
-  body.embed .howto{bottom:66px;}
-  .cell{-webkit-appearance:none;appearance:none;border:1.5px solid #2c5c88;background:rgba(31,86,140,.28);
-    border-radius:9px;cursor:pointer;padding:0;position:relative;transition:background .12s ease,transform .08s ease;
+  .hud-ships{display:inline-flex;gap:7px;flex-wrap:wrap;}
+  .chip{display:inline-flex;align-items:center;gap:4px;background:rgba(63,160,236,.28);border:1.5px solid #4f8fc8;border-radius:9px;padding:3px 10px;font-size:clamp(12px,1.9vmin,15px);}
+  .chip.sunk{background:rgba(46,204,113,.3);border-color:#2ecc71;color:#c9f7d8;text-decoration:line-through;}
+  .howto{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);z-index:5;color:#dbe9f8;font-size:clamp(12px,2vmin,15px);font-weight:700;background:rgba(9,26,45,.72);border:1px solid #2c5c88;border-radius:999px;padding:6px 16px;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis;}
+  body.embed .howto{bottom:68px;}
+  .cell{-webkit-appearance:none;appearance:none;border:3px solid #3f74a6;background:rgba(41,102,160,.35);
+    border-radius:10px;cursor:pointer;padding:0;position:relative;transition:background .12s ease,transform .08s ease;
     display:flex;align-items:center;justify-content:center;}
-  .cell:hover:not(:disabled){background:rgba(63,160,236,.28);}
-  .cell.cursor{outline:0;box-shadow:0 0 0 3px #fff,0 0 0 7px var(--accent);}
-  .cell.miss::after{content:"";width:26%;height:26%;border-radius:50%;background:#cfe0f2;box-shadow:0 0 6px rgba(255,255,255,.5);}
-  .cell.hit{background:#E24B4A;border-color:#ff7a78;}
-  .cell.hit::after{content:"";width:48%;height:48%;border-radius:4px;background:#fff3;box-shadow:0 0 10px #ffb;}
-  .cell.sunk{background:#7a1f1f;border-color:#c04a48;}
+  .cell:hover:not(:disabled){background:rgba(63,160,236,.4);}
+  .cell.cursor{outline:0;box-shadow:0 0 0 4px #0b1f38,0 0 0 9px #FFC400;transform:scale(1.05);z-index:2;}
+  .cell.miss{background:rgba(20,44,72,.6);}
+  .cell.miss::after{content:"";width:34%;height:34%;border-radius:50%;background:#e9f2fb;box-shadow:0 0 8px rgba(255,255,255,.6);}
+  .cell.hit{background:#E53935;border-color:#ff8a87;}
+  .cell.hit::after{content:"";width:56%;height:56%;border-radius:6px;background:#fff;box-shadow:0 0 12px #ffd;}
+  .cell.sunk{background:#8e1414;border-color:#ff5a55;}
   .cell:disabled{cursor:default;}
 
   .controls{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);
@@ -92,11 +93,12 @@
     <div class="row-labels" id="rowLabels" aria-hidden="true"></div>
     <div class="board" id="board" role="group" aria-label="배틀십 5행 5열 바다. 방향키로 이동, 엔터로 발사."></div>
   </div>
-  <div class="howto" id="howtoText">방향키 이동 · Enter 발사 · C 현재 칸 · R 현황 · N 새 게임</div>
+  <div class="howto" id="howtoText">방향키 이동 · 스페이스 발사 · C 현재 칸 · R 남은 배 · B 판 읽기 · H 도움말</div>
 </div>
 
 <div class="controls">
   <div class="ctl-row">
+    <button id="help" class="btn" type="button" aria-label="게임 방법 듣기"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2 -3 3 -3 3"/><path d="M12 17h.01"/></svg><span id="helpLbl">게임 방법</span></button>
     <button id="read" class="btn" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8"/><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5"/></svg><span id="readLbl">현황 듣기</span></button>
     <button id="sound" class="btn icon" aria-pressed="true" aria-label="음성 켜짐, 누르면 끔" type="button"></button>
     <button id="dpBtn" class="btn dpbtn" data-on="0" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8l10 8l-5 4v-16l5 4l-10 8"/></svg><span id="dpLbl">닷패드 연결</span></button>
@@ -125,7 +127,7 @@
 
   let cells=new Array(GRID*GRID).fill(0);        // 0 미확인 / 1 빗나감 / 2 명중
   let ships=[];                                  // {cells:[], size, hits}
-  let cursor=0, shots=0, over=true, soundOn=true, busy=false;
+  let cursor=0, shots=0, over=true, soundOn=true, busy=false, firstGame=true;
   let sdk=null,scanner=null,KeyCodes=null,DataCodes=null,dpConnected=false;
   let ac=null;
 
@@ -195,7 +197,7 @@
     if(lg){ lg.innerHTML=''; for(const s of ships){ const c=document.createElement('span'); c.className='chip'+(s.hits>=s.size?' sunk':'');
       c.textContent=(LANG==='en'?String(s.size):(s.size+'칸')); lg.appendChild(c); } }
   }
-  function cellName(i){const st=cells[i];return st===2?S('명중','hit'):st===1?S('빗나감','miss'):S('미확인','unknown');}
+  function cellName(i){const st=cells[i];return st===2?S('맞힌 칸','hit'):st===1?S('빗나간 칸','miss'):S('아직 안 쏜 칸','not fired yet');}
   function render(){ for(let i=0;i<GRID*GRID;i++){const b=cellBtns[i],st=cells[i];
       b.classList.toggle('hit',st===2); b.classList.toggle('miss',st===1); b.classList.toggle('cursor',i===cursor&&!over);
       const sh=st===2?shipAt(i):null; b.classList.toggle('sunk', !!(sh&&sh.hits>=sh.size));
@@ -205,7 +207,11 @@
   function sync(focus){ render(); if(focus!==false&&cellBtns[cursor]&&!cellBtns[cursor].disabled){try{cellBtns[cursor].focus();}catch(e){}} }
   function setStatus(t,phase,doSpeak){ statusText.textContent=t; if(phase)statusEl.dataset.phase=phase; if(doSpeak!==false)speak(t); }
 
-  function moveCursor(dr,dc){ if(over)return; let[r,c]=rc(cursor); r=Math.max(0,Math.min(GRID-1,r+dr)); c=Math.max(0,Math.min(GRID-1,c+dc));
+  function moveCursor(dr,dc){ if(over)return; const[r0,c0]=rc(cursor);
+    let r=Math.max(0,Math.min(GRID-1,r0+dr)), c=Math.max(0,Math.min(GRID-1,c0+dc));
+    if(r===r0&&c===c0){ // 경계에서 막힘 → 어느 끝인지 알려줌
+      const edge = dr<0?S('맨 위 줄이에요.','Top row.') : dr>0?S('맨 아래 줄이에요.','Bottom row.') : dc<0?S('맨 왼쪽이에요.','Far left.') : S('맨 오른쪽이에요.','Far right.');
+      speak(edge+' '+coord(cursor)+', '+cellName(cursor)+'.'); return; }
     cursor=r*GRID+c; sync(); speak(coord(cursor)+', '+cellName(cursor)+'.'); }
 
   // ---- placement ----
@@ -220,15 +226,15 @@
 
   // ---- fire ----
   function fire(i){ if(over||busy)return; ensureAudio();
-    if(cells[i]!==0){ speak(coord(i)+', '+S('이미 쏜 곳이에요.','already fired.')); return; }
+    if(cells[i]!==0){ speak(coord(i)+', '+S('이미 쏜 곳이에요. 다른 칸을 골라요.','already fired. Pick another cell.')); return; }
     shots++; const sh=shipAt(i);
     if(sh){ cells[i]=2; sh.hits++;
       if(sh.hits>=sh.size){
         if(allSunk()){ render(); win(); return; }
-        beep(660,0.14);setTimeout(()=>beep(880,0.18),120);
-        setStatus(coord(i)+', '+S('명중, 격침!','Hit, sunk!'),'play');
-      } else { beep(720,0.16); setStatus(coord(i)+', '+S('명중!','Hit!'),'play'); }
-    } else { cells[i]=1; beep(200,0.16,'triangle'); setStatus(coord(i)+', '+S('빗나감.','Miss.'),'play'); }
+        beep(660,0.14);setTimeout(()=>beep(880,0.2),120);
+        setStatus(coord(i)+', '+S('명중, 배 한 척 격침! ','Hit and sunk a ship! ')+remainMsg(),'play');
+      } else { beep(720,0.16); setStatus(coord(i)+', '+S('명중이에요! ','Hit! ')+remainMsg(),'play'); }
+    } else { cells[i]=1; beep(200,0.16,'triangle'); setStatus(coord(i)+', '+S('빗나감. 계속 찾아봐요.','Miss. Keep hunting.'),'play'); }
     render(); }
   function win(){ over=true; busy=true; for(const b of cellBtns)b.disabled=true;
     beep(523,0.15);setTimeout(()=>beep(659,0.15),150);setTimeout(()=>beep(784,0.28),300);
@@ -236,16 +242,24 @@
                'All ships sunk! You won in '+shots+' shots. Press start to play again.'),'over');
     padPulse(); }
 
+  function remainMsg(){ const left=SHIPS.length-sunkCount(); return S('배 '+left+'척 남았어요.','('+left+' left.)'); }
+  function tutorial(){ speak(S(
+    '닷 배틀십이에요. 다섯 칸씩 다섯 줄, 바다에 배 세 척이 숨어 있어요. 방향키로 칸을 옮기면 지금 위치를 말해 드려요. 스페이스나 엔터를 누르면 그 칸에 발사합니다. 배가 있으면 명중, 배의 칸을 모두 맞히면 격침이에요. 세 척을 다 격침하면 이겨요. 아무 때나 H는 이 설명 다시, C는 지금 위치, R은 남은 배, B는 판 전체 읽기, N은 새 게임이에요. 자, 방향키로 천천히 시작해 보세요.',
+    'Dot Battleship. Three ships hide in a five by five sea. Use the arrow keys to move and I will tell you your position. Press Space or Enter to fire at that cell. A ship there is a hit; hit all its cells to sink it. Sink all three to win. Anytime: H repeats this, C says your position, R the ships left, B reads the whole board, N starts a new game. Take your time and use the arrow keys to begin.')); }
+  function readBoard(){ let out=S('판 상태입니다. ','Board. ');
+    for(let r=0;r<GRID;r++){ const row=[]; for(let c=0;c<GRID;c++) row.push(cellName(r*GRID+c));
+      out+=S((r+1)+'행, ','row '+(r+1)+', ')+row.join(', ')+'. '; }
+    speak(out); }
   function readStatus(){ speak(S('배 '+SHIPS.length+'척 중 '+sunkCount()+'척 격침. 지금까지 '+shots+'번 발사.',
                                   sunkCount()+' of '+SHIPS.length+' ships sunk. '+shots+' shots so far.')); }
   function readCell(){ speak(coord(cursor)+', '+cellName(cursor)+'.'); }
-  function overview(){ speak(S('배틀십. 5행 5열 바다에 배 세 척이 숨어 있어요. 방향키로 옮기고 발사해 모두 격침하세요. 지금 '+coord(cursor)+'.',
-                               'Battleship. Three ships hide in a 5 by 5 sea. Move and fire to sink them all. Now at '+coord(cursor)+'.')); }
+  function overview(){ tutorial(); }
 
   function newGame(){ ensureAudio(); place(); cursor=0; shots=0; over=false; busy=false;
-    setStatus(S('새 게임. 5행 5열 바다에 배 세 척(3칸·2칸·2칸)이 숨어 있어요. 방향키로 옮기고 발사하세요.',
-               'New game. Three ships (3,2,2) hide in a 5 by 5 sea. Move and fire.'),'play');
-    sync(); }
+    setStatus(S('방향키로 이동, 엔터로 발사. H는 도움말.','Arrows move, Enter fires. H for help.'),'play',false);
+    sync();
+    if(firstGame){ firstGame=false; tutorial(); }
+    else speak(S('새 게임. 방향키로 옮기고 발사하세요.','New game. Move and fire.')); }
 
   // ---- DotPad ----
   function handleDotPadKey(keyCode){ if(!KeyCodes)return; document.body.classList.add('kbd');
@@ -256,8 +270,8 @@
       case KeyCodes.KeyFunction1: fire(cursor); break;
       case KeyCodes.KeyFunction2: readCell(); break;
       case KeyCodes.KeyFunction3: readStatus(); break;
-      case KeyCodes.KeyFunction4: readStatus(); break;
-      case KeyCodes.PanningAll: overview(); break;
+      case KeyCodes.KeyFunction4: readBoard(); break;
+      case KeyCodes.PanningAll: tutorial(); break;
       case KeyCodes.LPF1: newGame(); break;
     } }
   function wait(ms){return new Promise(r=>setTimeout(r,ms));}
@@ -289,6 +303,8 @@
     if(k==='Enter'||k===' '){ if(over){newGame();}else{fire(cursor);} ev.preventDefault(); return; }
     if(k==='c'||k==='C'){ readCell(); ev.preventDefault(); return; }
     if(k==='r'||k==='R'){ readStatus(); ev.preventDefault(); return; }
+    if(k==='h'||k==='H'||k==='?'){ tutorial(); ev.preventDefault(); return; }
+    if(k==='b'||k==='B'){ readBoard(); ev.preventDefault(); return; }
     if(k==='n'||k==='N'){ newGame(); ev.preventDefault(); return; }
   });
 
@@ -300,6 +316,7 @@
     if(soundOn)speak(S('소리를 켰어요.','Sound on.')); else if(window.TW_TTS)TW_TTS.stop(); });
   newBtn.addEventListener('click',newGame);
   readBtn.addEventListener('click',readStatus);
+  document.getElementById('help').addEventListener('click',tutorial);
   dpBtn.addEventListener('click',connectDotPad);
   pinToggle.addEventListener('click',()=>{const on=pinwrap.classList.toggle('show');pinToggle.setAttribute('aria-pressed',String(on));if(on)drawPin();});
   window.addEventListener('resize',()=>{clearTimeout(window.__rz);window.__rz=setTimeout(drawPin,150);});
@@ -309,7 +326,8 @@
     document.getElementById('newLbl').textContent='Start'; document.getElementById('readLbl').textContent='Status';
     document.getElementById('dpLbl').textContent='Connect DotPad';
     document.getElementById('hudSunkLbl').textContent='Sunk'; document.getElementById('hudShotLbl').textContent='Shots';
-    document.getElementById('howtoText').textContent='Arrows move · Enter fire · C cell · R status · N new';
+    document.getElementById('helpLbl').textContent='How to play';
+    document.getElementById('howtoText').textContent='Arrows move · Space fire · C cell · R ships · B read · H help';
     setStatus('Press start or Enter to begin.','play',false); }
   else { setStatus('시작하려면 시작 버튼이나 엔터를 누르세요.','play',false); }
   buildCells(); buildLabels(); place(); render(); loadSDK();
