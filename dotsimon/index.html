@@ -12,7 +12,7 @@
     -webkit-font-smoothing:antialiased;color:var(--ink);overflow:hidden;
     background:linear-gradient(180deg,#E7ECFF 0%,#EEE9FF 45%,#FBEAF3 100%);}
 
-  .stage{position:absolute;inset:0;}
+  .stage{position:absolute;inset:0;background:#181430 url('./bg.webp') center/cover no-repeat;}
   .status{position:absolute;top:6%;left:50%;transform:translateX(-50%);z-index:5;
     background:rgba(255,255,255,.94);border:2px solid #fff;border-radius:16px;
     padding:6px 14px;font-size:clamp(11px,2vmin,13px);font-weight:800;white-space:nowrap;max-width:92%;
@@ -25,18 +25,18 @@
   .pad{position:absolute;left:50%;top:53%;transform:translate(-50%,-50%);
     width:min(78vmin,440px);aspect-ratio:1;display:grid;grid-template-columns:1fr 1fr;
     grid-template-rows:1fr 1fr;gap:min(3.2vmin,18px);}
-  .zone{border:0;cursor:pointer;border-radius:22px;padding:0;position:relative;
-    box-shadow:0 10px 22px -12px rgba(40,30,70,.6);transition:filter .1s ease,transform .08s ease,box-shadow .1s ease;
-    filter:brightness(.62) saturate(.9);}
-  .zone[data-z="0"]{background:#3FB765;}
-  .zone[data-z="1"]{background:#E24B4A;}
-  .zone[data-z="2"]{background:#EF9F27;}
-  .zone[data-z="3"]{background:#378ADD;}
-  .zone.lit{filter:brightness(1.12) saturate(1.05);transform:scale(1.03);
-    box-shadow:0 0 0 6px rgba(255,255,255,.7),0 12px 26px -10px rgba(40,30,70,.7);}
+  .zone{border:0;cursor:pointer;border-radius:50%;padding:0;position:relative;aspect-ratio:1;
+    background:center/contain no-repeat;
+    transition:filter .12s ease,transform .08s ease;
+    filter:brightness(.5) saturate(.85);}
+  .zone[data-z="0"]{background-image:url('./btn-green.webp');}
+  .zone[data-z="1"]{background-image:url('./btn-red.webp');}
+  .zone[data-z="2"]{background-image:url('./btn-yellow.webp');}
+  .zone[data-z="3"]{background-image:url('./btn-blue.webp');}
+  .zone.lit{filter:brightness(1.18) saturate(1.15) drop-shadow(0 0 16px rgba(255,255,255,.85));transform:scale(1.05);}
   .zone:disabled{cursor:default;}
   body.kbd .zone.cursor{outline:0;box-shadow:0 0 0 5px #fff,0 0 0 10px var(--accent);}
-  .zlabel{position:absolute;top:10px;left:12px;font-size:13px;font-weight:800;color:rgba(255,255,255,.9);}
+  .zlabel{position:absolute;top:7%;left:50%;transform:translateX(-50%);font-size:clamp(12px,2.4vmin,16px);font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);}
 
   .controls{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);
     z-index:6;display:flex;flex-direction:column;align-items:center;gap:9px;max-width:96vw;}
