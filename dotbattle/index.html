@@ -12,9 +12,11 @@
     -webkit-font-smoothing:antialiased;color:var(--ink);overflow:hidden;}
 
   /* .stage 배경: 지금은 바다 그라데이션. 배경 이미지(assets/bg.webp) 주시면 여기에 center/cover 로 넣습니다. */
-  .stage{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,#12406e 0%,#0c2c4d 55%,#071d34 100%);}
+  .stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:10px 10px 12px;gap:8px;overflow:hidden;
+    background:linear-gradient(rgba(4,16,32,.42),rgba(4,16,32,.62)),#0b2c4d url('./assets/bg.webp') center/cover no-repeat;}
+  .board-area{flex:1 1 auto;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;}
 
-  .status{position:absolute;top:4%;left:50%;transform:translateX(-50%);z-index:5;
+  .status{position:relative;z-index:5;flex:0 0 auto;margin-top:2px;
     background:#fff;border:3px solid #FFC400;border-radius:16px;color:#0b1f38;
     padding:9px 18px;font-size:clamp(14px,2.6vmin,20px);font-weight:800;white-space:nowrap;max-width:94%;
     display:flex;align-items:center;gap:10px;box-shadow:0 6px 18px -6px rgba(0,0,0,.6);}
@@ -22,26 +24,24 @@
   .status[data-phase="play"] .dot{background:#3FA0EC;}
   .status[data-phase="over"] .dot{background:#2ecc71;}
 
-  .board-wrap{position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);
-    display:grid;grid-template-columns:auto min(86vmin,520px);grid-template-rows:auto auto;gap:4px;}
+  .board-wrap{display:grid;grid-template-columns:auto min(64vmin,46vh,460px);grid-template-rows:auto auto;gap:4px;}
   .corner{}
   .col-labels{grid-column:2;grid-row:1;display:grid;grid-template-columns:repeat(5,1fr);gap:min(1.8vmin,10px);padding:0 min(1.8vmin,11px);}
   .row-labels{grid-column:1;grid-row:2;display:grid;grid-template-rows:repeat(5,1fr);gap:min(1.8vmin,10px);padding:min(1.8vmin,11px) 0;}
   .col-labels span,.row-labels span{display:flex;align-items:center;justify-content:center;font-size:clamp(13px,2.4vmin,18px);font-weight:800;color:#dbe9f8;}
   .row-labels span{padding-right:8px;}
   .board{grid-column:2;grid-row:2;
-    width:min(86vmin,520px);aspect-ratio:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);
+    width:min(64vmin,46vh,460px);aspect-ratio:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);
     gap:min(1.8vmin,10px);background:rgba(4,18,34,.6);padding:min(1.8vmin,11px);border-radius:14px;
     box-shadow:0 14px 30px -14px rgba(0,0,0,.7);}
-  .hud{position:absolute;top:14%;left:50%;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;
+  .hud{position:relative;z-index:5;flex:0 0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;
     background:rgba(9,26,45,.82);border:2px solid #3f74a6;border-radius:999px;padding:8px 18px;font-size:clamp(13px,2.2vmin,17px);font-weight:800;color:#eaf4ff;max-width:94%;}
   .hud b{color:#FFD54A;}
   .hud-sep{color:#5f86ad;}
   .hud-ships{display:inline-flex;gap:7px;flex-wrap:wrap;}
   .chip{display:inline-flex;align-items:center;gap:4px;background:rgba(63,160,236,.28);border:1.5px solid #4f8fc8;border-radius:9px;padding:3px 10px;font-size:clamp(12px,1.9vmin,15px);}
   .chip.sunk{background:rgba(46,204,113,.3);border-color:#2ecc71;color:#c9f7d8;text-decoration:line-through;}
-  .howto{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);z-index:5;color:#dbe9f8;font-size:clamp(12px,2vmin,15px);font-weight:700;background:rgba(9,26,45,.72);border:1px solid #2c5c88;border-radius:999px;padding:6px 16px;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis;}
-  body.embed .howto{bottom:68px;}
+  .howto{position:relative;z-index:5;flex:0 0 auto;color:#dbe9f8;font-size:clamp(12px,2vmin,15px);font-weight:700;background:rgba(9,26,45,.72);border:1px solid #2c5c88;border-radius:999px;padding:6px 16px;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis;}
   .cell{-webkit-appearance:none;appearance:none;border:3px solid #3f74a6;background:rgba(41,102,160,.35);
     border-radius:10px;cursor:pointer;padding:0;position:relative;transition:background .12s ease,transform .08s ease;
     display:flex;align-items:center;justify-content:center;}
@@ -54,8 +54,8 @@
   .cell.sunk{background:#8e1414;border-color:#ff5a55;}
   .cell:disabled{cursor:default;}
 
-  .controls{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);
-    z-index:6;display:flex;flex-direction:column;align-items:center;gap:9px;max-width:96vw;}
+  .controls{position:relative;z-index:6;flex:0 0 auto;
+    display:flex;flex-direction:column;align-items:center;gap:9px;max-width:96vw;}
   .ctl-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;}
   .btn{font-family:inherit;font-size:12px;font-weight:800;border-radius:13px;border:0;cursor:pointer;
     background:rgba(255,255,255,.95);color:#183153;box-shadow:0 5px 13px -6px rgba(0,0,0,.5);
@@ -72,7 +72,6 @@
   .pinwrap canvas{width:150px;display:block;border-radius:6px;background:#FBF7EE;}
   .pinwrap .cap{font-size:10px;color:#5a4a7a;text-align:center;margin-top:4px;font-weight:700;}
 
-  body.embed .controls{bottom:20px;}
   @media (prefers-reduced-motion: reduce){*{transition:none!important;}}
 </style>
 </head>
@@ -87,11 +86,13 @@
     <span class="hud-item"><span id="hudShotLbl">발사</span> <b id="shotN">0</b></span>
     <span class="hud-ships" id="shipLegend"></span>
   </div>
-  <div class="board-wrap">
-    <div class="corner" aria-hidden="true"></div>
-    <div class="col-labels" id="colLabels" aria-hidden="true"></div>
-    <div class="row-labels" id="rowLabels" aria-hidden="true"></div>
-    <div class="board" id="board" role="group" aria-label="배틀십 5행 5열 바다. 방향키로 이동, 엔터로 발사."></div>
+  <div class="board-area">
+    <div class="board-wrap">
+      <div class="corner" aria-hidden="true"></div>
+      <div class="col-labels" id="colLabels" aria-hidden="true"></div>
+      <div class="row-labels" id="rowLabels" aria-hidden="true"></div>
+      <div class="board" id="board" role="group" aria-label="배틀십 5행 5열 바다. 방향키로 이동, 엔터로 발사."></div>
+    </div>
   </div>
   <div class="howto" id="howtoText">방향키 이동 · 스페이스 발사 · C 현재 칸 · R 남은 배 · B 판 읽기 · H 도움말</div>
 </div>
