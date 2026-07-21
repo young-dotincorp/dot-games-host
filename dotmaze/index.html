@@ -86,11 +86,12 @@
   <div class="maze-area">
     <div class="maze" id="maze" role="group" aria-label="미로. 방향키로 한 칸씩 이동해 출구를 찾으세요."></div>
   </div>
-  <div class="howto" id="howtoText">방향키 이동 · C 갈 수 있는 방향 · H 도움말 · N 새 미로</div>
+  <div class="howto" id="howtoText">방향키 이동 · C 방향 · G 출구 안내 · H 도움말 · N 새 미로</div>
   <div class="controls">
     <div class="ctl-row">
       <button id="help" class="btn" type="button" aria-label="게임 방법 듣기"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2 -3 3 -3 3"/><path d="M12 17h.01"/></svg><span id="helpLbl">게임 방법</span></button>
       <button id="where" class="btn" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21c-4 -4 -7 -7 -7 -11a7 7 0 0 1 14 0c0 4 -3 7 -7 11"/><circle cx="12" cy="10" r="2.5"/></svg><span id="whereLbl">방향 안내</span></button>
+      <button id="guide" class="btn" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l0 3M12 18l0 3M3 12l3 0M18 12l3 0"/><path d="M12 8l4 4l-4 4l-4 -4z"/></svg><span id="guideLbl">출구 안내</span></button>
       <button id="sound" class="btn icon" aria-pressed="true" aria-label="음성 켜짐, 누르면 끔" type="button"></button>
       <button id="dpBtn" class="btn dpbtn" data-on="0" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8l10 8l-5 4v-16l5 4l-10 8"/></svg><span id="dpLbl">닷패드 연결</span></button>
       <button id="pinToggle" class="btn icon" type="button" aria-pressed="false" aria-label="닷패드 핀 화면 미리보기"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h.01M12 5h.01M19 5h.01M5 12h.01M12 12h.01M19 12h.01M5 19h.01M12 19h.01M19 19h.01"/></svg></button>
@@ -125,7 +126,7 @@
   const statusEl=document.getElementById('status'), statusText=document.getElementById('statusText');
   const mazeEl=document.getElementById('maze');
   const soundBtn=document.getElementById('sound'), newBtn=document.getElementById('newgame'), dpBtn=document.getElementById('dpBtn');
-  const helpBtn=document.getElementById('help'), whereBtn=document.getElementById('where'), pinToggle=document.getElementById('pinToggle'), pinwrap=document.getElementById('pinwrap');
+  const helpBtn=document.getElementById('help'), whereBtn=document.getElementById('where'), guideBtn=document.getElementById('guide'), pinToggle=document.getElementById('pinToggle'), pinwrap=document.getElementById('pinwrap');
   const pin=document.getElementById('pin'), pctx=pin.getContext('2d');
   const mzCells=[];
 
@@ -166,9 +167,10 @@
     const set=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x>=0&&x<N&&y>=0&&y<M)g[y][x]=1;};
     for(let by2=0;by2<H;by2++)for(let bx2=0;bx2<W;bx2++){ if(bmp[by2][bx2]===1){
       for(let y=0;y<SY;y++)for(let x=0;x<SX;x++)set(OFFX+bx2*SX+x, OFFY+by2*SY+y); } }
-    // 출구: 셀 네 모서리 표시(빈 표식)
-    const gx=OFFX+(2*(C-1)+1)*SX, gy=OFFY+(2*(R-1)+1)*SY;
-    set(gx,gy);set(gx+SX-1,gy);set(gx,gy+SY-1);set(gx+SX-1,gy+SY-1);
+    // 출구: 셀 중앙 십자 표식 (벽=꽉 찬 블록, 플레이어=작은 점 과 촉각적으로 구분)
+    const gx=OFFX+(2*(C-1)+1)*SX, gy=OFFY+(2*(R-1)+1)*SY, gcx=gx+((SX/2)|0), gcy=gy+((SY/2)|0);
+    for(let x=gx;x<gx+SX;x++) set(x,gcy);
+    for(let y=gy;y<gy+SY;y++) set(gcx,y);
     // 플레이어: 셀 중앙 점
     const px=OFFX+(2*pc+1)*SX, py=OFFY+(2*pr+1)*SY, cx=px+((SX/2)|0), cy=py+((SY/2)|0);
     set(cx,cy);set(cx-1,cy);
@@ -204,8 +206,8 @@
   function setStatus(t,phase,doSpeak){ statusText.textContent=t; if(phase)statusEl.dataset.phase=phase; if(doSpeak!==false)speak(t); }
 
   function tutorial(){ speak(S(
-    '닷 미로예요. 시작은 왼쪽 위 구석, 출구는 오른쪽 아래 구석이에요. 방향키로 한 칸씩 움직여요. 벽이 있으면 못 가고 벽이라고 알려줄게요. 움직일 때마다 갈 수 있는 방향도 말해 줘요. 씨 키를 누르면 지금 갈 수 있는 방향을 다시 알려주고, 에이치 키는 도움말이에요. 출구에 도착하면 이겨요. 자, 방향키로 천천히 시작해 보세요.',
-    'This is Dot Maze. You start at the top-left corner and the exit is at the bottom-right. Move one cell at a time with the arrow keys. Walls block you and I will say "wall". Each move I also tell you which ways are open. Press C to hear the open directions again, and H for help. Reach the exit to win. Take your time with the arrow keys.'
+    '닷 미로예요. 시작은 왼쪽 위 구석, 출구는 오른쪽 아래 구석이에요. 방향키로 한 칸씩 움직여요. 벽이 있으면 못 가고 벽이라고 알려줄게요. 움직일 때마다 갈 수 있는 방향도 말해 줘요. 씨 키는 지금 갈 수 있는 방향, 그리고 길이 헷갈리면 지 키를 누르세요. 출구까지 몇 칸 남았는지, 다음에 어느 쪽으로 갈지 알려줄게요. 에이치는 도움말이에요. 출구에 도착하면 이겨요. 자, 방향키로 천천히 시작해 보세요.',
+    'This is Dot Maze. You start at the top-left corner and the exit is at the bottom-right. Move one cell at a time with the arrow keys. Walls block you and I will say "wall". Each move I also tell you which ways are open. Press C for open directions, and if you get lost press G: I will tell you the shortest distance to the exit and which way to go next. H is help. Reach the exit to win. Take your time with the arrow keys.'
   )); }
 
   function announceMove(blocked){ if(blocked){ beep(150,0.16,'square'); speak(S('벽이에요. 그쪽은 막혔어요.','Wall. That way is blocked.')); return; }
@@ -219,6 +221,26 @@
     setStatus(S('출구 도착! '+steps+'걸음 만에 탈출 성공! 다시 하려면 시작을 누르세요.','You reached the exit! Escaped in '+steps+' steps! Press start to play again.'),'over');
     padPulse(); }
   function whereAmI(){ speak(posText(pc,pr)+'. '+dirsText(pc,pr)); }
+  function bfsToGoal(){ // 현재→출구 최단경로: {dist, dir:[dc,dr] 첫 걸음}
+    const seen=Array.from({length:R},()=>new Array(C).fill(-1));
+    const prev=Array.from({length:R},()=>new Array(C).fill(null));
+    const q=[[pc,pr]]; seen[pr][pc]=0;
+    while(q.length){ const [c,r]=q.shift();
+      for(const [dc,dr] of [[0,-1],[0,1],[-1,0],[1,0]]) if(openBetween(c,r,dc,dr)&&seen[r+dr][c+dc]<0){
+        seen[r+dr][c+dc]=seen[r][c]+1; prev[r+dr][c+dc]=[c,r,dc,dr]; q.push([c+dc,r+dr]); } }
+    if(seen[R-1][C-1]<0) return null;
+    let cx=C-1, cy=R-1, first=null; const dist=seen[R-1][C-1];
+    while(prev[cy][cx]){ const [pcx,pcy,dc,dr]=prev[cy][cx]; if(pcx===pc&&pcy===pr) first=[dc,dr]; cx=pcx; cy=pcy; }
+    return { dist, dir:first };
+  }
+  const dirName=(dc,dr)=> dr<0?S('위','up'):dr>0?S('아래','down'):dc<0?S('왼쪽','left'):S('오른쪽','right');
+  function guideToExit(){ ensureAudio();
+    if(pc===C-1&&pr===R-1){ speak(S('여기가 출구예요! 도착했어요.','This is the exit! You made it.')); return; }
+    const gg=bfsToGoal();
+    if(!gg||!gg.dir){ speak(S('출구는 오른쪽 아래 구석에 있어요.','The exit is at the bottom-right corner.')); return; }
+    beep(500,0.09);
+    speak(S('출구까지 최단 '+gg.dist+'칸. 다음은 '+dirName(gg.dir[0],gg.dir[1])+'으로 가세요.',
+            'Shortest path to the exit is '+gg.dist+' steps. Next, go '+dirName(gg.dir[0],gg.dir[1])+'.')); }
 
   function newGame(){ ensureAudio(); genMaze(); pc=0; pr=0; steps=0; over=false; busy=false;
     setStatus(S('새 미로예요. 방향키로 출구를 찾으세요. H는 도움말.','New maze. Find the exit with the arrow keys. H for help.'),'play',false);
@@ -234,7 +256,8 @@
       case KeyCodes.KeyFunction3: move(-1,0); break;   // 왼쪽
       case KeyCodes.KeyFunction4: move(1,0); break;    // 오른쪽
       case KeyCodes.PanningAll: tutorial(); break;
-      case KeyCodes.PanningLeft: case KeyCodes.PanningRight: whereAmI(); break;
+      case KeyCodes.PanningLeft: whereAmI(); break;
+      case KeyCodes.PanningRight: guideToExit(); break;
       case KeyCodes.LPF1: newGame(); break;
     } }
   function wait(ms){return new Promise(r=>setTimeout(r,ms));}
@@ -265,6 +288,7 @@
     if(k==='ArrowRight'){move(1,0);ev.preventDefault();return;}
     if(k==='Enter'||k===' '){ if(over){newGame();} ev.preventDefault(); return; }
     if(k==='c'||k==='C'){ whereAmI(); ev.preventDefault(); return; }
+    if(k==='g'||k==='G'){ guideToExit(); ev.preventDefault(); return; }
     if(k==='h'||k==='H'||k==='?'){ tutorial(); ev.preventDefault(); return; }
     if(k==='n'||k==='N'){ newGame(); ev.preventDefault(); return; }
   });
@@ -278,6 +302,7 @@
   newBtn.addEventListener('click',newGame);
   helpBtn.addEventListener('click',tutorial);
   whereBtn.addEventListener('click',whereAmI);
+  guideBtn.addEventListener('click',guideToExit);
   dpBtn.addEventListener('click',connectDotPad);
   pinToggle.addEventListener('click',()=>{const on=pinwrap.classList.toggle('show');pinToggle.setAttribute('aria-pressed',String(on));if(on)drawPin();});
   window.addEventListener('resize',()=>{clearTimeout(window.__rz);window.__rz=setTimeout(drawPin,150);});
@@ -285,9 +310,9 @@
 
   if(LANG==='en'){ document.documentElement.lang='en'; document.title='DOT MAZE';
     document.getElementById('newLbl').textContent='Start'; document.getElementById('helpLbl').textContent='How to play';
-    document.getElementById('whereLbl').textContent='Directions'; document.getElementById('dpLbl').textContent='Connect DotPad';
+    document.getElementById('whereLbl').textContent='Directions'; document.getElementById('guideLbl').textContent='Exit guide'; document.getElementById('dpLbl').textContent='Connect DotPad';
     document.getElementById('hudStepLbl').textContent='Steps'; document.getElementById('hudGoal').textContent='Exit: bottom-right';
-    document.getElementById('howtoText').textContent='Arrows move · C directions · H help · N new';
+    document.getElementById('howtoText').textContent='Arrows move · C directions · G exit guide · H help · N new';
     setStatus('Press start or Enter to begin.','play',false); }
   else { setStatus('시작하려면 시작 버튼이나 엔터를 누르세요.','play',false); }
   buildMazeCells(); genMaze(); render(); loadSDK();
