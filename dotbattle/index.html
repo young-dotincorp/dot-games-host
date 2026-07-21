@@ -22,10 +22,26 @@
   .status[data-phase="play"] .dot{background:#3FA0EC;}
   .status[data-phase="over"] .dot{background:#2ecc71;}
 
-  .board{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);
+  .board-wrap{position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);
+    display:grid;grid-template-columns:auto min(80vmin,460px);grid-template-rows:auto auto;gap:4px;}
+  .corner{}
+  .col-labels{grid-column:2;grid-row:1;display:grid;grid-template-columns:repeat(5,1fr);gap:min(1.4vmin,8px);padding:0 min(1.6vmin,9px);}
+  .row-labels{grid-column:1;grid-row:2;display:grid;grid-template-rows:repeat(5,1fr);gap:min(1.4vmin,8px);padding:min(1.6vmin,9px) 0;}
+  .col-labels span,.row-labels span{display:flex;align-items:center;justify-content:center;font-size:clamp(11px,2vmin,14px);font-weight:800;color:#bcd3ea;}
+  .row-labels span{padding-right:6px;}
+  .board{grid-column:2;grid-row:2;
     width:min(80vmin,460px);aspect-ratio:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);
     gap:min(1.4vmin,8px);background:rgba(4,18,34,.55);padding:min(1.6vmin,9px);border-radius:14px;
     box-shadow:0 14px 30px -14px rgba(0,0,0,.7);}
+  .hud{position:absolute;top:15%;left:50%;transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
+    background:rgba(9,26,45,.7);border:1px solid #24557f;border-radius:999px;padding:7px 16px;font-size:clamp(11px,1.9vmin,13px);font-weight:700;color:#dcebfb;max-width:92%;}
+  .hud b{color:#fff;}
+  .hud-sep{color:#5f86ad;}
+  .hud-ships{display:inline-flex;gap:6px;flex-wrap:wrap;}
+  .chip{display:inline-flex;align-items:center;gap:4px;background:rgba(63,160,236,.22);border:1px solid #3f7fb8;border-radius:8px;padding:2px 8px;font-size:11.5px;}
+  .chip.sunk{background:rgba(46,204,113,.25);border-color:#2ecc71;color:#c9f7d8;text-decoration:line-through;}
+  .howto{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);z-index:5;color:#bcd3ea;font-size:clamp(10.5px,1.7vmin,12.5px);font-weight:600;background:rgba(9,26,45,.55);border-radius:999px;padding:5px 14px;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis;}
+  body.embed .howto{bottom:66px;}
   .cell{-webkit-appearance:none;appearance:none;border:1.5px solid #2c5c88;background:rgba(31,86,140,.28);
     border-radius:9px;cursor:pointer;padding:0;position:relative;transition:background .12s ease,transform .08s ease;
     display:flex;align-items:center;justify-content:center;}
@@ -64,7 +80,19 @@
   <div class="status" id="status" role="status" aria-live="assertive" data-phase="play">
     <span class="dot" aria-hidden="true"></span><span id="statusText">시작하려면 시작 버튼이나 엔터를 누르세요.</span>
   </div>
-  <div class="board" id="board" role="group" aria-label="배틀십 5행 5열 바다. 방향키로 이동, 엔터로 발사."></div>
+  <div class="hud" id="hud">
+    <span class="hud-item"><span id="hudSunkLbl">격침</span> <b id="sunkN">0</b>/<span id="totN">3</span></span>
+    <span class="hud-sep">·</span>
+    <span class="hud-item"><span id="hudShotLbl">발사</span> <b id="shotN">0</b></span>
+    <span class="hud-ships" id="shipLegend"></span>
+  </div>
+  <div class="board-wrap">
+    <div class="corner" aria-hidden="true"></div>
+    <div class="col-labels" id="colLabels" aria-hidden="true"></div>
+    <div class="row-labels" id="rowLabels" aria-hidden="true"></div>
+    <div class="board" id="board" role="group" aria-label="배틀십 5행 5열 바다. 방향키로 이동, 엔터로 발사."></div>
+  </div>
+  <div class="howto" id="howtoText">방향키 이동 · Enter 발사 · C 현재 칸 · R 현황 · N 새 게임</div>
 </div>
 
 <div class="controls">
@@ -156,13 +184,24 @@
     for(let i=0;i<GRID*GRID;i++){const b=document.createElement('button');b.className='cell';b.type='button';b.dataset.i=i;
       b.addEventListener('click',()=>{ if(over){newGame();return;} cursor=i; sync(false); fire(i); });
       boardEl.appendChild(b); cellBtns[i]=b; } }
+  function buildLabels(){
+    const cl=document.getElementById('colLabels'), rl=document.getElementById('rowLabels');
+    if(cl && !cl.childElementCount){ for(let c=1;c<=GRID;c++){const s=document.createElement('span');s.textContent=c;cl.appendChild(s);} }
+    if(rl && !rl.childElementCount){ for(let r=1;r<=GRID;r++){const s=document.createElement('span');s.textContent=r;rl.appendChild(s);} }
+  }
+  function updateHud(){
+    const sn=document.getElementById('sunkN'), tn=document.getElementById('totN'), shn=document.getElementById('shotN'), lg=document.getElementById('shipLegend');
+    if(sn)sn.textContent=sunkCount(); if(tn)tn.textContent=SHIPS.length; if(shn)shn.textContent=shots;
+    if(lg){ lg.innerHTML=''; for(const s of ships){ const c=document.createElement('span'); c.className='chip'+(s.hits>=s.size?' sunk':'');
+      c.textContent=(LANG==='en'?String(s.size):(s.size+'칸')); lg.appendChild(c); } }
+  }
   function cellName(i){const st=cells[i];return st===2?S('명중','hit'):st===1?S('빗나감','miss'):S('미확인','unknown');}
   function render(){ for(let i=0;i<GRID*GRID;i++){const b=cellBtns[i],st=cells[i];
       b.classList.toggle('hit',st===2); b.classList.toggle('miss',st===1); b.classList.toggle('cursor',i===cursor&&!over);
       const sh=st===2?shipAt(i):null; b.classList.toggle('sunk', !!(sh&&sh.hits>=sh.size));
       b.setAttribute('aria-label',coord(i)+', '+cellName(i)+(i===cursor?S(', 현재 위치',', current'):''));
       b.disabled=over||st!==0; }
-    drawPin(); renderPad(); }
+    updateHud(); drawPin(); renderPad(); }
   function sync(focus){ render(); if(focus!==false&&cellBtns[cursor]&&!cellBtns[cursor].disabled){try{cellBtns[cursor].focus();}catch(e){}} }
   function setStatus(t,phase,doSpeak){ statusText.textContent=t; if(phase)statusEl.dataset.phase=phase; if(doSpeak!==false)speak(t); }
 
@@ -269,9 +308,11 @@
   if(LANG==='en'){ document.documentElement.lang='en'; document.title='DOT BATTLESHIP';
     document.getElementById('newLbl').textContent='Start'; document.getElementById('readLbl').textContent='Status';
     document.getElementById('dpLbl').textContent='Connect DotPad';
+    document.getElementById('hudSunkLbl').textContent='Sunk'; document.getElementById('hudShotLbl').textContent='Shots';
+    document.getElementById('howtoText').textContent='Arrows move · Enter fire · C cell · R status · N new';
     setStatus('Press start or Enter to begin.','play',false); }
   else { setStatus('시작하려면 시작 버튼이나 엔터를 누르세요.','play',false); }
-  buildCells(); place(); render(); loadSDK();
+  buildCells(); buildLabels(); place(); render(); loadSDK();
   if(params.get('preview')==='1'){ pinwrap.classList.add('show'); pinToggle.setAttribute('aria-pressed','true'); drawPin(); }
   document.addEventListener('pointerdown',()=>document.body.classList.remove('kbd'));
   document.body.addEventListener('pointerdown',function once(){ ensureAudio(); try{speechSynthesis.resume();}catch(e){} document.body.removeEventListener('pointerdown',once); },{once:true});
