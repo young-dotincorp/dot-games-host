@@ -17,9 +17,9 @@
   .board-area{flex:1 1 auto;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;}
 
   .status{position:relative;z-index:5;flex:0 0 auto;margin-top:2px;
-    background:#fff;border:3px solid #FFC400;border-radius:16px;color:#0b1f38;
+    background:rgba(6,20,40,.88);border:2px solid rgba(0,200,255,.55);border-radius:16px;color:#eaf6ff;
     padding:9px 18px;font-size:clamp(14px,2.6vmin,20px);font-weight:800;white-space:nowrap;max-width:94%;
-    display:flex;align-items:center;gap:10px;box-shadow:0 6px 18px -6px rgba(0,0,0,.6);}
+    display:flex;align-items:center;gap:10px;box-shadow:0 0 18px rgba(0,180,255,.28),0 6px 18px -6px rgba(0,0,0,.7);}
   .status .dot{width:14px;height:14px;border-radius:50%;background:#8fb3d6;flex:0 0 auto;}
   .status[data-phase="play"] .dot{background:#3FA0EC;}
   .status[data-phase="over"] .dot{background:#2ecc71;}
@@ -28,30 +28,32 @@
   .corner{}
   .col-labels{grid-column:2;grid-row:1;display:grid;grid-template-columns:repeat(5,1fr);gap:min(1.8vmin,10px);padding:0 min(1.8vmin,11px);}
   .row-labels{grid-column:1;grid-row:2;display:grid;grid-template-rows:repeat(5,1fr);gap:min(1.8vmin,10px);padding:min(1.8vmin,11px) 0;}
-  .col-labels span,.row-labels span{display:flex;align-items:center;justify-content:center;font-size:clamp(13px,2.4vmin,18px);font-weight:800;color:#dbe9f8;}
+  .col-labels span,.row-labels span{display:flex;align-items:center;justify-content:center;font-size:clamp(13px,2.4vmin,18px);font-weight:800;color:#7fe8ff;text-shadow:0 0 8px rgba(0,200,255,.55);}
   .row-labels span{padding-right:8px;}
   .board{grid-column:2;grid-row:2;
     width:min(64vmin,46vh,460px);aspect-ratio:1;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);
-    gap:min(1.8vmin,10px);background:rgba(4,18,34,.6);padding:min(1.8vmin,11px);border-radius:14px;
-    box-shadow:0 14px 30px -14px rgba(0,0,0,.7);}
+    gap:min(1.8vmin,10px);background:rgba(6,22,44,.55);padding:min(1.8vmin,11px);border-radius:18px;
+    border:2px solid rgba(0,200,255,.5);
+    box-shadow:0 0 28px rgba(0,180,255,.28),inset 0 0 32px rgba(0,120,200,.12),0 16px 40px -16px rgba(0,0,0,.85);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
   .hud{position:relative;z-index:5;flex:0 0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;
-    background:rgba(9,26,45,.82);border:2px solid #3f74a6;border-radius:999px;padding:8px 18px;font-size:clamp(13px,2.2vmin,17px);font-weight:800;color:#eaf4ff;max-width:94%;}
-  .hud b{color:#FFD54A;}
+    background:rgba(6,20,40,.8);border:1.5px solid rgba(0,200,255,.45);border-radius:999px;padding:8px 18px;font-size:clamp(13px,2.2vmin,17px);font-weight:800;color:#eaf6ff;max-width:94%;box-shadow:0 0 16px rgba(0,160,220,.22);}
+  .hud b{color:#5cf0d0;}
   .hud-sep{color:#5f86ad;}
   .hud-ships{display:inline-flex;gap:7px;flex-wrap:wrap;}
-  .chip{display:inline-flex;align-items:center;gap:4px;background:rgba(63,160,236,.28);border:1.5px solid #4f8fc8;border-radius:9px;padding:3px 10px;font-size:clamp(12px,1.9vmin,15px);}
+  .chip{display:inline-flex;align-items:center;gap:4px;background:rgba(0,180,255,.18);border:1.5px solid rgba(0,200,255,.5);border-radius:9px;padding:3px 10px;font-size:clamp(12px,1.9vmin,15px);color:#cdefff;}
   .chip.sunk{background:rgba(46,204,113,.3);border-color:#2ecc71;color:#c9f7d8;text-decoration:line-through;}
   .howto{position:relative;z-index:5;flex:0 0 auto;color:#dbe9f8;font-size:clamp(12px,2vmin,15px);font-weight:700;background:rgba(9,26,45,.72);border:1px solid #2c5c88;border-radius:999px;padding:6px 16px;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis;}
-  .cell{-webkit-appearance:none;appearance:none;border:3px solid #3f74a6;background:rgba(41,102,160,.35);
-    border-radius:10px;cursor:pointer;padding:0;position:relative;transition:background .12s ease,transform .08s ease;
-    display:flex;align-items:center;justify-content:center;}
-  .cell:hover:not(:disabled){background:rgba(63,160,236,.4);}
-  .cell.cursor{outline:0;box-shadow:0 0 0 4px #0b1f38,0 0 0 9px #FFC400;transform:scale(1.05);z-index:2;}
-  .cell.miss{background:rgba(20,44,72,.6);}
-  .cell.miss::after{content:"";width:34%;height:34%;border-radius:50%;background:#e9f2fb;box-shadow:0 0 8px rgba(255,255,255,.6);}
-  .cell.hit{background:#E53935;border-color:#ff8a87;}
-  .cell.hit::after{content:"";width:56%;height:56%;border-radius:6px;background:#fff;box-shadow:0 0 12px #ffd;}
-  .cell.sunk{background:#8e1414;border-color:#ff5a55;}
+  .cell{-webkit-appearance:none;appearance:none;border:2px solid rgba(0,200,255,.45);background:rgba(16,66,110,.42);
+    border-radius:12px;cursor:pointer;padding:0;position:relative;transition:background .12s ease,transform .08s ease,box-shadow .12s ease;
+    box-shadow:inset 0 0 14px rgba(0,180,255,.14);display:flex;align-items:center;justify-content:center;}
+  .cell:hover:not(:disabled){background:rgba(0,180,255,.32);box-shadow:inset 0 0 18px rgba(0,220,255,.3);}
+  .cell.cursor{outline:0;border-color:#FFC400;box-shadow:0 0 0 3px #06121e,0 0 0 6px #FFC400,0 0 22px 5px rgba(255,196,0,.6);transform:scale(1.06);z-index:2;}
+  .cell.miss{background:rgba(8,26,48,.7);border-color:rgba(120,160,200,.35);box-shadow:none;}
+  .cell.miss::after{content:"";width:32%;height:32%;border-radius:50%;background:#dbe9f8;box-shadow:0 0 10px rgba(255,255,255,.55);}
+  .cell.hit{background:radial-gradient(circle at 50% 45%,#ffb347,#e53935 72%);border-color:#ffcf9a;box-shadow:0 0 20px rgba(255,90,30,.7),inset 0 0 14px rgba(255,180,80,.5);}
+  .cell.hit::after{content:"";width:50%;height:50%;border-radius:50%;background:radial-gradient(circle,#fff,#ffd27a);box-shadow:0 0 16px #ffd;}
+  .cell.sunk{background:radial-gradient(circle,#b52a1a,#6e0f0f);border-color:#ff5a55;box-shadow:0 0 22px rgba(255,60,40,.6);}
   .cell:disabled{cursor:default;}
 
   .controls{position:relative;z-index:6;flex:0 0 auto;
@@ -95,9 +97,7 @@
     </div>
   </div>
   <div class="howto" id="howtoText">방향키 이동 · 스페이스 발사 · C 현재 칸 · R 남은 배 · B 판 읽기 · H 도움말</div>
-</div>
-
-<div class="controls">
+  <div class="controls">
   <div class="ctl-row">
     <button id="help" class="btn" type="button" aria-label="게임 방법 듣기"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2 -3 3 -3 3"/><path d="M12 17h.01"/></svg><span id="helpLbl">게임 방법</span></button>
     <button id="read" class="btn" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8"/><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5"/></svg><span id="readLbl">현황 듣기</span></button>
@@ -106,6 +106,7 @@
     <button id="pinToggle" class="btn icon" type="button" aria-pressed="false" aria-label="닷패드 핀 화면 미리보기"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h.01M12 5h.01M19 5h.01M5 12h.01M12 12h.01M19 12h.01M5 19h.01M12 19h.01M19 19h.01"/></svg></button>
   </div>
   <button id="newgame" class="btn btn-primary" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/></svg><span id="newLbl">시작</span></button>
+</div>
 </div>
 
 <div class="pinwrap" id="pinwrap">
