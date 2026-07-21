@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>닷 사이먼 · DOT SIMON</title>
+<style>
+  :root{ --accent:#FF4F00; --ink:#2b2740; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;color:var(--ink);overflow:hidden;
+    background:linear-gradient(180deg,#E7ECFF 0%,#EEE9FF 45%,#FBEAF3 100%);}
+
+  .stage{position:absolute;inset:0;background:#181430 url('./bg.webp') center/cover no-repeat;}
+  .status{position:absolute;top:6%;left:50%;transform:translateX(-50%);z-index:5;
+    background:rgba(255,255,255,.94);border:2px solid #fff;border-radius:16px;
+    padding:6px 14px;font-size:clamp(11px,2vmin,13px);font-weight:800;white-space:nowrap;max-width:92%;
+    display:flex;align-items:center;gap:8px;box-shadow:0 6px 16px -7px rgba(40,30,70,.5);}
+  .status .dot{width:11px;height:11px;border-radius:50%;background:#bbb;flex:0 0 auto;}
+  .status[data-phase="watch"] .dot{background:#7C4DFF;}
+  .status[data-phase="input"] .dot{background:#1F9D55;}
+  .status[data-phase="over"] .dot{background:#E24B4A;}
+
+  .pad{position:absolute;left:50%;top:53%;transform:translate(-50%,-50%);
+    width:min(78vmin,440px);aspect-ratio:1;display:grid;grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr 1fr;gap:min(3.2vmin,18px);}
+  .zone{border:0;cursor:pointer;border-radius:50%;padding:0;position:relative;aspect-ratio:1;
+    background:center/contain no-repeat;
+    transition:filter .12s ease,transform .08s ease;
+    filter:brightness(.5) saturate(.85);}
+  .zone[data-z="0"]{background-image:url('./btn-green.webp');}
+  .zone[data-z="1"]{background-image:url('./btn-red.webp');}
+  .zone[data-z="2"]{background-image:url('./btn-yellow.webp');}
+  .zone[data-z="3"]{background-image:url('./btn-blue.webp');}
+  .zone.lit{filter:brightness(1.18) saturate(1.15) drop-shadow(0 0 16px rgba(255,255,255,.85));transform:scale(1.05);}
+  .zone:disabled{cursor:default;}
+  body.kbd .zone.cursor{outline:0;box-shadow:0 0 0 5px #fff,0 0 0 10px var(--accent);}
+  .zlabel{position:absolute;top:7%;left:50%;transform:translateX(-50%);font-size:clamp(12px,2.4vmin,16px);font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);}
+
+  .controls{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);
+    z-index:6;display:flex;flex-direction:column;align-items:center;gap:9px;max-width:96vw;}
+  .ctl-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;}
+  .btn{font-family:inherit;font-size:12px;font-weight:800;border-radius:13px;border:0;cursor:pointer;
+    background:rgba(255,255,255,.95);color:var(--ink);box-shadow:0 5px 13px -6px rgba(40,30,70,.55);
+    transition:.12s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;line-height:1;}
+  .btn.icon{padding:9px;}
+  .btn:hover{transform:translateY(-1px);}
+  .btn-primary{background:var(--accent);color:#fff;padding:10px 16px;}
+  .btn.dpbtn[data-on="1"]{background:#1F9D55;color:#fff;}
+  .ti{width:18px;height:18px;flex:0 0 auto;display:block;}
+
+  .pinwrap{position:fixed;right:12px;bottom:76px;z-index:6;background:rgba(255,255,255,.96);
+    border-radius:12px;padding:8px;box-shadow:0 8px 20px -8px rgba(0,0,0,.4);display:none;}
+  .pinwrap.show{display:block;}
+  .pinwrap canvas{width:150px;display:block;border-radius:6px;background:#FBF7EE;}
+  .pinwrap .cap{font-size:10px;color:#5a4a7a;text-align:center;margin-top:4px;font-weight:700;}
+
+  body.embed .controls{bottom:20px;}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="status" id="status" role="status" aria-live="assertive" data-phase="input">
+    <span class="dot" aria-hidden="true"></span><span id="statusText">시작하려면 시작 버튼이나 엔터를 누르세요.</span>
+  </div>
+  <div class="pad" id="pad" role="group" aria-label="사이먼 판. 네 개의 구역. 순서를 듣고 따라 누르세요. 숫자 1에서 4 또는 화살표와 엔터.">
+    <button class="zone" data-z="0" type="button"><span class="zlabel" aria-hidden="true">1</span></button>
+    <button class="zone" data-z="1" type="button"><span class="zlabel" aria-hidden="true">2</span></button>
+    <button class="zone" data-z="2" type="button"><span class="zlabel" aria-hidden="true">3</span></button>
+    <button class="zone" data-z="3" type="button"><span class="zlabel" aria-hidden="true">4</span></button>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="ctl-row">
+    <button id="replay" class="btn" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/></svg><span id="replayLbl">다시 듣기</span></button>
+    <button id="speed" class="btn" type="button" aria-label="속도 바꾸기"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="speedLbl">느리게</span></button>
+    <button id="sound" class="btn icon" aria-pressed="true" aria-label="음성 켜짐, 누르면 끔" type="button"></button>
+    <button id="dpBtn" class="btn dpbtn" data-on="0" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8l10 8l-5 4v-16l5 4l-10 8"/></svg><span id="dpLbl">닷패드 연결</span></button>
+    <button id="pinToggle" class="btn icon" type="button" aria-pressed="false" aria-label="닷패드 핀 화면 미리보기"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h.01M12 5h.01M19 5h.01M5 12h.01M12 12h.01M19 12h.01M5 19h.01M12 19h.01M19 19h.01"/></svg></button>
+  </div>
+  <button id="newgame" class="btn btn-primary" type="button"><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/></svg><span id="newLbl">시작</span></button>
+</div>
+
+<div class="pinwrap" id="pinwrap">
+  <canvas id="pin" aria-hidden="true"></canvas>
+  <div class="cap">실제 핀 출력 (60×40)</div>
+</div>
+
+<script src="/tts.js"></script>
+<script>
+(function(){
+  "use strict";
+  const N=60,M=40;
+  // 4구역 사각형 [x0,y0,x1,y1] — 2x2 배치(왼위/오른위/왼아래/오른아래)
+  const ZR=[[3,3,28,18],[31,3,56,18],[3,21,28,37],[31,21,56,37]];
+  const FREQ=[392.00,329.63,261.63,220.00]; // G4 E4 C4 A3 — 구역별 고유 음
+  const B_NUM=0x3C,B_SP=0x00,B_DIG={'0':0x35,'1':0x01,'2':0x03,'3':0x09,'4':0x19,'5':0x11,'6':0x0B,'7':0x1B,'8':0x13,'9':0x0A};
+
+  const params=new URLSearchParams(location.search);
+  if(params.get('embed')==='1') document.body.classList.add('embed');
+  const LANG=(params.get('lang')==='en')?'en':'ko';
+  const S=(ko,en)=>LANG==='en'?en:ko;
+  const ZN=LANG==='en'?['top left','top right','bottom left','bottom right']:['왼쪽 위','오른쪽 위','왼쪽 아래','오른쪽 아래'];
+
+  // 촉각 사용자 기준 타이밍(ms) — 손을 대고 위치를 더듬어 느낄 시간을 넉넉히.
+  //   dwell: 핀을 올려 두는 시간(그 사이 음성으로 번호도 안내), gap: 단계 사이 쉼, lead: 재생 시작 전 준비.
+  const PACE={ slow:{lead:1300,dwell:2100,gap:800,tone:0.5}, normal:{lead:650,dwell:1150,gap:430,tone:0.42} };
+  let speed='slow'; // 기본은 느리게(접근성 우선)
+  const ZNUM=LANG==='en'?['one','two','three','four']:['1번','2번','3번','4번'];
+  let seq=[], inputIdx=0, round=0, busy=false, over=true, soundOn=true, cursor=0;
+  let sdk=null,scanner=null,KeyCodes=null,DataCodes=null,dpConnected=false;
+  let ac=null;
+
+  const statusEl=document.getElementById('status'), statusText=document.getElementById('statusText');
+  const padEl=document.getElementById('pad');
+  const zoneBtns=Array.from(document.querySelectorAll('.zone'));
+  const soundBtn=document.getElementById('sound'), newBtn=document.getElementById('newgame'), dpBtn=document.getElementById('dpBtn');
+  const replayBtn=document.getElementById('replay'), speedBtn=document.getElementById('speed'), pinToggle=document.getElementById('pinToggle'), pinwrap=document.getElementById('pinwrap');
+  const pin=document.getElementById('pin'), pctx=pin.getContext('2d');
+
+  function speak(t){ if(soundOn && window.TW_TTS) TW_TTS.speak(t); }
+  if(window.TW_TTS){ TW_TTS.setLang(LANG); }
+
+  // ---- audio tones ----
+  function ensureAudio(){ if(!ac){ try{ ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(ac&&ac.state==='suspended'){ try{ac.resume();}catch(e){} } }
+  function tone(freq,dur,type){ if(!soundOn||!ac) return; try{
+    const o=ac.createOscillator(),g=ac.createGain(),t0=ac.currentTime;
+    o.type=type||'sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.32,t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(ac.destination); o.start(t0); o.stop(t0+dur+0.02);
+  }catch(e){} }
+  function buzz(){ tone(120,0.5,'square'); }
+
+  // ---- tactile frame (pin output) ----
+  function fillRect(set,x0,y0,x1,y1){ for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)set(x,y); }
+  function outRect(set,x0,y0,x1,y1){ for(let x=x0;x<=x1;x++){set(x,y0);set(x,y1);} for(let y=y0;y<=y1;y++){set(x0,y);set(x1,y);} }
+  function buildFrame(active,outlineOthers){
+    const g=Array.from({length:M},()=>new Uint8Array(N));
+    const set=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x>=0&&x<N&&y>=0&&y<M)g[y][x]=1;};
+    for(let z=0;z<4;z++){const r=ZR[z];
+      if(z===active) fillRect(set,r[0],r[1],r[2],r[3]);        // 켜진 구역: 꽉 채워 융기
+      else if(outlineOthers) outRect(set,r[0],r[1],r[2],r[3]); // 대기 상태: 윤곽만(위치 파악)
+    }
+    return g;
+  }
+  const EA=[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2],[1,3]];
+  function encodeFrame(g){let h='';for(let s=0;s<10;s++)for(let n=0;n<30;n++){let b=0;
+    for(let m=0;m<8;m++){const u=EA[m][0],p=EA[m][1];if(g[s*4+p][n*2+u])b|=(1<<m);}h+=(b<16?'0':'')+b.toString(16);}return h;}
+  function brailleLine(){const digs=String(Math.max(0,round)).split('');const by=[B_NUM];
+    for(const d of digs)by.push(B_DIG[d]!=null?B_DIG[d]:B_SP);
+    while(by.length<20)by.push(B_SP);return by.slice(0,20).map(b=>(b<16?'0':'')+b.toString(16)).join('');}
+  function drawPin(active,outlineOthers){if(!pinwrap.classList.contains('show'))return;
+    const W=pin.clientWidth||150,gap=W/N,cssH=gap*M,dpr=window.devicePixelRatio||1;const frame=buildFrame(active,outlineOthers);
+    pin.style.height=cssH+'px';pin.width=Math.round(W*dpr);pin.height=Math.round(cssH*dpr);pctx.setTransform(dpr,0,0,dpr,0,0);pctx.clearRect(0,0,W,cssH);
+    const rOn=gap*0.34,rOff=gap*0.13;
+    for(let y=0;y<M;y++)for(let x=0;x<N;x++){const px=x*gap+gap/2,py=y*gap+gap/2;
+      pctx.fillStyle=frame[y][x]?'#211d16':'#d9d3c6';
+      pctx.beginPath();pctx.arc(px,py,frame[y][x]?rOn:rOff,0,6.2832);pctx.fill();}}
+  function renderPad(active,outlineOthers){ if(pinwrap.classList.contains('show')) drawPin(active,outlineOthers);
+    if(!dpConnected||!sdk)return;try{sdk.displayGraphicData(encodeFrame(buildFrame(active,outlineOthers)));sdk.displayTextData(brailleLine());}catch(e){}}
+  function padStep(z){ renderPad(z,false); }   // 재생: 켜진 구역 하나만 융기
+  function padIdle(){ renderPad(-1,true); }     // 입력 대기: 네 구역 윤곽(위치 파악)
+  function padFlat(){ renderPad(-1,false); }    // 전부 내림(단계 사이)
+
+  // ---- lighting ----
+  function litOn(z){ zoneBtns[z].classList.add('lit'); }
+  function litOff(){ zoneBtns.forEach(b=>b.classList.remove('lit')); }
+  function flash(z){ ensureAudio(); litOn(z); tone(FREQ[z],0.25); padStep(z);
+    setTimeout(()=>{litOff();padIdle();}, 340); }
+
+  function setStatus(t,phase,doSpeak){ statusText.textContent=t; if(phase)statusEl.dataset.phase=phase; if(doSpeak!==false)speak(t); }
+  function reduced(){return window.matchMedia('(prefers-reduced-motion: reduce)').matches;}
+  function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+  function setBtns(disabled){ zoneBtns.forEach(b=>{b.disabled=disabled;}); }
+  function syncCursor(){ zoneBtns.forEach((b,i)=>{b.classList.toggle('cursor',i===cursor);
+    b.setAttribute('aria-label',(i+1)+'. '+ZN[i]+(i===cursor?(LANG==='en'?', current':', 현재 위치'):''));}); }
+
+  // ---- game flow ----
+  async function playSequence(){
+    busy=true; setBtns(true); litOff(); padFlat();
+    setStatus(S('잘 듣고 순서를 기억하세요.','Listen and remember the order.'),'watch',false);
+    const P=PACE[speed];
+    await wait(P.lead);
+    for(let i=0;i<seq.length;i++){
+      const z=seq[i]; litOn(z); ensureAudio(); tone(FREQ[z],P.tone); padStep(z); speak(ZNUM[z]); // 소리+촉각+음성(번호)
+      await wait(P.dwell); litOff(); padFlat(); await wait(P.gap);
+    }
+    busy=false; inputIdx=0; setBtns(false); padIdle(); // 입력 대기: 네 구역 윤곽 표시
+    setStatus(S('이제 순서대로 따라 누르세요.','Now repeat the order.'),'input');
+  }
+  function nextRound(){
+    seq.push((Math.random()*4)|0); round=seq.length;
+    setStatus(S(round+'단계.',('Level '+round+'.')),'watch');
+    setTimeout(playSequence, 700);
+  }
+  function newGame(){
+    ensureAudio(); seq=[]; inputIdx=0; round=0; over=false; busy=false; cursor=0; litOff();
+    syncCursor(); padIdle(); nextRound();
+  }
+  function gameOver(z){
+    over=true; busy=true; setBtns(true); litOff(); buzz(); padFlat();
+    const cleared=Math.max(0,round-1);
+    setStatus(S('틀렸어요. '+cleared+'단계까지 성공했어요! 다시 시작하려면 시작을 누르세요.',
+                'Wrong. You cleared level '+cleared+'! Press start to play again.'),'over');
+    padOverPulse();
+  }
+  function press(z){
+    if(over){ return; }
+    if(busy) return;
+    cursor=z; syncCursor(); flash(z);
+    if(z===seq[inputIdx]){
+      inputIdx++;
+      if(inputIdx>=seq.length){
+        busy=true; setBtns(true);
+        setStatus(S('정답!','Correct!'),'input',true);
+        setTimeout(nextRound, 800);
+      }
+    } else {
+      setTimeout(()=>gameOver(z), 260);
+    }
+  }
+  function replay(){ if(over||busy||seq.length===0)return; playSequence(); }
+
+  function moveCursor(nx,ny){ if(busy||over)return; let c=cursor&1,r=cursor>>1;
+    if(nx!=null)c=nx; if(ny!=null)r=ny; cursor=r*2+c; syncCursor();
+    speak(ZN[cursor]); }
+
+  // ---- DotPad ----
+  function handleDotPadKey(keyCode){ if(!KeyCodes)return; document.body.classList.add('kbd');
+    if(over){ if(keyCode===KeyCodes.KeyFunction1||keyCode===KeyCodes.LPF1) newGame(); return; }
+    switch(keyCode){
+      case KeyCodes.KeyFunction1: press(0); break;
+      case KeyCodes.KeyFunction2: press(1); break;
+      case KeyCodes.KeyFunction3: press(2); break;
+      case KeyCodes.KeyFunction4: press(3); break;
+      case KeyCodes.PanningAll: replay(); break;
+      case KeyCodes.LPF1: newGame(); break;
+    }
+  }
+  async function padOverPulse(){ if(!dpConnected||!sdk)return;
+    try{ for(let i=0;i<3;i++){ sdk.displayAllUp&&sdk.displayAllUp(); await wait(80); sdk.displayAllDown&&sdk.displayAllDown(); await wait(60);} padIdle();}catch(e){} }
+  async function loadSDK(){ try{ const m=await import('./dotpad-sdk/DotPadSDK-3.0.0.js');
+    KeyCodes=m.KeyCodes;DataCodes=m.DataCodes;sdk=new m.DotPadSDK();scanner=new m.DotPadScanner();
+    sdk.setCallBack((device,code)=>{ if(code===DataCodes.Connected){dpConnected=true;setDpUI(true);
+        setTimeout(()=>{try{sdk.displayAllDown();setTimeout(()=>padIdle(),300);}catch(e){}},200);}
+      else if(code===DataCodes.Disconnected){dpConnected=false;setDpUI(false);}},
+      (device,keyCode)=>handleDotPadKey(keyCode)); return true;}catch(e){return false;} }
+  function setDpUI(on){ dpBtn.dataset.on=on?'1':'0'; document.getElementById('dpLbl').textContent=on?S('닷패드 연결됨','DotPad connected'):S('닷패드 연결','Connect DotPad');
+    if(on)speak(S('닷패드가 연결됐어요. F1에서 F4로 네 구역을 누르세요.','DotPad connected. Use F1 to F4 for the four zones.')); }
+  async function connectDotPad(){
+    if(!navigator.bluetooth){ setStatus(S('이 브라우저는 블루투스를 지원하지 않아요. 크롬이나 엣지에서 열어 주세요.','This browser does not support Bluetooth. Please use Chrome or Edge.'),'',true); return; }
+    if(!sdk){ loadSDK(); setStatus(S('닷패드 준비 중이에요. 잠시 후 한 번 더 눌러 주세요.','Preparing DotPad. Please tap once more in a moment.'),'',true); return; }
+    try{ let dev=null;
+      try{ dev=await navigator.bluetooth.requestDevice({filters:[{namePrefix:'DotPad'},{namePrefix:'KM2-'},{namePrefix:'KM3-'},{namePrefix:'DPK'},{namePrefix:'DMI'}],optionalServices:[scanner.DOTPAD_SERVICE]}); }
+      catch(e){ if(e.name==='NotFoundError'){ dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:[scanner.DOTPAD_SERVICE]}); } else throw e; }
+      if(dev){ setStatus(S('닷패드에 연결 중…','Connecting to DotPad…'),'',false); await sdk.connectBleDevice(dev); }
+    }catch(e){ if(e.name!=='NotFoundError') setStatus(S('닷패드 연결 실패: ','DotPad connection failed: ')+(e.message||e.name),'',false); }
+  }
+
+  // ---- input wiring ----
+  zoneBtns.forEach((b,i)=>{ b.addEventListener('click',()=>{ if(over){newGame();return;} press(i); }); });
+  document.addEventListener('keydown',(ev)=>{ const k=ev.key; document.body.classList.add('kbd');
+    if(k>='1'&&k<='4'){ if(over){newGame();}else{press(parseInt(k,10)-1);} ev.preventDefault(); return; }
+    if(k==='ArrowLeft'){moveCursor(0,null);ev.preventDefault();return;}
+    if(k==='ArrowRight'){moveCursor(1,null);ev.preventDefault();return;}
+    if(k==='ArrowUp'){moveCursor(null,0);ev.preventDefault();return;}
+    if(k==='ArrowDown'){moveCursor(null,1);ev.preventDefault();return;}
+    if(k==='Enter'||k===' '){ if(over){newGame();}else{press(cursor);} ev.preventDefault(); return; }
+    if(k==='r'||k==='R'){ replay(); ev.preventDefault(); return; }
+    if(k==='n'||k==='N'){ newGame(); ev.preventDefault(); return; }
+  });
+
+  const SVG_VOL='<svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 0 8"/><path d="M17.7 5a9 9 0 0 1 0 14"/><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5"/></svg>';
+  const SVG_VOL_OFF='<svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8a5 5 0 0 1 1.912 4.934m-1.377 2.602a5 5 0 0 1 -.535 .464"/><path d="M17.7 5a9 9 0 0 1 2.362 11.086m-1.676 2.299a9 9 0 0 1 -.686 .615"/><path d="M9.069 5.054l.431 -.554a.8 .8 0 0 1 1.5 .5v2m0 4v8a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l1.294 -1.664"/><path d="M3 3l18 18"/></svg>';
+  soundBtn.innerHTML=SVG_VOL;
+  soundBtn.addEventListener('click',()=>{ soundOn=!soundOn; soundBtn.setAttribute('aria-pressed',String(soundOn));
+    soundBtn.innerHTML=soundOn?SVG_VOL:SVG_VOL_OFF; soundBtn.setAttribute('aria-label',soundOn?S('음성 켜짐, 누르면 끔','Sound on, tap to mute'):S('음성 꺼짐, 누르면 켬','Sound off, tap to unmute'));
+    if(soundOn)speak(S('소리를 켰어요.','Sound on.')); else if(window.TW_TTS)TW_TTS.stop(); });
+  newBtn.addEventListener('click',newGame);
+  replayBtn.addEventListener('click',replay);
+  speedBtn.addEventListener('click',()=>{ speed = speed==='slow'?'normal':'slow';
+    document.getElementById('speedLbl').textContent = speed==='slow'?S('느리게','Slow'):S('보통','Normal');
+    speak(speed==='slow'?S('느린 속도로 바꿨어요.','Switched to slow speed.'):S('보통 속도로 바꿨어요.','Switched to normal speed.')); });
+  dpBtn.addEventListener('click',connectDotPad);
+  pinToggle.addEventListener('click',()=>{const on=pinwrap.classList.toggle('show');pinToggle.setAttribute('aria-pressed',String(on));if(on)drawPin(-1,true);});
+  window.addEventListener('resize',()=>{clearTimeout(window.__rz);window.__rz=setTimeout(()=>drawPin(-1,true),150);});
+  window.getDotpadFrame=()=>encodeFrame(buildFrame(-1,true));
+
+  if(LANG==='en'){ document.documentElement.lang='en'; document.title='DOT SIMON';
+    document.getElementById('newLbl').textContent='Start'; document.getElementById('replayLbl').textContent='Replay';
+    document.getElementById('speedLbl').textContent='Slow';
+    document.getElementById('dpLbl').textContent='Connect DotPad';
+    setStatus('Press start or Enter to begin.','input',false); }
+  else { setStatus('시작하려면 시작 버튼이나 엔터를 누르세요.','input',false); }
+  syncCursor(); loadSDK();
+  if(params.get('preview')==='1'){ pinwrap.classList.add('show'); pinToggle.setAttribute("aria-pressed","true"); drawPin(-1,true); }
+  document.addEventListener('pointerdown',()=>document.body.classList.remove('kbd'));
+  document.body.addEventListener('pointerdown',function once(){ ensureAudio(); try{speechSynthesis.resume();}catch(e){} document.body.removeEventListener('pointerdown',once); },{once:true});
+})();
+</script>
+</body>
+</html>
