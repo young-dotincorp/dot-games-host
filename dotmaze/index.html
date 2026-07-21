@@ -36,13 +36,17 @@
   /* 벽: 석재 블록 + 시안 회로 글로우 테두리 (배경 톤과 통일) */
   .mz.wall{background:linear-gradient(158deg,#d3bd92,#9c8258);border-radius:3px;
     box-shadow:inset 0 0 0 1.5px rgba(0,225,255,.6),inset 0 0 7px rgba(0,205,255,.4),0 1px 2px rgba(0,0,0,.45);}
-  /* 플레이어: 따뜻한 호박빛 오브(탐험가 톤) */
-  .mz.player::after{content:"";position:absolute;inset:14%;border-radius:50%;
-    background:radial-gradient(circle at 40% 35%,#fff2c8,#ff9e2c);box-shadow:0 0 16px 5px rgba(255,175,60,.85);}
+  .mz.player{overflow:visible;z-index:6;}
+  /* 플레이어: 탐험가 캐릭터가 칸 바닥에 서 있는 형태 */
+  .mz.player::after{content:"";position:absolute;left:50%;bottom:4%;transform:translateX(-50%);
+    width:118%;height:188%;background:url('./assets/player.webp') bottom center/contain no-repeat;
+    filter:drop-shadow(0 0 5px rgba(255,190,80,.9)) drop-shadow(0 2px 3px rgba(0,0,0,.55));pointer-events:none;}
   /* 출구: 마젠타 게이트 링(이미지의 핑크 액센트) */
   .mz.goal::after{content:"";position:absolute;inset:11%;border-radius:5px;border:2.5px solid #ff5ad6;
     box-shadow:0 0 16px rgba(255,90,214,.85),inset 0 0 9px rgba(255,90,214,.45);}
-  .mz.goal.player::after{background:radial-gradient(circle at 40% 35%,#fff2c8,#ff9e2c);border:none;border-radius:50%;inset:14%;box-shadow:0 0 16px 5px rgba(255,175,60,.85);}
+  .mz.goal.player::after{border:none;border-radius:0;inset:auto;left:50%;bottom:4%;transform:translateX(-50%);
+    width:118%;height:188%;background:url('./assets/player.webp') bottom center/contain no-repeat;box-shadow:none;
+    filter:drop-shadow(0 0 6px rgba(255,90,214,.9));}
 
   .controls{position:relative;z-index:6;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:9px;max-width:96vw;}
   .ctl-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;}
